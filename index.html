@@ -46,8 +46,9 @@ button{cursor:pointer}
 .btn[disabled]{opacity:.45;cursor:default}
 .pill{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:3px 10px;font-size:13px;font-weight:600;background:var(--panel2);border:1px solid var(--line)}
 .pill.acc{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+.pill.good{background:#e8f7f0;color:var(--good);border-color:transparent}
 .nav{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;background:var(--panel);border-top:1px solid var(--line);padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));gap:4px;z-index:5}
-.nav button{flex:1;max-width:170px;border:0;background:none;padding:8px 4px;border-radius:12px;font:600 15px var(--f-disp);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);min-height:48px}
+.nav button{flex:1;max-width:140px;border:0;background:none;padding:8px 2px;border-radius:12px;font:600 14px var(--f-disp);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);min-height:48px}
 .nav button[aria-current="true"]{background:var(--accent-soft);color:var(--accent)}
 .tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
 .tabs button{border:1px solid var(--line);background:var(--panel);border-radius:99px;padding:8px 16px;font-weight:600;min-height:42px}
@@ -109,7 +110,7 @@ select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:90px;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;z-index:9}
 @media (max-width:560px){
   h1{font-size:30px} .score .sc{font-size:42px} .attrs{grid-template-columns:repeat(2,1fr)} .slot{grid-template-columns:90px 1fr}
-  .vs .nm{font-size:20px} .nav button{font-size:13px}
+  .vs .nm{font-size:20px} .nav button{font-size:12px}
 }
 </style>
 </head>
@@ -117,7 +118,6 @@ select{background:var(--panel2);border:1px solid var(--line);border-radius:10px;
 <div id="app"></div>
 
 <script>
-/* ===== DATABASE SOCIETÀ & ROSE 2026/27 ===== */
 const LEAGUES = {
   A1: { name: "Serie A1", rounds: 26, teams: [
     { id: "con", short: "Conegliano", full: "Prosecco DOC Imoco Conegliano", city: "Conegliano", tier: 5.0, color: "#1d4ed8", p: ["C|Linda Manfredini||","C|Raphaela Folie||","S|Anna Piovesan||","L|Monica De Gennaro||","L|Elena Arici||","O|Merit Adigwe||","C|Sarah Fahr||","C|Cekulaev||","S|Gabi||","O|Haak||","S|Sillah||","P|Wolosz||","S|Zhu Ting||","P|Yao Di||"] },
@@ -197,6 +197,15 @@ const KEY_ATTR={P:"set",O:"att",S:"att",C:"blk",L:"rec"};
 
 function gauss(r){let u=0,v=0;while(!u)u=r();while(!v)v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
 
+/* Calcolo valore economico di mercato (ETV) */
+function calcETV(p){
+  const baseFactor = Math.pow(p.ovr / 40, 3.8);
+  let val = baseFactor * 6500;
+  if(p.age <= 21) val *= 1.35; // upside gioventù
+  if(p.age >= 32) val *= 0.75;
+  return Math.round(val / 500) * 500;
+}
+
 function makePlayer(lid,team,i,raw,rng,gen){
   let role,name,nat="",year=0;
   if(gen){role=gen.role;name=gen.name;year=SEASON_YEAR-(17+Math.floor(rng()*4));nat="ITA";}
@@ -214,7 +223,24 @@ function makePlayer(lid,team,i,raw,rng,gen){
   for(const k of ["att","blk","srv","rec","def","set"])p[k]=Math.round(clamp(ovr+ra[k]+gauss(rng)*3,25,98));
   p.ovr=p[KEY_ATTR[role]];
   p.pot=age<=21?Math.round(clamp(p.ovr+4+rng()*9,p.ovr,96)):p.ovr;
+  p.val=calcETV(p);
   return p;
+}
+
+function generateFreeAgents(){
+  const fa=[];
+  const rng=mulberry32(992026);
+  let count=0;
+  for(const role of ROLE_ORDER){
+    for(let i=0;i<4;i++){
+      const nm=FIRST[Math.floor(rng()*FIRST.length)]+" "+LAST[Math.floor(rng()*LAST.length)];
+      const dummyTeam={tier:2.8,id:"fa"};
+      const p=makePlayer("FA",dummyTeam,count++,null,rng,{role,name:nm});
+      p.teamId=null;p.lid=null;
+      fa.push(p);
+    }
+  }
+  return fa.sort((a,b)=>b.ovr-a.ovr);
 }
 
 function buildWorld(){
@@ -240,9 +266,12 @@ function buildWorld(){
   }
   return W;
 }
+
 const WORLD=buildWorld();
+const FREE_AGENTS=generateFreeAgents();
 const PLAYER_INDEX={};
 for(const lid of Object.keys(WORLD))for(const t of WORLD[lid])for(const p of t.players)PLAYER_INDEX[p.id]=p;
+for(const p of FREE_AGENTS)PLAYER_INDEX[p.id]=p;
 
 function autoLineup(team){
   const by=r=>team.players.filter(p=>p.role===r).sort((a,b)=>b.ovr-a.ovr);
@@ -402,7 +431,6 @@ function playRound(G,userRes){
 
   G.round=rnd+1;
 
-  // Transizione A3: passaggio dalla Regular Season alle Pool
   if(G.phase===1 && G.results["A3A"] && G.results["A3A"].length>=14 && G.results["A3B"] && G.results["A3B"].length>=14){
     G.phase=2;
     const stA=standings("A3A",G.results);
@@ -455,7 +483,7 @@ function nextFixture(G){
 
 const SAVE_KEY="volley-manager-italia-v1";
 let G=null;
-const UI={tab:"home",lg:"A1",rd:null,sel:null,confirm:false,match:null,lgTab:"table"};
+const UI={tab:"home",lg:"A1",rd:null,sel:null,confirm:false,match:null,lgTab:"table",mktTab:"buy"};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const $=s=>document.querySelector(s);
 const myTeam=()=>WORLD[G.lid][G.teamIdx];
@@ -463,6 +491,7 @@ const ovrColor=v=>v>=85?"#d6336c":v>=75?"#d98a1f":v>=65?"#2f9e8f":v>=55?"#4f86c6
 const ovrChip=v=>`<span class="ovr" style="background:${ovrColor(v)}">${Math.round(v)}</span>`;
 const initials=t=>t.short.split(/[\s-]+/).filter(Boolean).slice(0,2).map(w=>w[0]).join("").toUpperCase();
 const crest=t=>`<span class="crest" style="background:${t.color}">${esc(initials(t))}</span>`;
+const formatEur=v=>"€ " + Number(v).toLocaleString("it-IT");
 
 function persist(){
   if(!G)return;
@@ -477,9 +506,21 @@ function toast(msg){
   document.body.appendChild(el);setTimeout(()=>el.remove(),3200);
 }
 
+function initBudget(lid, tier){
+  if(lid==="A1") return Math.round(tier * 750000);
+  if(lid==="A2") return Math.round(tier * 110000);
+  return Math.round(tier * 75000); // A3 ~150k - 200k
+}
+
 function newGame(lid,idx){
   const t=WORLD[lid][idx];
-  G={v:1,t:0,lid,teamIdx:idx,round:0,season:1,phase:1,results:{A1:[],A2:[],A3A:[],A3B:[]},lineup:autoLineup(t),tactic:"bal"};
+  G={
+    v:1,t:0,lid,teamIdx:idx,round:0,season:1,phase:1,
+    budget:initBudget(lid, t.tier),
+    freeAgents:FREE_AGENTS.slice(),
+    results:{A1:[],A2:[],A3A:[],A3B:[]},
+    lineup:autoLineup(t),tactic:"bal"
+  };
   UI.tab="home";UI.lg=lid;UI.rd=null;UI.sel=null;
   persist();render();
 }
@@ -489,13 +530,18 @@ function render(){
   if(UI.match)return;
   if(!G){app.innerHTML=startHTML();return;}
   const t=myTeam(),total=SCHEDULE[G.lid]?SCHEDULE[G.lid].length:0;
-  const head=`<div class="top"><div class="brand">${crest(t)}<div style="min-width:0"><b>${esc(t.short)}</b><span class="muted small">${LEAGUES[G.lid]?LEAGUES[G.lid].name:G.lid} · stagione ${G.season} · giornata ${Math.min(G.round+1,total)}/${total}</span></div></div></div>`;
+  const head=`<div class="top"><div class="brand">${crest(t)}<div style="min-width:0"><b>${esc(t.short)}</b><span class="muted small">${LEAGUES[G.lid]?LEAGUES[G.lid].name:G.lid} · Budget: <b style="color:var(--good)">${formatEur(G.budget)}</b></span></div></div></div>`;
   let body="";
   if(UI.tab==="home")body=homeHTML();
   else if(UI.tab==="squad")body=squadHTML();
   else if(UI.tab==="lineup")body=lineupHTML();
+  else if(UI.tab==="market")body=marketHTML();
   else body=leagueHTML();
-  const nav=["home:Home","squad:Rosa","lineup:Formazione","league:Campionato"].map(x=>{const [k,l]=x.split(":");return `<button data-act="tab" data-v="${k}" aria-current="${UI.tab===k}">${l}</button>`;}).join("");
+  
+  const nav=["home:Home","squad:Rosa","lineup:Formazione","market:Mercato","league:Campionato"].map(x=>{
+    const [k,l]=x.split(":");
+    return `<button data-act="tab" data-v="${k}" aria-current="${UI.tab===k}">${l}</button>`;
+  }).join("");
   app.innerHTML=head+body+`<nav class="nav" aria-label="Sezioni">${nav}</nav>`;
 }
 
@@ -508,7 +554,7 @@ function startHTML(){
   const saved=loadLocal();
   const cont=validSave(saved)?`<div class="card row" style="justify-content:space-between;margin-top:18px"><span>Hai una carriera con <b>${esc(WORLD[saved.lid][saved.teamIdx].short)}</b>.</span><button class="btn primary" data-act="continue">Continua</button></div>`:"";
   return `<div class="hero" style="margin-top:8px"><span class="pill acc" style="justify-self:start">Pallavolo femminile · 2026/27</span><h1>Volley Manager Italia</h1>
-  <p class="sub">Guida la tua squadra tra Serie A1, Serie A2 e la nuova Serie A3 divisa nei Gironi A e B con formula a Pool.</p></div>${cont}
+  <p class="sub">Guida il tuo club tra campo, mercato trasferimenti e gestione finanziaria.</p></div>${cont}
   ${block("A1")}${block("A2")}${block("A3A")}${block("A3B")}`;
 }
 
@@ -561,7 +607,7 @@ function squadHTML(){
     const label=role==="S"?"Schiacciatrici":role==="C"?"Centrali":role==="P"?"Palleggiatrici":role==="O"?"Opposti":"Libero";
     out+=`<div class="card" style="margin-bottom:14px"><h3>${label}</h3>`;
     for(const p of ps){
-      out+=`<button class="prow" data-act="player" data-id="${esc(p.id)}"><span class="role">${role}</span><span class="nm"><b>${esc(p.name)}${start.has(p.id)?" ●":""}</b><span class="muted small">${p.est?"~":""}${p.age} anni${p.nat?" · "+esc(p.nat):""}${p.gen?" · giovanile":""}</span></span>${ovrChip(p.ovr)}</button>`;
+      out+=`<button class="prow" data-act="player" data-id="${esc(p.id)}"><span class="role">${role}</span><span class="nm"><b>${esc(p.name)}${start.has(p.id)?" ●":""}</b><span class="muted small">${p.est?"~":""}${p.age} anni · Valore: ${formatEur(p.val||calcETV(p))}</span></span>${ovrChip(p.ovr)}</button>`;
       if(UI.sel===p.id)out+=playerDetail(p);
     }
     out+=`</div>`;
@@ -570,7 +616,7 @@ function squadHTML(){
 }
 function playerDetail(p){
   const rows=[["att","Attacco"],["blk","Muro"],["srv","Battuta"],["rec","Ricezione"],["def","Difesa"],["set","Alzata"]];
-  return `<div style="padding:10px 4px 14px;border-bottom:1px solid var(--line)"><div class="row"><span class="pill">Nata nel ${p.est?"~":""}${p.year}</span>${p.pot>p.ovr?`<span class="pill acc">Potenziale ${p.pot}</span>`:""}</div><div class="attrs">${rows.map(([k,l])=>`<div><span>${l}<b class="num" style="color:var(--ink)">${p[k]}</b></span><div class="bar"><i style="width:${clamp(p[k],0,100)}%"></i></div></div>`).join("")}</div></div>`;
+  return `<div style="padding:10px 4px 14px;border-bottom:1px solid var(--line)"><div class="row"><span class="pill">Nata nel ${p.est?"~":""}${p.year}</span>${p.pot>p.ovr?`<span class="pill acc">Potenziale ${p.pot}</span>`:""}<span class="pill good">Valore ${formatEur(p.val||calcETV(p))}</span></div><div class="attrs">${rows.map(([k,l])=>`<div><span>${l}<b class="num" style="color:var(--ink)">${p[k]}</b></span><div class="bar"><i style="width:${clamp(p[k],0,100)}%"></i></div></div>`).join("")}</div></div>`;
 }
 
 function lineupHTML(){
@@ -579,11 +625,47 @@ function lineupHTML(){
   const r=ratingsOf(t,lu,G.tactic,null,false);
   const sel=slots.map(([k,l,role])=>{
     const ps=t.players.filter(p=>p.role===role).sort((a,b)=>b.ovr-a.ovr);
-    return `<div class="slot"><label for="sl-${k}" class="muted small" style="font-weight:600">${l}</label><select id="sl-${k}" data-act="slot" data-k="${k}">${ps.map(p=>`<option value="${esc(p.id)}"${lu[k]===p.id?" selected":""}>${esc(p.name)} ·${p.ovr}</option>`).join("")}</select></div>`;
+    return `<div class="slot"><label for="sl-${k}" class="muted small" style="font-weight:600">${l}</label><select id="sl-${k}" data-act="slot" data-k="${k}">${ps.map(p=>`<option value="${esc(p.id)}"${lu[k]===p.id?" selected":""}>${esc(p.name)} · ${p.ovr}</option>`).join("")}</select></div>`;
   }).join("");
   return `<div class="row" style="justify-content:space-between;margin-bottom:10px"><h2>Formazione</h2><button class="btn" data-act="autolineup">Automatica</button></div>
   <div class="grid g2"><div class="card">${sel}</div>
   <div class="card"><h3>Livello Squadra</h3><div class="attrs" style="grid-template-columns:repeat(2,1fr)">${[["att","Attacco"],["blk","Muro"],["srv","Battuta"],["rec","Ricezione"],["def","Difesa"],["set","Alzata"]].map(([k,l])=>`<div><span>${l}<b class="num" style="color:var(--ink)">${Math.round(r[k])}</b></span><div class="bar"><i style="width:${clamp(r[k],0,100)}%"></i></div></div>`).join("")}</div></div></div>`;
+}
+
+/* ----- SEZIONE MERCATO & TRASFERIMENTI ----- */
+function marketHTML(){
+  const t=myTeam();
+  const tabs=[["buy","Svincolate / Acquisti"],["sell","Cessioni"]].map(([k,l])=>`<button data-act="mkttab" data-v="${k}" aria-pressed="${UI.mktTab===k}">${l}</button>`).join("");
+  let body="";
+  if(UI.mktTab==="buy"){
+    const list=G.freeAgents||[];
+    body=`<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:10px"><h3>Atlete Disponibili (${list.length})</h3><span class="muted small">Pagando il cartellino firmano subito</span></div>
+    ${list.length===0?`<div class="empty">Nessuna atleta disponibile sul mercato.</div>`:list.map(p=>{
+      const cost=p.val||calcETV(p);
+      const canAfford=G.budget>=cost;
+      return `<div class="prow"><span class="role">${p.role}</span>
+        <span class="nm"><b>${esc(p.name)}</b><span class="muted small">${p.age} anni · Pot: ${p.pot} ·${formatEur(cost)}</span></span>
+        <div style="display:flex;gap:8px;align-items:center">${ovrChip(p.ovr)}<button class="btn primary" style="min-height:36px;padding:6px 12px;font-size:13px" data-act="buyplayer" data-id="${esc(p.id)}" ${canAfford?"":"disabled"}>Ingaggia</button></div>
+      </div>`;
+    }).join("")}</div>`;
+  }else{
+    const lu=lineupFor(G,t);
+    const start=new Set(Object.values(lu));
+    body=`<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:10px"><h3>La Tua Rosa in Vendita</h3><span class="muted small">Vendi giocatrici per fare cassa</span></div>
+    ${t.players.map(p=>{
+      const val=p.val||calcETV(p);
+      const isStarter=start.has(p.id);
+      const sameRoleCount=t.players.filter(x=>x.role===p.role).length;
+      const canSell=!isStarter && sameRoleCount>1;
+      return `<div class="prow"><span class="role">${p.role}</span>
+        <span class="nm"><b>${esc(p.name)}${isStarter?" ●":""}</b><span class="muted small">${p.age} anni · Cartellino: ${formatEur(val)}</span></span>
+        <div style="display:flex;gap:8px;align-items:center">${ovrChip(p.ovr)}<button class="btn" style="min-height:36px;padding:6px 12px;font-size:13px;color:var(--bad)" data-act="sellplayer" data-id="${esc(p.id)}" ${canSell?"":"disabled"}>Vendi</button></div>
+      </div>`;
+    }).join("")}
+    <p class="muted small" style="margin-top:12px">Nota: le titolari (●) o le giocatrici senza riserve nel ruolo non possono essere cedute.</p></div>`;
+  }
+  return `<div class="row" style="justify-content:space-between;margin-bottom:10px"><h2>Calciomercato</h2><span class="pill good" style="font-size:15px">Budget: <b>${formatEur(G.budget)}</b></span></div>
+  <div class="tabs">${tabs}</div>${body}`;
 }
 
 function leagueHTML(){
@@ -613,7 +695,6 @@ function leagueHTML(){
   return `<div class="row" style="justify-content:space-between;margin-bottom:10px"><h2>Campionato</h2></div><div class="tabs">${lgBtns}</div><div class="tabs">${modeBtns}</div>${body}`;
 }
 
-/* ===== RENDERING PARTITA 2D ===== */
 const BASE=[[2.4,7.6],[2.6,4.5],[2.4,1.4],[7.0,1.4],[7.0,4.5],[7.0,7.6]];
 const NETX=10.5;
 const slotXY=(side,i)=>{const [bx,by]=BASE[i];return side==="h"?[1.5+bx,1.5+by]:[19.5-bx,10.5-by];};
@@ -825,6 +906,9 @@ function finishMatch(){
   const res=M.res,mine=M.fx.home?[res.hs,res.as]:[res.as,res.hs];
   const win=mine[0]>mine[1];
   const pts=win?(mine[1]<=1?3:2):(mine[0]===2?1:0);
+  const inc=M.fx.home?(win?8500:4200):(win?2500:800);
+  G.budget+=inc; // Incassi botteghino
+
   const all=Object.entries(res.pts).map(([id,v])=>({p:PLAYER_INDEX[id],v})).sort((x,y)=>y.v-x.v);
   const topU=all.find(x=>x.p.teamId===myTeam().id),topAll=all[0];
   $("#feed").textContent=`Finale: ${M.home.short} ${res.hs}-${res.as} ${M.away.short}.`;
@@ -833,6 +917,7 @@ function finishMatch(){
   $("#ctl").innerHTML="";
   $("#sum").innerHTML=`<div class="card" style="margin-top:6px"><h3>${win?"Vittoria":"Sconfitta"} · ${pts} ${pts===1?"punto":"punti"}</h3>
     <p class="sub" style="margin:8px 0 0;color:var(--ink)">Migliore in campo: <b>${esc(topAll.p.name)}</b>. ${topU&&topU!==topAll?`Per i tuoi: <b>${esc(topU.p.name)}</b>.`:""}</p>
+    <p class="muted small" style="margin-top:4px">Incasso partita accreditato: <b style="color:var(--good)">+${formatEur(inc)}</b></p>
     <div class="row" style="margin-top:14px"><button class="btn primary big" data-act="endmatch">Continua</button></div></div>`;
 }
 function endMatch(){
@@ -843,23 +928,69 @@ function endMatch(){
   render();window.scrollTo(0,0);
 }
 
+/* Gestione acquisto e cessione */
+function buyPlayer(pid){
+  const p=G.freeAgents.find(x=>x.id===pid);
+  if(!p)return;
+  const cost=p.val||calcETV(p);
+  if(G.budget<cost){toast("Budget insufficiente!");return;}
+  G.budget-=cost;
+  G.freeAgents=G.freeAgents.filter(x=>x.id!==pid);
+  p.teamId=myTeam().id;
+  p.lid=G.lid;
+  myTeam().players.push(p);
+  myTeam().players.sort((a,b)=>ROLE_ORDER.indexOf(a.role)-ROLE_ORDER.indexOf(b.role)||b.ovr-a.ovr);
+  toast(`Hai ingaggiato ${p.name}!`);
+  persist();render();
+}
+
+function sellPlayer(pid){
+  const t=myTeam();
+  const idx=t.players.findIndex(x=>x.id===pid);
+  if(idx<0)return;
+  const p=t.players[idx];
+  const price=Math.round((p.val||calcETV(p))*0.85); // 85% valore
+  t.players.splice(idx,1);
+  p.teamId=null;p.lid=null;
+  G.freeAgents.push(p);
+  G.budget+=price;
+  toast(`Hai ceduto ${p.name} per ${formatEur(price)}!`);
+  persist();render();
+}
+
 document.addEventListener("click",e=>{
   const el=e.target.closest("[data-act]");if(!el||el.tagName==="SELECT")return;
   const act=el.dataset.act,v=el.dataset.v;
   if(act==="start"){newGame(el.dataset.lid,+el.dataset.i);return;}
-  if(act==="continue"){const s=loadLocal();if(validSave(s)){G=s;UI.lg=G.lid;if(!lineupValid(myTeam(),G.lineup))G.lineup=autoLineup(myTeam());render();}return;}
+  if(act==="continue"){
+    const s=loadLocal();
+    if(validSave(s)){
+      G=s;UI.lg=G.lid;
+      if(!G.budget) G.budget=initBudget(G.lid, myTeam().tier);
+      if(!G.freeAgents) G.freeAgents=FREE_AGENTS.slice();
+      if(!lineupValid(myTeam(),G.lineup))G.lineup=autoLineup(myTeam());
+      render();
+    }
+    return;
+  }
   if(act==="speed"){if(!UI.match)return;UI.match.speed=+v;document.querySelectorAll('[data-act="speed"]').forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===v)));return;}
   if(act==="pause"){const M=UI.match;if(!M)return;M.paused=!M.paused;el.textContent=M.paused?"Riprendi":"Pausa";return;}
   if(act==="skip"){skipMatch();return;}
   if(act==="endmatch"){endMatch();return;}
   if(!G)return;
   if(act==="tab"){UI.tab=v;UI.sel=null;render();window.scrollTo(0,0);}
+  else if(act==="mkttab"){UI.mktTab=v;render();}
+  else if(act==="buyplayer"){buyPlayer(el.dataset.id);}
+  else if(act==="sellplayer"){sellPlayer(el.dataset.id);}
   else if(act==="tactic"){G.tactic=v;persist();render();}
   else if(act==="play"){startMatch();window.scrollTo(0,0);}
   else if(act==="quick"){
     const fx=nextFixture(G);if(!fx||fx.rest)return;
     const home=WORLD[G.lid][fx.h],away=WORLD[G.lid][fx.a];
     const res=simMatch(home,away,{h:lineupFor(G,home),a:lineupFor(G,away)},{h:fx.home?G.tactic:"bal",a:fx.home?"bal":G.tactic},Math.random,false);
+    const win=(fx.home?res.hs:res.as)>(fx.home?res.as:res.hs);
+    const inc=fx.home?(win?8500:4200):(win?2500:800);
+    G.budget+=inc;
     playRound(G,res);persist();render();
   }
   else if(act==="rest"){playRound(G,null);persist();render();}
@@ -867,6 +998,7 @@ document.addEventListener("click",e=>{
     G.round=0; G.season++; G.phase=1;
     G.results={A1:[],A2:[],A3A:[],A3B:[]};
     if (G.lid.includes("A3")) G.lid = "A3A";
+    G.budget+=Math.round(initBudget(G.lid, myTeam().tier)*0.6); // bonus nuova stagione
     persist();render();window.scrollTo(0,0);
   }
   else if(act==="reset"){if(!UI.confirm){UI.confirm=true;render();}else{UI.confirm=false;try{localStorage.removeItem(SAVE_KEY);}catch(x){}G=null;render();window.scrollTo(0,0);}}
@@ -886,7 +1018,12 @@ window.addEventListener("resize",()=>{if(UI.match)sizeCanvas();});
 
 (function boot(){
   const s=loadLocal();
-  if(validSave(s)){G=s;UI.lg=G.lid;if(!lineupValid(myTeam(),G.lineup))G.lineup=autoLineup(myTeam());}
+  if(validSave(s)){
+    G=s;UI.lg=G.lid;
+    if(!G.budget) G.budget=initBudget(G.lid, myTeam().tier);
+    if(!G.freeAgents) G.freeAgents=FREE_AGENTS.slice();
+    if(!lineupValid(myTeam(),G.lineup))G.lineup=autoLineup(myTeam());
+  }
   render();
 })();
 </script>
