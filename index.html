@@ -1,0 +1,1601 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Volley Manager Italia</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<style>
+:root{
+  --bg:#e9eef5; --panel:#ffffff; --panel2:#f2f5fa; --ink:#0c1a2e; --muted:#576881; --line:#d7dfeb;
+  --accent:#d6336c; --accent-ink:#ffffff; --accent-soft:#fbe4ed;
+  --good:#17825a; --good-soft:#dff4ea; --bad:#c2352b; --bad-soft:#fde5e2; --warn:#a96a10; --warn-soft:#fbefd2;
+  --navy:#0a1424; --navy2:#13253f; --rail-ink:#9fb1cb; --on-navy:#f2f6fd;
+  --shadow:0 1px 0 rgba(255,255,255,.7) inset,0 10px 28px -16px rgba(12,32,64,.30);
+  --team:#d6336c;
+  --f-disp:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:18px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#080f1b; --panel:#101a2b; --panel2:#162235; --ink:#e8eef8; --muted:#8fa0b8; --line:#1f2d45;
+  --accent:#ff5c93; --accent-ink:#1a0710; --accent-soft:#3b1727;
+  --good:#4fd1a0; --good-soft:#12362b; --bad:#ff8277; --bad-soft:#3d1a18; --warn:#e6b455; --warn-soft:#3a2c10;
+  --navy:#050a14; --navy2:#0e1c32; --rail-ink:#8396b3;
+  --shadow:0 1px 0 rgba(255,255,255,.03) inset,0 14px 30px -18px rgba(0,0,0,.7); color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{min-height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--f-body);padding-inline:16px;padding-block:0;-webkit-tap-highlight-color:transparent;text-rendering:optimizeLegibility}
+#app{max-width:1180px;margin:0 auto;padding-block:16px 108px}
+h1,h2,h3{font-family:var(--f-disp);font-weight:700;margin:0;text-wrap:balance}
+h1{font-size:clamp(34px,5vw,54px);line-height:.98;letter-spacing:.005em;text-transform:uppercase}
+h2{font-size:28px;line-height:1.05;letter-spacing:.01em}
+h3{font-size:14px;line-height:1.2;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:8px}
+h3::before{content:"";width:14px;height:3px;border-radius:2px;background:var(--accent);flex:none}
+.num{font-family:var(--f-disp);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)} .small{font-size:13px}
+a{color:var(--accent)}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;justify-content:center;gap:2px;background:var(--navy);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));border-top:1px solid rgba(255,255,255,.08)}
+.nav button{flex:1;max-width:120px;display:grid;justify-items:center;gap:2px;border:0;background:none;color:var(--rail-ink);padding:7px 2px 6px;border-radius:12px;font:600 11px var(--f-disp);letter-spacing:.09em;text-transform:uppercase;min-height:52px;transition:background .15s,color .15s}
+.nav button[aria-current="true"]{background:rgba(255,255,255,.1);color:#fff}
+.nav button[aria-current="true"] .nav-icon{color:var(--accent)}
+.nav-icon{display:grid;place-items:center;width:26px;height:26px}
+.nav-icon svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+@media (min-width:900px){
+  body{padding-left:calc(100px + 28px);padding-right:28px}
+  .nav{top:0;bottom:0;right:auto;width:100px;flex-direction:column;justify-content:flex-start;gap:6px;padding:22px 8px calc(16px + env(safe-area-inset-bottom,0px));border-top:0;border-right:1px solid rgba(255,255,255,.06)}
+  .nav button{flex:none;max-width:none;width:100%;padding:12px 2px 10px;font-size:10.5px;letter-spacing:.04em}
+  #app{padding-block:22px 40px}
+}
+.top{display:flex;align-items:center;gap:14px;justify-content:space-between;margin-bottom:12px}
+.brand{display:flex;gap:12px;align-items:center;min-width:0}
+.brand .crest{--cs:50px}
+.brand b{display:block;font:700 26px/1 var(--f-disp);text-transform:uppercase;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crest{display:inline-block;flex:none;width:var(--cs,42px);height:var(--cs,42px);filter:drop-shadow(0 3px 5px rgba(10,20,40,.25))}
+.crest svg{display:block;width:100%;height:100%}
+.season-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.season-strip>div{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:9px 14px;box-shadow:var(--shadow)}
+.season-strip span{display:block;font:600 11px var(--f-disp);text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.season-strip b{font:700 20px/1.15 var(--f-disp);letter-spacing:.01em}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:var(--shadow)}
+.card>h3{margin-bottom:12px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);background:var(--panel2);border-radius:13px;padding:11px 16px;font-weight:600;min-height:46px;transition:transform .08s,background .15s,border-color .15s}
+.btn:hover{border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+.btn:active{transform:translateY(1px) scale(.99)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);box-shadow:0 8px 18px -8px color-mix(in srgb,var(--accent) 70%,transparent)}
+.btn.big{font:700 22px var(--f-disp);letter-spacing:.05em;text-transform:uppercase;padding:13px 24px;min-height:58px;border-radius:15px}
+.btn[disabled]{opacity:.42;cursor:default;box-shadow:none}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:3px 11px;font-size:13px;font-weight:600;background:var(--panel2);border:1px solid var(--line);color:var(--ink)}
+.pill.acc{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+.pill.good{background:var(--good-soft);border-color:transparent;color:var(--good)}
+.pill.bad{background:var(--bad-soft);border-color:transparent;color:var(--bad)}
+.pill.warn{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+.tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.tabs button,.tabs .btn{border:1px solid var(--line);background:var(--panel);border-radius:99px;padding:8px 18px;font-weight:600;min-height:42px}
+.tabs button[aria-pressed="true"],.btn.primary.tab{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.seg{display:flex;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel2)}
+.seg button{flex:1;border:0;background:none;padding:12px 8px;font-weight:600;min-height:48px;transition:background .15s}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+select,input[type=text],input[type=search]{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-height:46px;width:100%}
+.scroll{overflow-x:auto}
+.sub{font-size:16px;color:var(--muted);max-width:62ch;margin:0}
+.empty{padding:26px 8px;text-align:center;color:var(--muted)}
+.feed{font-size:15px;min-height:46px;padding:11px 14px;border-radius:12px;background:var(--panel2);border:1px solid var(--line);border-left:4px solid var(--accent)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom,0px));background:var(--navy);color:var(--on-navy);padding:12px 18px;border-radius:14px;font-weight:600;z-index:60;max-width:min(92vw,520px);box-shadow:0 14px 30px -10px rgba(0,0,0,.5)}
+@media (min-width:900px){.toast{bottom:28px}}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th{font:600 12px var(--f-disp);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);text-align:right;padding:8px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap;font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:0}
+th:first-child,td:first-child{text-align:left;padding-left:4px}
+th.l,td.l{text-align:left}
+tr.me td{background:var(--accent-soft);font-weight:700}
+tr.me td:first-child{box-shadow:inset 4px 0 var(--accent)}
+tr.zone-up td:first-child{box-shadow:inset 4px 0 var(--good)}
+tr.zone-down td:first-child{box-shadow:inset 4px 0 var(--bad)}
+.team-cell{display:flex;gap:9px;align-items:center}
+.dot{width:11px;height:11px;border-radius:50%;flex:none}
+.bar{height:7px;border-radius:7px;background:var(--line);overflow:hidden;min-width:60px}
+.bar i{display:block;height:100%;border-radius:7px;background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 70%,#fff),var(--accent))}
+.ovr{display:inline-grid;place-items:center;min-width:36px;height:30px;border-radius:9px;font:700 18px var(--f-disp);color:#fff;padding:0 7px;box-shadow:inset 0 -3px 0 rgba(0,0,0,.18)}
+.data-tag{display:inline-block;border-radius:99px;padding:3px 9px;font-size:12px;font-weight:700;background:var(--panel2);border:1px solid var(--line)}
+.data-tag.real{color:var(--good)}.data-tag.partial{color:var(--warn)}.data-tag.sim{color:var(--bad)}
+.avatar{position:relative;display:inline-block;flex:none;width:var(--as,44px);height:var(--as,44px)}
+.avatar svg{display:block;width:100%;height:100%;border-radius:50%;box-shadow:0 0 0 2px var(--panel),0 2px 8px rgba(10,20,40,.2)}
+.av-role{position:absolute;right:-3px;bottom:-3px;width:42%;height:42%;display:grid;place-items:center;border-radius:50%;background:var(--navy);color:#fff;font:700 calc(var(--as,44px)*.22) var(--f-disp);font-style:normal;box-shadow:0 0 0 2px var(--panel)}
+.prow{display:grid;grid-template-columns:54px 1fr auto;gap:12px;align-items:center;padding:11px 4px;border:0;border-bottom:1px solid var(--line);width:100%;background:none;text-align:left;border-radius:0}
+button.prow:hover{background:var(--panel2)}
+.prow .nm{min-width:0}
+.prow .nm b{display:block;font-weight:600;font-size:17px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prow .nm .small{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
+.role{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;font:700 15px var(--f-disp);background:var(--panel2);border:1px solid var(--line)}
+.attrs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 20px;margin-top:12px}
+.attrs div{display:grid;gap:5px}
+.attrs span{display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}
+.slot{display:grid;grid-template-columns:130px 1fr;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+.mini-stat{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px}
+.mini-stat>div{background:var(--panel2);border-radius:12px;padding:12px}
+.mini-stat strong{display:block;font:700 26px var(--f-disp)}
+.player-table button{border:0;background:none;color:var(--accent);font-weight:600;padding:4px;text-align:left}
+.scout-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:10px;margin:12px 0}
+.player-profile{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--panel);margin:8px 0 12px;box-shadow:var(--shadow)}
+.player-profile-head{position:relative;display:flex;gap:18px;align-items:center;padding:18px;color:#fff;background:linear-gradient(120deg,var(--navy),color-mix(in srgb,var(--team) 60%,var(--navy)))}
+.player-profile-head h2{font-size:34px;text-transform:uppercase}
+.player-profile-head .subline{color:#c3d0e4;font-size:14px}
+.player-profile-head .pill{background:rgba(255,255,255,.14);color:#fff;border-color:transparent}
+.player-avatar{flex:none}
+.player-avatar .avatar svg{box-shadow:0 0 0 3px rgba(255,255,255,.85),0 8px 20px rgba(0,0,0,.35)}
+.player-profile-body{padding:16px}
+.profile-quick{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:14px}
+.profile-quick>div{background:var(--panel2);border-radius:12px;padding:12px}
+.profile-quick span{font:600 11px var(--f-disp);text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.profile-quick strong{display:block;font:700 28px var(--f-disp)}
+.hero{position:relative;overflow:hidden;display:grid;gap:10px;margin-bottom:16px;border-radius:24px;padding:24px;color:var(--on-navy);background:linear-gradient(118deg,var(--navy) 0%,var(--navy2) 52%,color-mix(in srgb,var(--team) 62%,var(--navy)) 130%);box-shadow:0 22px 40px -24px rgba(5,15,35,.7)}
+.hero>*{position:relative;z-index:1}
+.hero h1{color:#fff}
+.hero .sub,.hero .muted,.hero p{color:#bccbe2}
+.hero .pill{background:rgba(255,255,255,.14);border-color:transparent;color:#fff;justify-self:start}
+.hero .pill.acc{background:var(--accent);color:var(--accent-ink)}
+.dashboard-hero{grid-template-columns:auto 1fr;align-items:center;gap:6px 22px}
+.dashboard-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.dashboard-kpi{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow);display:grid;gap:2px;align-content:start}
+.dashboard-kpi span{font:600 12px var(--f-disp);text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.dashboard-kpi strong{font:700 clamp(26px,3.2vw,36px)/1.05 var(--f-disp)}
+.dashboard-kpi small{color:var(--muted);font-size:13px}
+.vs{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;align-items:center;text-align:center}
+.vs>div{justify-items:center}
+.vs .crest{--cs:84px}
+.vs .nm{font:700 26px/1.02 var(--f-disp);text-transform:uppercase;text-wrap:balance}
+.vs .at{font:600 15px var(--f-disp);color:var(--muted)}
+.cmp{display:grid;grid-template-columns:42px 1fr 42px;gap:12px;align-items:center;font-size:14px}
+.cmp .c{font:700 18px var(--f-disp);text-align:center}
+.cmp .lab{text-align:center;color:var(--muted);font:600 11px var(--f-disp);text-transform:uppercase;letter-spacing:.12em;margin-bottom:3px}
+.cmp .tr{height:9px;border-radius:9px;background:color-mix(in srgb,var(--ink) 16%,var(--panel2));position:relative;overflow:hidden}
+.cmp .tr i{position:absolute;top:0;bottom:0;left:0;background:var(--team);border-radius:9px 0 0 9px}
+.res{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:16px}
+.res .r{text-align:right}
+.res.me{font-weight:700;color:var(--accent)}
+.res .sc{font:700 22px var(--f-disp);text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap}
+.setline{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.setline .pill{font:600 15px var(--f-disp);font-variant-numeric:tabular-nums}
+.pick{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr))}
+.pick button{display:flex;gap:14px;align-items:center;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 14px;min-height:78px;box-shadow:var(--shadow);transition:transform .12s,border-color .15s}
+.pick button:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--accent) 50%,var(--line))}
+.pick .crest{--cs:54px}
+.pick button b{display:block;font:700 22px/1.05 var(--f-disp);text-transform:uppercase}
+.pick .st{margin-left:auto;font:700 26px var(--f-disp);color:var(--muted);display:grid;justify-items:end}
+.arena{position:relative;border-radius:22px;overflow:hidden;background:#05080f;box-shadow:0 26px 50px -26px rgba(2,8,20,.9);border:1px solid rgba(255,255,255,.06)}
+.arena .cv{display:block;width:100%;height:auto;max-height:none;object-fit:fill;touch-action:manipulation}
+.scorebug{position:absolute;left:14px;top:14px;min-width:240px;max-width:60%;background:rgba(6,10,20,.88);backdrop-filter:blur(6px);color:#fff;border-radius:14px;overflow:hidden;font-family:var(--f-disp);box-shadow:0 10px 24px -8px rgba(0,0,0,.6)}
+.sb-ctx,.sb-set{font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:5px 12px;background:rgba(255,255,255,.07);color:#b4c3dc}
+.sb-row{display:flex;align-items:center;gap:9px;padding:7px 12px 7px 9px;border-left:6px solid var(--kit)}
+.sb-row+.sb-row{border-top:1px solid rgba(255,255,255,.07)}
+.sb-row .crest{--cs:30px}
+.sb-name{font-size:21px;flex:1;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.01em}
+.sb-pts{font-size:34px;line-height:1;min-width:40px;text-align:right}
+.pips{display:flex;gap:4px}.pips i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.18)}.pips i.on{background:#ffd24a}
+.srv{width:10px;height:10px;border-radius:50%;background:#ffd24a;flex:none;box-shadow:0 0 0 3px rgba(255,210,74,.25)}
+.caption{position:absolute;left:14px;right:14px;bottom:14px;background:rgba(6,10,20,.86);backdrop-filter:blur(6px);color:#fff;padding:11px 16px;border-radius:12px;font-weight:600;font-size:16px;border-left:5px solid var(--accent)}
+.banner{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);display:none;gap:16px;align-items:baseline;background:rgba(6,10,20,.92);color:#fff;padding:16px 34px;border-radius:16px;font-family:var(--f-disp);text-transform:uppercase;border:1px solid rgba(255,255,255,.12);z-index:15}
+.banner.show{display:flex;animation:pop .35s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{transform:translate(-50%,-50%) scale(.7);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
+.banner span{font-size:19px;letter-spacing:.12em;color:#ffd24a}.banner b{font-size:38px}.banner em{font-size:30px;font-style:normal}
+.matchctl{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0}
+@media (max-width:640px){
+  .dashboard-kpis{grid-template-columns:repeat(2,1fr)}
+  .dashboard-hero{grid-template-columns:1fr}
+  .scorebug{min-width:0;left:8px;top:8px;max-width:78%}.sb-name{font-size:16px}.sb-pts{font-size:26px}
+  .caption{left:8px;right:8px;bottom:8px;font-size:14px;padding:8px 12px}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+const Gx = (() => {
+  const hash = s => { let h = 2166136261; s = String(s); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
+  const rng = seed => { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
+  const hex2rgb = h => { h = String(h || '#888888').replace('#', ''); if (h.length === 3) h = h.split('').map(c => c + c).join(''); const n = parseInt(h, 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+  const rgb2hex = ([r, g, b]) => '#' + [r, g, b].map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
+  const mix = (a, b, t) => { const A = hex2rgb(a), B = hex2rgb(b); return rgb2hex(A.map((v, i) => v + (B[i] - v) * t)); };
+  const lum = c => { const [r, g, b] = hex2rgb(c).map(v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * r + .7152 * g + .0722 * b; };
+  const dist = (a, b) => { const A = hex2rgb(a), B = hex2rgb(b); const rm = (A[0] + B[0]) / 2; const dr = A[0] - B[0], dg = A[1] - B[1], db = A[2] - B[2]; return Math.sqrt((2 + rm / 256) * dr * dr + 4 * dg * dg + (2 + (255 - rm) / 256) * db * db); };
+  const dark = (c, t = .35) => mix(c, '#05080f', t);
+  const light = (c, t = .35) => mix(c, '#ffffff', t);
+  const onColor = c => (lum(c) > .45 ? '#0b1220' : '#ffffff');
+  const teamOf = p => { if (!p) return null; if (typeof WORLD !== 'undefined' && WORLD[p.lid]) return WORLD[p.lid].find(t => t.id === p.teamId) || null; return null; };
+  const kitCache = new Map();
+  function kit(team) {
+    const key = team.id + team.color + (team.color2 || '');
+    if (kitCache.has(key)) return kitCache.get(key);
+    const main = team.color || '#2563eb';
+    const trim = team.color2 || (lum(main) > .5 ? dark(main, .62) : '#ffffff');
+    const shorts = lum(main) > .55 ? dark(main, .55) : dark(main, .38);
+    const k = { main, trim, shorts, num: onColor(main), shade: dark(main, .22), hi: light(main, .22) };
+    kitCache.set(key, k);
+    return k;
+  }
+  function altKit(team) {
+    const k = kit(team);
+    const main = lum(k.main) > .6 ? '#16233b' : '#f6f7fa';
+    const trim = lum(main) > .5 ? k.main : '#ffffff';
+    return { main, trim, shorts: lum(main) > .5 ? k.main : dark(main, .1), num: onColor(main), shade: dark(main, .12), hi: light(main, .2) };
+  }
+  function matchKits(home, away) {
+    const kh = kit(home); let ka = kit(away);
+    if (dist(kh.main, ka.main) < 130) ka = altKit(away);
+    if (dist(kh.main, ka.main) < 130) ka = { ...ka, main: '#f6f7fa', trim: kit(away).main, shorts: kit(away).main, num: '#0b1220', shade: '#cfd5df', hi: '#ffffff' };
+    const pick = (a, b) => { const cands = ['#ffd24a', '#ff8a3d', '#37d6b5', '#ffffff', '#1b2234']; let best = cands[0], bd = -1; for (const c of cands) { const d = Math.min(dist(c, a), dist(c, b)); if (d > bd) { bd = d; best = c; } } return best; };
+    const lib = pick(kh.main, ka.main);
+    return { h: kh, a: ka, lib, libNum: onColor(lib) };
+  }
+  return { hash, rng, hex2rgb, rgb2hex, mix, lum, dist, dark, light, onColor, teamOf, kit, altKit, matchKits };
+})();
+
+let _crestUid = 0;
+function initials(t) {
+  const stop = new Set(['di', 'del', 'della', 'dei', 'volley', 'pallavolo', 'club', 'asd', 'e']);
+  const words = String(t.short || t.full || '?').replace(/[&+]/g, ' ').split(/[\s\-–']+/).filter(w => w && !stop.has(w.toLowerCase()));
+  const w = words.length ? words : [String(t.short || '?')];
+  if (w.length === 1) return w[0].slice(0, 3).toUpperCase();
+  return (w[0][0] + w[1][0] + (w.length > 2 ? w[2][0] : '')).toUpperCase().slice(0, 3);
+}
+function crestSVG(t, px) {
+  const id = 'c' + (++_crestUid);
+  const h = Gx.hash(t.id || t.short);
+  const c1 = t.color || '#2563eb';
+  const light = Gx.lum(c1) > .5;
+  const c2 = t.color2 || (light ? Gx.dark(c1, .7) : '#ffffff');
+  const d = 'M32 3 L58 10 V32 C58 47 46 57 32 62 C18 57 6 47 6 32 V10 Z';
+  const txt = initials(t);
+  const fs = txt.length >= 3 ? 19 : txt.length === 2 ? 23 : 28;
+  const tc = Gx.onColor(c1);
+  return `<svg viewBox="0 0 64 64" width="${px || 42}" height="${px || 42}" role="img" xmlns="http://www.w3.org/2000/svg">
+<path d="${d}" fill="${c1}"/><path d="${d}" fill="none" stroke="${c2}" stroke-width="2.4" stroke-linejoin="round"/>
+<text x="32" y="40" text-anchor="middle" font-family="'Barlow Condensed','Arial Narrow',sans-serif" font-weight="700" font-size="${fs}" fill="${tc}">${esc(txt)}</text></svg>`;
+}
+const crest = (t, px) => `<span class="crest"${px ? ` style="--cs:${px}px"` : ''}>${crestSVG(t, px)}</span>`;
+
+const SKIN = ['#f7d9c4', '#efc3a1', '#e0a981', '#c98b62', '#a86a45', '#7c4a2e'];
+const HAIR = ['#14110f', '#2b1a12', '#4a2c1a', '#7a4a26', '#b07a3c', '#d8b36a', '#8c2f1c', '#c9c9cf'];
+function avatarLook(p) {
+  const h = Gx.hash((p && (p.id || p.name)) || 'x'), R = Gx.rng(h);
+  return { skin: SKIN[Math.floor(R() * 4)], hair: HAIR[Math.floor(R() * 7)], style: Math.floor(R() * 5) };
+}
+function avatarSVG(p, px) {
+  const L = avatarLook(p), id = 'a' + (++_crestUid);
+  const team = Gx.teamOf(p);
+  const kit = team ? Gx.kit(team) : { main: '#64748b' };
+  return `<svg viewBox="0 0 64 64" width="${px || 44}" height="${px || 44}" xmlns="http://www.w3.org/2000/svg">
+<circle cx="32" cy="32" r="31" fill="${kit.main}"/>
+<ellipse cx="32" cy="30" rx="12" ry="14" fill="${L.skin}"/>
+<circle cx="32" cy="22" r="14" fill="${L.hair}"/>
+<circle cx="28" cy="30" r="1.5" fill="#111"/><circle cx="36" cy="30" r="1.5" fill="#111"/>
+</svg>`;
+}
+const avatar = (p, px) => `<span class="avatar" style="--as:${px || 44}px">${avatarSVG(p, px)}<i class="av-role">${esc(p.role || '')}</i></span>`;
+
+const POSE = {
+  ready:    { cr: .30, ln: .20, lf: 0,   L: [.38, -.95], R: [.38, -.95] },
+  walk:     { cr: .12, ln: .10, lf: 0,   L: [.25, -.40], R: [.25, -.40] },
+  receive:  { cr: .72, ln: .55, lf: 0,   L: [.20, -.55], R: [.20, -.55] },
+  bump:     { cr: .52, ln: .40, lf: .03, L: [-.02, -.10], R: [-.02, -.10] },
+  setReady: { cr: .18, ln: .05, lf: 0,   L: [2.25, .40], R: [2.25, .40] },
+  set:      { cr: .06, ln: 0,   lf: .05, L: [2.75, .25], R: [2.75, .25] },
+  toss:     { cr: .10, ln: .05, lf: 0,   L: [3.00, 0],   R: [.55, -.80] },
+  serveHit: { cr: .00, ln: .00, lf: .22, L: [.55, -.40], R: [3.05, .05] },
+  cock:     { cr: .35, ln: .10, lf: .18, L: [2.45, .10], R: [1.95, 1.50] },
+  spike:    { cr: .00, ln: -.05, lf: .62, L: [.45, -.50], R: [3.05, .12] },
+  spikeTop: { cr: .00, ln: -.05, lf: .78, L: [.70, -.40], R: [3.05, .08] },
+  block:    { cr: .05, ln: 0,   lf: .55, L: [2.95, -.05], R: [2.95, -.05] },
+  blockUp:  { cr: .05, ln: 0,   lf: .70, L: [3.05, 0],   R: [3.05, 0] },
+  dive:     { cr: .96, ln: .95, lf: .02, L: [.15, .20],  R: [.15, .20] },
+  dig:      { cr: .85, ln: .70, lf: .00, L: [.10, -.30], R: [.10, -.30] },
+  cheer:    { cr: .05, ln: 0,   lf: .10, L: [2.75, .30], R: [2.75, .30] },
+  cheerUp:  { cr: .20, ln: 0,   lf: .02, L: [2.55, .10], R: [2.95, .20] },
+  down:     { cr: .22, ln: .35, lf: 0,   L: [.12, -.25], R: [.12, -.25] }
+};
+function poseBlend(a, b, f) {
+  const k = Math.max(0, Math.min(1, f)), e = k * k * (3 - 2 * k);
+  const m = (x, y) => x + (y - x) * e;
+  return { cr: m(a.cr, b.cr), ln: m(a.ln, b.ln), lf: m(a.lf, b.lf), L: [m(a.L[0], b.L[0]), m(a.L[1], b.L[1])], R: [m(a.R[0], b.R[0]), m(a.R[1], b.R[1])] };
+}
+
+function drawFigure(c, X, Y, s, f) {
+  const P = f.pose || POSE.ready, K = f.kit, look = f.look;
+  const Yf = Y - P.lf * s;
+  c.fillStyle = "rgba(5,10,20,0.3)";
+  c.beginPath(); c.ellipse(X, Y, .25 * s, .08 * s, 0, 0, 7); c.fill();
+  c.fillStyle = K.shorts;
+  c.fillRect(X - .14 * s, Yf - .6 * s, .28 * s, .25 * s);
+  c.fillStyle = K.main;
+  c.fillRect(X - .15 * s, Yf - .95 * s, .3 * s, .4 * s);
+  c.fillStyle = look.skin;
+  c.beginPath(); c.arc(X, Yf - 1.08 * s, .11 * s, 0, 7); c.fill();
+  c.fillStyle = look.hair;
+  c.beginPath(); c.arc(X, Yf - 1.13 * s, .12 * s, Math.PI, 0); c.fill();
+  return { head: [X, Yf - 1.08 * s] };
+}
+
+/* ===== Motore 3D: Camera Multi-Angolo con Tracking Dinamico ===== */
+const Cam = { 
+  W: 1280, H: 720, mode: "tv",
+  Dc: 26, Hc: 12, tilt: 0.0, pan: 0.0, zoom: 1.0,
+  F: 1000, K: 12000, hy: -100, cx: 640, xs: 1.4, portrait: false 
+};
+
+const CAM_PRESETS = {
+  tv:       { Dc: 26, Hc: 12.0, tilt: 0.00, zoom: 1.00, xs: 1.40, label: "Regia TV" },
+  side:     { Dc: 17, Hc: 4.2,  tilt: 0.08, zoom: 1.15, xs: 1.25, label: "Bordocampo" },
+  endline:  { Dc: 24, Hc: 7.5,  tilt: -0.04, zoom: 0.95, xs: 1.65, label: "Fondo Campo" }
+};
+
+function setCamMode(mode) {
+  if (!CAM_PRESETS[mode]) return;
+  Cam.mode = mode;
+  const p = CAM_PRESETS[mode];
+  Cam.Dc = p.Dc; Cam.Hc = p.Hc; Cam.tilt = p.tilt; Cam.zoom = p.zoom; Cam.xs = p.xs;
+  camSetup(Cam.W, Cam.H);
+  if (UI.match && UI.match.arena) UI.match.arena = arenaBuild(UI.match, UI.match.k);
+}
+
+function camSetup(W, H) {
+  Cam.W = W; Cam.H = H; Cam.portrait = H > W * 0.95;
+  const zN = Math.max(2, Cam.Dc - 9), zF = Cam.Dc + 9;
+  const top = (Cam.portrait ? 0.32 : 0.36) - Cam.tilt;
+  const bot = (Cam.portrait ? 0.86 : 0.91) - Cam.tilt;
+  Cam.K = H * (bot - top) / (1 / zN - 1 / zF);
+  Cam.F = (Cam.K / Cam.Hc) * Cam.zoom;
+  Cam.hy = H * bot - Cam.K / zN;
+  Cam.cx = (W / 2) + Cam.pan;
+  const half = (Cam.portrait ? 0.47 : 0.325) * W;
+  Cam.xs = (half / (4.5 * Cam.F / zN)) * (CAM_PRESETS[Cam.mode]?.xs || 1.4);
+}
+
+function proj(u, v, zh) {
+  const z = Math.max(1.5, Cam.Dc - u);
+  const sc = Cam.F / z;
+  return { 
+    x: Cam.cx + v * sc * Cam.xs, 
+    y: Cam.hy + (Cam.K / z) - ((zh || 0) * sc), 
+    s: sc 
+  };
+}
+
+function polyPath(c, pts) { c.beginPath(); pts.forEach((p, i) => i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y)); c.closePath(); }
+function lineWorld(c, u1, v1, u2, v2, wMeters, steps) {
+  const n = steps || 1;
+  for (let i = 0; i < n; i++) {
+    const a = proj(u1 + (u2 - u1) * i / n, v1 + (v2 - v1) * i / n), b = proj(u1 + (u2 - u1) * (i + 1) / n, v1 + (v2 - v1) * (i + 1) / n);
+    c.lineWidth = Math.max(1, wMeters * (a.s + b.s) / 2 * 1.15);
+    c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke();
+  }
+}
+
+function arenaBuild(M, k) {
+  const W = Cam.W, H = Cam.H, cv = document.createElement('canvas');
+  cv.width = Math.round(W * k); cv.height = Math.round(H * k);
+  const c = cv.getContext('2d'); c.setTransform(k, 0, 0, k, 0, 0);
+  c.fillStyle = '#0a1424'; c.fillRect(0, 0, W, H);
+  const F = (u, v) => proj(u, v);
+  c.fillStyle = '#163866'; polyPath(c, [F(-12, -8.6), F(-12, 8.6), F(12, 8.6), F(12, -8.6)]); c.fill();
+  c.fillStyle = '#d29a5c'; polyPath(c, [F(-9, -4.5), F(-9, 4.5), F(9, 4.5), F(9, -4.5)]); c.fill();
+  c.fillStyle = '#c58d50';
+  polyPath(c, [F(-3, -4.5), F(-3, 4.5), F(0, 4.5), F(0, -4.5)]); c.fill();
+  polyPath(c, [F(0, -4.5), F(0, 4.5), F(3, 4.5), F(3, -4.5)]); c.fill();
+  c.strokeStyle = '#ffffff';
+  lineWorld(c, -9, -4.5, -9, 4.5, .06, 1); lineWorld(c, 9, -4.5, 9, 4.5, .06, 1);
+  lineWorld(c, -9, -4.5, 9, -4.5, .06, 8); lineWorld(c, -9, 4.5, 9, 4.5, .06, 8);
+  lineWorld(c, 0, -4.5, 0, 4.5, .06, 1);
+  lineWorld(c, -3, -4.5, -3, 4.5, .06, 1); lineWorld(c, 3, -4.5, 3, 4.5, .06, 1);
+  return { cv };
+}
+
+function drawNet(c) {
+  const a = proj(0, -5, 2.24), b = proj(0, 5, 2.24), b2 = proj(0, 5, 1.24), a2 = proj(0, -5, 1.24);
+  c.fillStyle = 'rgba(8,12,22,.34)'; polyPath(c, [a, b, b2, a2]); c.fill();
+  c.strokeStyle = '#f5f7fb'; c.lineWidth = 2;
+  c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke();
+  c.beginPath(); c.moveTo(a2.x, a2.y); c.lineTo(b2.x, b2.y); c.stroke();
+}
+
+/* ===== DATABASE COMPLETO A1, A2, A3 CON ROSE VALDARNO E RIPALTA ===== */
+const LEAGUES = {
+  A1: { name: "Serie A1", rounds: 26, teams: [
+    { id: "con", short: "Conegliano", full: "Prosecco DOC Imoco Conegliano", city: "Conegliano", tier: 5.0, color: "#1d4ed8", p: ["C|Linda Manfredini||","C|Raphaela Folie||","S|Anna Piovesan||","L|Monica De Gennaro||","L|Elena Arici||","O|Merit Adigwe||","C|Sarah Fahr||","C|Cekulaev||","S|Gabi||","O|Haak||","S|Sillah||","P|Wolosz||","S|Zhu Ting||","P|Yao Di||"] },
+    { id: "sca", short: "Scandicci", full: "Savino Del Bene Scandicci", city: "Scandicci", tier: 4.8, color: "#be123c", p: ["P|Chidera Eze||","L|Imma Sirressi||","S|Sofia D'Odorico||","S|Caterina Bosetti||","L|Martina Armini||","C|Emma Graziani||","C|Linda Nwakalor||","C|Sara Alberti||","P|Ognjenovic||","S|Skinner||","C|Aleksic||","S|Bergmann||","O|Van Hecke||","O|Van Ryk||"] },
+    { id: "mil", short: "Milano", full: "Numia Vero Volley Milano", city: "Milano", tier: 4.9, color: "#111827", p: ["P|Francesca Bosio||","P|Giulia Gennari||","L|Virginia Paola Di Napoli||","L|Eleonora Fersino||","C|Benedetta Maria Sartori||","C|Anna Danesi||","O|Paola Egonu||","O|Binto Diop||","S|Rebecca Piva||","C|Kurtagic||","S|Lanier||","C|Dautova||","S|Sato||","S|Vázquez Gomez||"] },
+    { id: "nov", short: "Novara", full: "Igor Gorgonzola Novara", city: "Novara", tier: 4.2, color: "#0369a1", p: ["P|Carlotta Cambi||","P|Giulia Carraro||","C|Federica Squarcini||","C|Benedetta Bartolini||","C|Sara Bonifacio||","L|Giulia De Nardi||","L|Ilenia Moro||","S|Elena Perinelli||","S|Alsmeier||","S|Herbots||","O|Tolok||","C|Awoleye||","O|Grobelna||","C|Gambatto Kudiess||","O|Weske||"] },
+    { id: "chi", short: "Chieri", full: "Reale Mutua Fenera Chieri '76", city: "Chieri", tier: 3.9, color: "#b91c1c", p: ["L|Alessia Regoni||","L|Ilaria Spirito||","C|Katja Eckl||","C|Marina Lubian||","C|Yasmina Akrari||","S|Stella Nervini||","O|Marina Giacomello||","C|Gray||","O|Németh||","P|van Aalen||","S|Cooper||","S|Eggleston||","P|Glaab||","S|Guezen||","C|Stuut||"] },
+    { id: "bus", short: "Busto Arsizio", full: "Laica Cioccolato UYBA Busto Arsizio", city: "Busto Arsizio", tier: 3.5, color: "#f59e0b", p: ["P|Asia Spaziano||","C|Matilde Munarini||","C|Maia Carlotta Monaco||","C|Dalila Marchesini||","C|Alice Torcolacci||","L|Francesca Parlangeli||","L|Federica Pelloni||","S|Valeria Battista||","O|Ajack Jhon Majak Malual||","S|Parra||","P|Seki||","S|Akimoto||","S|Grozer||","S|Wada||"] },
+    { id: "ber", short: "Bergamo", full: "Volley Bergamo 1991", city: "Bergamo", tier: 3.5, color: "#15803d", p: ["P|Ilaria Battistoni||","P|Safa Allaoui||","C|Giada Agazzi||","C|Denise Meli||","C|Maria Adelaide Babatunde||","L|Anna Rocca||","S|Maria Teresa Bassi||","S|Elena Pietrini||","S|Erika Esposito||","S|Federica Carletti||","O|Kipp||","L|Gelin||","S|Stigrot||","S|Ungureanu||","C|Van Avermaet||"] },
+    { id: "val", short: "Vallefoglia", full: "Megabox Ond. Savio Vallefoglia", city: "Vallefoglia", tier: 3.2, color: "#0e7490", p: ["P|Ulrike Bridi||","L|Sophie Andrea Blasi||","L|Chiara De Bortoli||","C|Sonia Candi||","S|Alessia Bolzonetti||","S|Gaia Giovannini||","S|Loveth Omoruyi||","O|Bici||","S|Bierria||","O|Davidovic||","P|Gray||","C|Kochurina||","C|Varela Gómez||"] },
+    { id: "fir", short: "Firenze", full: "Azzurra Volley Firenze / Il Bisonte Firenze", city: "Firenze", tier: 3.1, color: "#7e22ce", p: ["P|Beatrice Agrifoglio||","P|Jennifer Boldini||","C|Nausica Acciarri||","C|Federica Piacentini||","C|Sara Caruso||","L|Beatrice Negretti||","L|Sofia Valoppi||","L|Giulia Fanfani||","S|Aneta Zojzi||","S|Alice Tanase||","S|Baird||","S|Damaske||","O|Cugno||","O|Lokhmanchuk||"] },
+    { id: "cun", short: "Cuneo", full: "Granda Volley Cuneo", city: "Cuneo", tier: 3.0, color: "#dc2626", p: ["P|Laura Pasquino||","P|Noemi Signorile||","C|Ludovica Guidi||","C|Sofia Ferrarini||","L|Carola Bonafede||","L|Linda Magnani||","C|Koulisiani||","S|Pucelj||","S|Baka||","S|Cucu||","O|Grafort||","O|McBride||","S|Tikhomirova||"] },
+    { id: "mac", short: "Macerata", full: "CBF Balducci Macerata", city: "Macerata", tier: 2.8, color: "#0f766e", p: ["P|Roberta Carraro||","P|Asia Bonelli||","C|Chiara Landucci||","C|Alessia Mazzon||","C|Bianca Farriol||","C|Alessia Mazzaro||","L|Melissa Tesi||","L|Giorgia Caforio||","S|Nicole Piomboni||","S|Beatrice Gardini||","O|Clara Decortes||","S|Schut||","O|Stoyanova||"] },
+    { id: "mar", short: "Marignano", full: "Omag Consolini Volley 1907", city: "S. Giovanni", tier: 2.6, color: "#ea580c", p: ["P|Anita Bagnoli||","P|Rachele Morello||","C|Veronica Costantini||","C|Margherita Brandi||","L|Rebecca Scialanca||","L|Sara Panetoni||","S|Martina Bracchi||","S|Alice Nardo||","S|Dominika Giuliani||","O|Anna Adelusi||","C|Wilson||","O|Eroktay||","C|Jehlářová||","S|Rivero||"] },
+    { id: "tal", short: "Talmassons", full: "CDA Volley Talmassons FVG", city: "Talmassons", tier: 2.5, color: "#2563eb", p: ["P|Francesca Scola||","C|Karin Barbazeni||","C|Islam Gannar||","C|Beatrice Molinaro||","L|Alessandra Mistretta||","L|Aurora Cassan||","S|Aurora Rossetto||","O|Giorgia Frosini||","O|Amelie Vighetto||","S|Bakodimou||","S|Grabić||","C|Herrera Blanco||","S|Lengweiler||","P|Schmit||"] },
+    { id: "bre", short: "Brescia", full: "Millenium Brescia", city: "Brescia", tier: 2.4, color: "#1e40af", p: ["P|Caterina Schillkowski||","P|Valentina Bartolucci||","C|Rossella Olivotto||","C|Dalila Modestino||","L|Beatrice Parrocchiale||","L|Paola Ruggieri||","S|Giorgia Amoruso||","S|Rachele Nardelli||","O|Kavalenka||","S|Bytsenko||","C|Marković||","O|Mihaljević||","S|Novosel||","S|Veneva||"] }
+  ]},
+  A2: { name: "Serie A2", rounds: 34, teams: [
+    { id: "per", short: "Perugia", full: "Bartoccini +Energia Perugia", city: "Perugia", tier: 4.0, color: "#b91c1c", p: ["P|Cecilia Nicolini|ITA|1994","P|Giovanna Fratangelo|ITA|2007","O|Sofia Biagianti|ITA|2007","O|Lena Große Scharmann|GER|1998","S|Carolina Martinelli|ITA|2005","S|Francesca Michieletto|ITA|1997","S|Alessia Fiesoli|ITA|1994","S|Natasza Ornoch|POL|2007","C|Claudia Consoli|ITA|2002","C|Valentina Colombo|ITA|2003","C|Giulia Mancini|ITA|1998","L|Stefania Recchia|ITA|2005","L|Aurora Brambilla|ITA|2007"] },
+    { id: "cos", short: "Vallecamonica", full: "Pallavolo Vallecamonica Sebino / C.B.L. Costa Volpino", city: "Costa Volpino", tier: 3.5, color: "#0369a1", p: ["P|Francesca Dell'Orto|ITA|2003","P|Giulia Nonato|ITA|2005","O|Arianna Populini|ITA|2005","O|Monika Krasteva|BUL|1999","S|Puck Hoogers|NED|2003","S|Marika Longobardi|ITA|1998","S|Carolina Fumagalli|ITA|2004","S|Giulia Viscioni|ITA|2004","C|Alessandra Talarico|ITA|2007","C|Valeria Pizzolato|ITA|1999","C|Fatim Kone|ITA|2000","L|Nicole Gamba|ITA|1998","L|Nicole Busetti|ITA|2005"] },
+    { id: "cas", short: "Casalmaggiore", full: "Volleyball Casalmaggiore", city: "Casalmaggiore", tier: 3.5, color: "#7c3aed", p: ["P|Alice Bernardeschi|ITA|2004","P|Vittoria Prandi|ITA|1994","O|Natasha Calkins|CAN|1996","O|Chiara Muzi|ITA|1998","S|Alessia Populini|ITA|2000","S|Layla Viti|ITA|2008","S|Irene Mescoli|ITA|2006","S|Sara Loda|ITA|1990","C|Ilaria Menon|ITA|2005","C|Sara Tajè|ITA|1998","C|Betsy Nwokoye|ITA|2005","C|Miranda Zanella|ITA|2008","L|Ludovica Franzoso|ITA|2003","L|Arianna Gambini|ITA|2005"] },
+    { id: "imo", short: "Imola", full: "Clai Imola Volley", city: "Imola", tier: 3.1, color: "#15803d", p: ["P|Sofia Cavalli|ITA|1998","P|Elena Foresi|ITA|2000","O|Serena Ortolani|ITA|1987","O|Sveva Mugnaini|ITA|2005","S|Bianca Orlandi|ITA|2003","S|Sofia Taiani|ITA|2002","S|Lisa Esposito|ITA|2005","S|Asja Zolota|CRO|2008","C|Alessandra Colzi|ITA|1997","C|Ada Fabbri|ITA|2005","C|Chiara Bergese|ITA|2003","L|Chiara Adorni|ITA|2004","L|Agata Tellone|ITA|2002"] },
+    { id: "ita", short: "Club Italia", full: "Club Italia", city: "Milano - Roma", tier: 2.2, color: "#1d4ed8", p: ["P|Andrea Carlotta Monetti|ITA|2008","P|Vanessa Hernandez|ITA|2008","O|Alexandra Nikolaeva Baleva|ITA|2008","O|Mariia Solovei|UKR|2009","S|Stella Caruso|ITA|2008","S|Giulia Voerzio|ITA|2009","S|Ludovica Tosini|ITA|2008","S|Giulia Faleschini|ITA|2009","C|Giulia Savioli|ITA|2008","C|Alice Guerra|ITA|2008","C|Ginevra Neri|ITA|2008","C|Letizia Feriozzi|ITA|2008","L|Sofia Giulì|ITA|2008","L|Stella Cornelli|ITA|2008"] },
+    { id: "mes", short: "Messina", full: "Akademia Messina", city: "Messina", tier: 2.6, color: "#ea580c", p: ["P|Sara Colombano|ITA|2000","P|Gaia Guiducci|ITA|2002","O|Saana Lindgren|FIN|2000","S|Caterina Peroni|ITA|2007","S|Sara Bellia|ITA|2004","S|Payton Henderson|CAN|2003","S|Elisabeth Caruso|ITA|2007","C|Veronica Quero|ITA|2007","C|Martina Pegoraro|ITA|2002","C|Laura Franceschini|ITA|2006","L|Sofia Gazzola|ITA|2006","L|Elena Rolando|ITA|1999"] },
+    { id: "fut", short: "Futura Busto", full: "Futura Giovani Busto Arsizio", city: "Busto Arsizio", tier: 2.6, color: "#f59e0b", p: ["P|Helena Sassolini|ITA|2005","P|Natasha Spinello|ITA|1998","P|Eleonora Muscetti|ITA|2002","O|Edinara Brancher|BRA|1996","O|Gaia Moroni|ITA|2005","S|Brunella Fusco|ITA|2007","S|Emili Ndoci|ITA|2006","S|Emma Cagnin|ITA|2002","S|Mija Šiftar|SLO|2006","C|Francesca Cosi|ITA|2000","C|Giulia Marconato|ITA|2003","C|Sofia Moroni|ITA|2007","L|Giada Di Mario|ITA|2004","L|Serena Scognamillo|ITA|2001"] },
+    { id: "rom", short: "Roma", full: "Ferraro SMI Roma Volley", city: "Roma", tier: 3.5, color: "#9a3412", p: ["P|Sofia Turlà|ITA|1998","P|Margherita Muzi|ITA|1994","O|Nikoleta Perović|MNE|1994","S|Teresa Bosso|ITA|2005","S|Carolina Pecorari|ITA|2003","S|Ana Escamilla|ESP|1998","S|Kata Török|HUN|1998","C|Giulia Polesello|ITA|2004","C|Chiara Biesso|ITA|2002","C|Melissa Martinelli|ITA|1993","L|Federica Baratella|ITA|2006","L|Giorgia Zannoni|ITA|1998"] },
+    { id: "tre", short: "Trentino", full: "Itas Trentino", city: "Trento", tier: 3.0, color: "#b91c1c", p: ["P|Emma Rizzieri|ITA|2002","P|Sofia Monza|ITA|2002","O|Polona Frelih|SLO|2004","S|Virginia Ristori|ITA|1999","S|Emma Galbero|ITA|2001","S|Alice Pamio|ITA|1998","S|Martina Susio|ITA|2007","S|Emily Colombo|ITA|2007","S|Alexandra Ravarini|ITA|2005","C|Ludovica Sismondi|ITA|2007","C|Arianna Bovolenta|ITA|2008","C|Greta Iob|ITA|2006","L|Sofia Luchi|ITA|2008","L|Rebecca Laporta|ITA|2003"] },
+    { id: "mel", short: "Melendugno", full: "Narconon Volley Melendugno", city: "Melendugno", tier: 3.0, color: "#0e7490", p: ["P|Giorgia Compagnin|ITA|2005","P|Giorgia Avenia|ITA|1994","O|Margherita Meoni|ITA|2005","O|Polina Malik|ISR|1998","S|Gaia Novello|ITA|2007","S|Perla Massaglia|ITA|2008","S|Beatrice Perfetto|ITA|2005","S|Natalia Lijewska|POL|2001","C|Aurora Micheletti|ITA|2005","C|Arianna Tomasetig|ITA|2001","C|Lara Gianfico|ITA|2002","L|Aurora Morandini|ITA|2000","L|Gaia Roserba|ITA|2008"] },
+    { id: "pad", short: "Altafratte Padova", full: "Nuvolì Altafratte Padova", city: "Trebaseleghe", tier: 3.1, color: "#1e3a8a", p: ["C|Laura Bovo|ITA|1996", "S|Giulia Bozzoli|ITA|2004", "S|Cristina Fiorio|ITA|1997", "C|Gaia Genovese|ITA|2007", "L|Celeste Sposetti Perissinotto|ITA|2005", "L|Marianna Maggipinto|ITA|1996", "C|Greta Catania|ITA|2004", "P|Rebecca Mirarchi|ITA|2006", "S|Chiara Mason|ITA|2000", "S|Giulia Angelina|ITA|1997", "O|Genevieve Lewis|USA|2004", "P|Martina Stocco|ITA|2000", "O|Giorgia Mazzon|ITA|1998"] },
+    { id: "fas", short: "Fasano", full: "Olio Pantaleo Volley Fasano", city: "Fasano", tier: 3.0, color: "#16a34a", p: ["P|Alice Turco|ITA|2000","P|Nicole Da Pos|ITA|2007","O|Piia Korhonen|FIN|1997","O|Federica Favaretto|ITA|2002","S|Beatrice Pozzoni|ITA|1995","S|Candela Salinas|ARG|2000","S|Ilaria Maiorano|ITA|2004","S|Katarina Bulovic|ITA|2002","C|Isabella Lavagnino|ITA|2007","C|Chiara Salvatori|ITA|2003","C|Anna Caneva|ITA|1992","L|Martina Bondavalli|ITA|2004","L|Federica Vittorio|ITA|1991"] },
+    { id: "alt", short: "Altamura", full: "Leonessa Volley Altamura", city: "Altamura", tier: 2.9, color: "#be123c", p: ["P|Valeria Caracuta|ITA|1987","P|Ester Serafini|ITA|2001","O|Ashley Adubea|ITA|2003","O|Dezirett Madan|CUB|2002","S|Alice Cacciatore|ITA|2006","S|Eva Svobodová|CZE|1997","S|Alessia Arciprete|ITA|1997","S|Nicole Mastrangelo|ITA|2008","S|Rosanna Montarulo|ITA|2007","C|Emanuela Agbortabi|ITA|2002","C|Francesca Evola|ITA|2005","C|Lea Orlandi|ITA|2006","C|Alessia Pulliero|ITA|2004","C|Giorgia Gismondi|ITA|2009","L|Giulia Biagini|ITA|2000","L|Noemi D'Onofrio|ITA|2003"] },
+    { id: "mar2", short: "Marsala", full: "Marsala Volley", city: "Marsala", tier: 2.9, color: "#0369a1", p: ["P|Veronica Allasia|ITA|2000","P|Erin Grippo|ITA|2002","O|Anja Ašonja|SRB|1999","O|Federica Nonnati|ITA|1999","S|Nelly Adamczewska|POL|2008","S|Sara Dodi|ITA|2007","S|Victoria Sassolini|ITA|2005","S|Elisa Bole|ITA|2003","C|Giulia Caserta|ITA|1999","C|Gaia Biondi|ITA|2003","C|Maria Marcuzzi|ITA|2004","L|Luna Cicola|ITA|2004","L|Chiara Lo Dico|ITA|2008"] },
+    { id: "avs", short: "Altino", full: "Tenaglia Altino Avastese Volley", city: "Altino", tier: 2.5, color: "#ca8a04", p: ["P|Camilla Lupoli|ITA|2003","P|Florencia Ferraro|ARG|2001","O|Sara Stival|ITA|2001","O|Valentina Omonoyan|ITA|2005","S|Claudia Provaroni|ITA|1998","S|Adji Astou Ndoye|SEN|2006","S|Gaia Riva|ITA|2000","S|Gaia Farelli|ITA|2006","C|Sara Mori|ITA|2008","C|Amelie Joyce Pixner|ITA|2006","C|Viola Tonello|ITA|1994","C|Giorgia Bernasconi|ITA|2001","L|Ilaria Maiezza|ITA|2006","L|Martina Ferrara|ITA|1999"] },
+    { id: "off", short: "Offanengo", full: "Dragons Volleyball Offanengo", city: "Offanengo", tier: 2.4, color: "#15803d", p: ["P|Sara Cakovic|ITA|2007","P|Emma Magnabosco|ITA|2006","O|Veronica Taborelli|ITA|1994","S|Chiara Costagli|ITA|1998","S|Arianna Visentin|ITA|2006","S|Giulia Resmini|ITA|2005","S|Jessica Joly|ITA|2000","C|Benedetta Campagnolo|ITA|2003","C|Sara Pedrolli|ITA|2007","C|Silene Martinelli|ITA|2006","L|Camilla Riccardi|ITA|2000","L|Alice Feduzzi|ITA|2006"] },
+    { id: "mon", short: "Monviso", full: "Wash4Green Monviso Volley", city: "Pinerolo", tier: 3.0, color: "#be185d", p: ["P|Ludovica Mennecozzi|ITA|2003","P|Maria Irene Ricci|ITA|1996","O|Irbe Lazda|LAT|2001","O|Olimpia Cicogna|ITA|1997","S|Francesca Bosso|ITA|2002","S|Bianca Bucciarelli|ITA|2001","S|Alyssa Enneking|USA|1997","S|Aurora Pistolesi|ITA|1999","C|Nicole Modesti|ITA|2004","C|Sveva Parini|ITA|2001","C|Alice Farina|ITA|2000","L|Manuela Ribechi|ITA|2004","L|Emma Bonansea|ITA|2006","L|Giulia De Nardi|ITA|1994"] }
+  ]},
+  A3A: { name: "Serie A3 - Girone A", rounds: 14, teams: [
+    { id: "mon_a3", short: "Mondovì", full: "Mondovì Volley", city: "Mondovì", tier: 2.6, color: "#c2185b", p: [
+      "P|Valentina Brandi|ITA|2004", "P|Matilde Rostagno|ITA|2006",
+      "O|Maria Sofia Barbaro|ITA|2003", "O|Petra Di Blasi|ITA|2009",
+      "S|Sofia Cusma|ITA|2005", "S|Vivien Di Diego|ITA|2006", "S|Emma Cantamessi|ITA|2007", "S|Anna Sclavo|ITA|2009", "S|Simona Sciarrotta|ITA|2004",
+      "C|Anna Aliberti|ITA|2002", "C|Martina Veneriano|ITA|2001", "C|Melissa Mattioli|ITA|2003",
+      "L|Michelle Gueli|ITA|2003", "L|Anna Imarisio|ITA|2005"
+    ] },
+    { id: "con_a3", short: "Concorezzo", full: "Pallavolo Concorezzo", city: "Concorezzo", tier: 2.5, color: "#dc2626", p: [
+      "P|Giulia Pasini|ITA|2004", "P|Gaia Rampoldi|ITA|2001",
+      "O|Martina Martinelli|ITA|1996", "O|Noemi Bilamour|ITA|2002",
+      "S|Giorgia Rosina|ITA|1999", "S|Francesca Trevisan|ITA|1995", "S|Rebecca Couch|ITA|2000", "S|Alessia Populini|ITA|2004",
+      "C|Silvia Piazza|ITA|1997", "C|Lisa Pegoraro|ITA|2000", "C|Gaia Moroni|ITA|2001",
+      "L|Cristina Ghezzi|ITA|2000", "L|Camilla Stucchi|ITA|2003"
+    ] },
+    { id: "gar_a3", short: "Garlasco", full: "Volley 2001 Garlasco", city: "Garlasco", tier: 2.4, color: "#15803d", p: [
+      "P|Mariaelena Aluigi|ITA|2001", "P|Camilla Trevisan|ITA|2007",
+      "O|Chiara Rognoni|ITA|2007", "O|Marta Prinetti|ITA|2002",
+      "S|Valentina Lombardi|ITA|1998", "S|Alice Gallina|ITA|2002", "S|Sara Angeleri|ITA|2004", "S|Martina Armeti|ITA|2003",
+      "C|Beatrice Badini|ITA|1997", "C|Elisa Ravarini|ITA|2003", "C|Nicole Modesti|ITA|2004",
+      "L|Silvia Angeleri|ITA|2000", "L|Alice Boffi|ITA|2004"
+    ] },
+    { id: "vig_a3", short: "Florens Vigevano", full: "INT – Florens Vigevano", city: "Vigevano", tier: 2.5, color: "#2563eb", p: [
+      "O|Glenda Messaggi|ITA|1999", "S|Lucrezia Rossi|ITA|1999", "S|Alessandra Gerbaudo|ITA|2005", "L|Matilde Bonitempo|ITA|2006",
+      "C|Aurora Bellinzona|ITA|1997", "C|Giulia Deambrogio|ITA|2003", "P|Anna Lualdi|ITA|2000", "C|Giorgia De Bortoli|ITA|2003",
+      "L|Giorgia Colombo|ITA|1999", "S|Greta Valli|ITA|1992", "C|Matilde Calvelli|ITA|2005", "P|Marta Gulli|ITA|1999"
+    ] },
+    { id: "rip_a3", short: "Ripalta", full: "C.R. Transport Ripalta", city: "Ripalta Cremasca", tier: 2.4, color: "#ea580c", p: [
+      "P|Giulia Nicoli|ITA|2000", "P|Beatrice Bassi|ITA|2003",
+      "O|Sara Lodi|ITA|1991", "O|Sofia Rivoltella|ITA|2002",
+      "S|Giulia Miglioli|ITA|2001", "S|Francesca Fenzio|ITA|1999", "S|Laura Bressanelli|ITA|2004", "S|Sara Dodi|ITA|2003",
+      "C|Francesca Palandrani|ITA|1998", "C|Anna Bassi|ITA|2001", "C|Elena Coti Zelati|ITA|2003",
+      "L|Marika Coti Zelati|ITA|1999", "L|Alice Labadini|ITA|2003"
+    ] },
+    { id: "vil_a3", short: "Villa Cortese", full: "Villa Cortese Volley", city: "Villa Cortese", tier: 2.5, color: "#06b6d4", p: [
+      "P|Sofia Alberti|ITA|2003", "P|Katia Mapelli|ITA|2008", "O|Valentina Viola|ITA|2004", "O|Lavinia Borroni|ITA|2004",
+      "S|Giulia Baldizzone|ITA|2004", "S|Claudia Talerico|ITA|2006", "S|Clarissa Elli|ITA|1995", "S|Erika Ghezzi|ITA|1995",
+      "C|Greta Pegoraro|ITA|2002", "C|Greta Donato Biasi|ITA|2006", "C|Oriola Shpuza|ITA|1996", "L|Alice Brunelli|ITA|2001", "L|Giulia Osana|ITA|2005"
+    ] },
+    { id: "mod_a3", short: "Volley Modena", full: "Volley Modena", city: "Modena", tier: 2.6, color: "#ca8a04", p: ["P|Theresa Barner|GER|2004", "P|Beatrice Balconati|ITA|2004", "O|Sonia Ratti|ITA|2001", "O|Amelia Pasini|ITA|2008", "S|Valentina Adani|ITA|2002", "S|Linda Cabassa|ITA|2004", "S|Chiara Martinato|ITA|2005", "S|Anja Nella|ITA|2006", "C|Monica Tirisegu Oke|ITA|2006", "C|Marta Semprini Cesari|ITA|2004", "C|Sofia Migliorini|ITA|2001", "C|Anna Pettiti|ITA|2007", "L|Lia Righi|ITA|2006", "L|Victoria Cavallieri|ITA|2005"] },
+    { id: "val_a3", short: "Valdarno", full: "Passione Valdarno Volley", city: "Figline Incisa Valdarno", tier: 2.3, color: "#0284c7", p: [
+      "P|Ester Grucka|ITA|2004", "P|Elena Bortolot|ITA|1995",
+      "O|Margherita Tani|ITA|2002", "O|Sara Casimirri|ITA|2000",
+      "S|Giulia Poggi|ITA|2003", "S|Marta Mantellassi|ITA|2004", "S|Sofia Valoppi|ITA|2003", "S|Rebecca Scardigli|ITA|2001",
+      "C|Matilde Ceccherini|ITA|2001", "C|Ilaria Mori|ITA|1999", "C|Elisa Morandini|ITA|2003",
+      "L|Camilla Mori|ITA|2002", "L|Irene Botti|ITA|2005"
+    ] }
+  ]},
+  A3B: { name: "Serie A3 - Girone B", rounds: 14, teams: [
+    { id: "gio_a3", short: "Giorgione", full: "Azimut Giorgione", city: "Castelfranco Veneto", tier: 2.6, color: "#dc2626", p: [
+      "P|Silvia Romanin|ITA|2003", "P|Margherita Bottura|ITA|2007", "O|Alessia Cicolini|ITA|2000", "O|Sara Esposito|ITA|2000",
+      "S|Sindi Mico|SUI|2004", "S|Alice Bellini|ITA|2001", "S|Arianna Rizzo|ITA|2001", "S|Alessandra Bartolomei|ITA|2008",
+      "C|Tatjana Fucka|ITA|2002", "C|Rebeka Fucka|ITA|2002", "C|Chiara Zamprogno|ITA|2008", "C|Angela Facchinato|ITA|2001",
+      "L|Gaia Moretto|ITA|2002", "L|Lucia Morra|ITA|1997"
+    ] },
+    { id: "sma_a3", short: "Arena Volley", full: "Smapiù Arena Volley", city: "Verona", tier: 2.4, color: "#f97316", p: [
+      "P|Sofia Grandi|ITA|2008", "P|Beatrice Giroldi|ITA|1995", "P|Elisa Fusa|ITA|2007", "O|Vittoria Adami|ITA|2007", "O|Nicole Tellaroli|ITA|2001",
+      "S|Alice Trampus|ITA|2004", "S|Francesca Trevisan|ITA|1995", "S|Aurora Piron|ITA|2007", "S|Isabel Ceccon|ITA|2006",
+      "C|Anna Riccato|ITA|2004", "C|Valentina Gatti|ITA|2007", "C|Chiara Murari|ITA|2007", "C|Sara Bonini|ITA|2004", "L|Isabella Monaco|ITA|2001"
+    ] },
+    { id: "adu_a3", short: "Aduna", full: "Banca Annia Aduna Women", city: "Padova", tier: 2.4, color: "#14b8a6", p: [
+      "P|Marianna Giay|ITA|2005", "P|Emma Venturi|ITA|2006", "O|Martina Simoncelli|ITA|2006", "O|Chiara Wabersich|ITA|2003",
+      "S|Aurora Marchesini|ITA|2004", "S|Alessia Pasa|ITA|2004", "S|Irene Gomiero|ITA|1990", "S|Elisa Vecerina|ITA|2002",
+      "C|Francesca Volpin|ITA|1995", "C|Linda Damian|ITA|2005", "C|Sofia Fenzio|ITA|2005", "C|Ludovica Marinucci|ITA|2007",
+      "L|Marta Masiero|ITA|1998", "L|Linda Callegaro|ITA|2006"
+    ] },
+    { id: "vvm_a3", short: "V&V Modena", full: "V&V Modena Volley", city: "Modena", tier: 2.4, color: "#6366f1", p: [
+      "P|Theresa Barner|GER|2004", "P|Beatrice Balconati|ITA|2004", "O|Amelia Pasini|ITA|2008", "O|Sonia Ratti|ITA|2001",
+      "S|Linda Cabassa|ITA|2004", "S|Chiara Martinato|ITA|2005", "S|Anja Nella|ITA|2006", "S|Valentina Adani|ITA|2002",
+      "C|Sofia Migliorini|ITA|2001", "C|Vittoria Fornari|ITA|2002", "L|Giulia Rastelli|ITA|1990", "L|Emma Falcone|ITA|2001", "L|Elena Lutti|ITA|2007", "L|Elena Brancato|ITA|2009"
+    ] },
+    { id: "oly_a3", short: "Olympia di Navigazione", full: "Olympia di Navigazione", city: "Ravenna", tier: 2.3, color: "#0ea5e9", p: [
+      "P|Francesca Montobbio|ITA|2000", "P|Chiara Parodi|ITA|2003",
+      "O|Martina Pastorino|ITA|1998", "O|Alice Frosio|ITA|2002",
+      "S|Camilla Poggi|ITA|2001", "S|Valentina Vado|ITA|1999", "S|Beatrice Raggi|ITA|2004", "S|Giulia Faleschini|ITA|2003",
+      "C|Silvia Gaggero|ITA|1998", "C|Ilaria Rizzolo|ITA|2002", "C|Martina Villa|ITA|2003",
+      "L|Sara Bulla|ITA|2001", "L|Giulia Fini|ITA|2004"
+    ] },
+    { id: "ves_a3", short: "Vesuvio Oplonti", full: "CO.GE. Vesuvio Oplonti", city: "Torre Annunziata", tier: 2.4, color: "#d946ef", p: [
+      "P|Emma Sturniolo|ITA|2003", "P|Giulia Picchi|ITA|2002", "O|Sofia Felappi|ITA|2003", "O|Ginevra Bazzani|ITA|2002",
+      "S|Giorgia Coveccia|ITA|2004", "S|Gioia Riccato|ITA|2002", "S|Sara Bassi|ITA|2007", "S|Vittoria Zuliani|ITA|2005",
+      "C|Francesca Russo|ITA|1998", "C|Rosa Pezzella|ITA|2003",
+      "L|Jessica Lanari|ITA|1993", "L|Annapaola Truono|ITA|1990"
+    ] },
+    { id: "cas_a3", short: "Castellana Grotte", full: "Zero5 Castellana Grotte", city: "Castellana Grotte", tier: 2.3, color: "#0284c7", p: [
+      "P|Francesca Saveriano|ITA|1993", "P|Martina Merati|ITA|2002", "O|Federica Stroppa|ITA|1997",
+      "S|Alessia Corradetti|ITA|2001", "S|Ginevra Camerini|ITA|2006", "S|Giorgia Rizza|ITA|2006", "S|Vera Bondarenko|UKR|2002",
+      "C|Asya Zingoni|ITA|1999", "C|Camilla Grazia|ITA|2000", "C|Marjolijn Oskam|NED|1996", "C|Sara Marchesano|ITA|2004",
+      "L|Michela Recchia|ITA|2001", "L|Giorgia Rizza|ITA|2004"
+    ] },
+    { id: "ton_a3", short: "Tonno Callipo", full: "Tonno Callipo Calabria", city: "Vibo Valentia", tier: 2.6, color: "#b91c1c", p: [
+      "P|Chiara Scacchetti|ITA|1995", "P|Romina Courroux|ARG|1998", "O|Giulia Colombo|ITA|2007", "O|Irene Botarelli|ITA|1996",
+      "S|Agnes Pallag|HUN|1993", "S|Giulia Felappi|ITA|2002", "S|Laura Grigolo|ITA|1996", "S|Valentina Pomili|ITA|1994",
+      "C|Chiara Albano|ITA|1999", "C|Chiara Riparbelli|ITA|1996", "C|Giada Civitico|ITA|2000", "C|Sarah Mazzuca|ITA|2002",
+      "L|Marta Gazzerro|ITA|2005", "L|Marta Pecalli|ITA|2001"
+    ] }
+  ]}
+};
+
+const STAR_BONUS = { "Paola Egonu": 9, "Zhu Ting": 9, "Monica De Gennaro": 7, "Anna Danesi": 6, "Wolosz": 5, "Ognjenovic": 4, "Sarah Fahr": 3, "Raphaela Folie": 3, "Caterina Bosetti": 3, "Elena Pietrini": 4, "Marina Lubian": 3, "Gabi": 5, "Skinner": 4, "Lanier": 3, "Stella Nervini": 3 };
+
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const ROLE_NAME={P:"Palleggiatrice",O:"Opposto",S:"Schiacciatrice",C:"Centrale",L:"Libero"};
+const ROLE_ORDER=["P","O","S","C","L"];
+const SEASON_YEAR=2026;
+const FIRST=["Giulia","Martina","Sara","Chiara","Alice","Elena","Francesca","Beatrice","Giorgia","Aurora","Sofia","Ilaria","Federica","Valentina","Silvia","Laura","Marta","Elisa","Camilla","Noemi","Arianna","Ginevra","Greta","Irene"];
+const LAST=["Rossi","Ferrari","Bianchi","Romano","Colombo","Ricci","Marino","Greco","Bruno","Gallo","Conti","De Luca","Mancini","Costa","Giordano","Rizzo","Lombardi","Moretti","Barbieri","Fontana","Santoro","Mariani","Rinaldi","Caruso"];
+const ROLE_ATTR={ P:{att:-18,blk:-8,srv:0,rec:-8,def:-2,set:5}, O:{att:4,blk:0,srv:0,rec:-20,def:-10,set:-30}, S:{att:0,blk:-6,srv:0,rec:4,def:2,set:-30}, C:{att:-1,blk:6,srv:-4,rec:-25,def:-10,set:-30}, L:{att:-30,blk:-30,srv:-10,rec:8,def:10,set:-15} };
+const KEY_ATTR={P:"set",O:"att",S:"att",C:"blk",L:"rec"};
+
+function gauss(r){let u=0,v=0;while(!u)u=r();while(!v)v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+function calcETV(p){ const baseFactor = Math.pow(p.ovr / 40, 3.8); let val = baseFactor * 6500; if(p.age <= 21) val *= 1.35; if(p.age >= 32) val *= 0.75; return Math.round(val / 500) * 500; }
+function salaryFor(p,lid){const tier=lid==="A1"?1:lid==="A2"?0.42:0.25;return Math.round((180+Math.pow(Math.max(35,p.ovr),2)*0.25)*tier/50)*50;}
+function ensureContracts(team,lid){team.players.forEach(p=>{if(!Number.isFinite(p.wage))p.wage=salaryFor(p,lid);if(!Number.isFinite(p.contractYears))p.contractYears=2;if(!p.contractStatus)p.contractStatus="signed";});}
+function payrollFor(team){return team.players.reduce((n,p)=>n+(p.wage||salaryFor(p,team.lid||G.lid)),0);}
+
+function makePlayer(lid,team,i,raw,rng,gen){
+  let role,name,nat="",year=0;
+  if(gen){role=gen.role;name=gen.name;year=SEASON_YEAR-(17+Math.floor(rng()*4));nat="ITA";}
+  else{const f=raw.split("|");role=f[0];name=f[1];nat=f[2]||"";year=f[3]?+f[3]:0;}
+  const surnameOnly=!gen&&lid==="A1"&&name.indexOf(" ")<0;
+  const base=lid==="A1"?58+team.tier*5.2:lid==="A2"?44+team.tier*4.2:38+team.tier*3.8;
+  let ovr=base+gauss(rng)*4.0+(STAR_BONUS[name]||0)+(surnameOnly?3:0);
+  let est=false;
+  if(!year){year=SEASON_YEAR-(20+Math.floor(rng()*14));est=true;}
+  const age=SEASON_YEAR-year;
+  if(age<=19)ovr-=4;
+  if(gen)ovr-=9;
+  ovr=clamp(ovr,36,95);
+  const ra=ROLE_ATTR[role],p={id:lid+":"+team.id+":"+i,name,role,nat,year,age,est,gen:!!gen,rosterStatus:gen?"simulated":"verified",teamId:team.id,lid,fatigue:0,inj:0,injName:""};
+  for(const k of ["att","blk","srv","rec","def","set"])p[k]=Math.round(clamp(ovr+ra[k]+gauss(rng)*2.3,25,98));
+  p.ovr=p[KEY_ATTR[role]];
+  p.pot=age<=21?Math.round(clamp(p.ovr+4+rng()*9,p.ovr,96)):p.ovr;
+  p.val=calcETV(p);
+  return p;
+}
+
+function generateFreeAgents(){ const fa=[]; const rng=mulberry32(992026); let count=0; for(const role of ROLE_ORDER){ for(let i=0;i<4;i++){ const nm=FIRST[Math.floor(rng()*FIRST.length)]+" "+LAST[Math.floor(rng()*LAST.length)]; const dummyTeam={tier:2.8,id:"fa"}; const p=makePlayer("FA",dummyTeam,count++,null,rng,{role,name:nm}); p.teamId=null;p.lid=null; fa.push(p); } } return fa.sort((a,b)=>b.ovr-a.ovr); }
+
+function buildWorld(){
+  const W={A1:[],A2:[],A3A:[],A3B:[]};
+  let seed=2026101;
+  for(const lid of Object.keys(W)){
+    LEAGUES[lid].teams.forEach((t,ti)=>{
+      const rng=mulberry32(seed+ti*977+(lid.includes("A3")?8500:lid==="A2"?5000:0));
+      const team={...t,lid,idx:ti,players:[]};
+      (t.p||[]).forEach((raw,i)=>team.players.push(makePlayer(lid,team,i,raw,rng,null)));
+      const need={P:2,O:2,S:4,C:4,L:2};
+      let n=team.players.length;
+      for(const role of ROLE_ORDER){
+        const have=team.players.filter(x=>x.role===role).length;
+        for(let k=have;k<need[role];k++){
+          const nm=FIRST[Math.floor(rng()*FIRST.length)]+" "+LAST[Math.floor(rng()*LAST.length)];
+          team.players.push(makePlayer(lid,team,n++,null,rng,{role,name:nm}));
+        }
+      }
+      team.players.sort((a,b)=>ROLE_ORDER.indexOf(a.role)-ROLE_ORDER.indexOf(b.role)||b.ovr-a.ovr);
+      W[lid].push(team);
+    });
+  }
+  return W;
+}
+
+const WORLD=buildWorld();
+const FREE_AGENTS=generateFreeAgents();
+const PLAYER_INDEX={};
+for(const lid of Object.keys(WORLD))for(const t of WORLD[lid])for(const p of t.players)PLAYER_INDEX[p.id]=p;
+for(const p of FREE_AGENTS)PLAYER_INDEX[p.id]=p;
+
+function autoLineup(team){
+  const used=new Set();
+  const pool=r=>{
+    const own=team.players.filter(p=>p.role===r&&!used.has(p.id));
+    const ok=own.filter(p=>!p.inj);
+    const list=(ok.length?ok:own).sort((a,b)=>b.ovr-a.ovr);
+    return list.length?list:team.players.filter(p=>!used.has(p.id)).sort((a,b)=>b.ovr-a.ovr);
+  };
+  const take=r=>{ const p=pool(r)[0]; if(!p)return undefined; used.add(p.id); return p.id; };
+  const o={};
+  for(const [k,r] of [["P","P"],["O","O"],["S1","S"],["S2","S"],["C1","C"],["C2","C"],["L","L"]])o[k]=take(r);
+  return o;
+}
+
+function lineupValid(team,lu){
+  if(!lu)return false;
+  const need={P:"P",O:"O",S1:"S",S2:"S",C1:"C",C2:"C",L:"L"},seen={};
+  for(const k in need){
+    const p=PLAYER_INDEX[lu[k]];
+    if(!p||p.teamId!==team.id||p.role!==need[k]||p.inj>0||seen[p.id])return false;
+    seen[p.id]=1;
+  }
+  return true;
+}
+
+function ratingsOf(team,lu,tactic,rng,noise){
+  const g=k=>PLAYER_INDEX[lu[k]];
+  const P=g("P"),O=g("O"),S1=g("S1"),S2=g("S2"),C1=g("C1"),C2=g("C2"),L=g("L");
+  const f=()=>noise?gauss(rng)*1.2:0;
+  const starters=[P,O,S1,S2,C1,C2,L];
+  const avgFatigue=starters.reduce((acc,pl)=>acc+(pl.fatigue||0),0)/7;
+  const malus=avgFatigue>60?(avgFatigue-60)*0.25:0;
+  let r={
+    srv:((P.srv+O.srv+S1.srv+S2.srv+C1.srv+C2.srv)/6)-malus,
+    rec:(L.rec*.38+S1.rec*.27+S2.rec*.27+O.rec*.08)-malus,
+    att:(O.att*.28+S1.att*.22+S2.att*.22+C1.att*.14+C2.att*.14)-malus,
+    blk:(C1.blk*.3+C2.blk*.3+O.blk*.2+S1.blk*.1+S2.blk*.1)-malus,
+    def:(L.def*.35+S1.def*.2+S2.def*.2+P.def*.1+O.def*.1+C1.def*.025+C2.def*.025)-malus,
+    set:P.set-malus
+  };
+  if(tactic==="srv"){r.srv+=5;r.att-=2;}
+  else if(tactic==="def"){r.blk+=3;r.def+=3;r.srv-=3;}
+  for(const k in r)r[k]+=f();
+  return r;
+}
+function teamStrength(team,lu){const r=ratingsOf(team,lu,"bal",null,false);return (r.srv+r.rec+r.att+r.blk+r.def+r.set)/6;}
+
+function pickW(items,wfn,rng){let tot=0;const ws=items.map(i=>{const w=Math.max(.01,wfn(i));tot+=w;return w;});let x=rng()*tot;for(let i=0;i<items.length;i++){x-=ws[i];if(x<=0)return items[i];}return items[items.length-1];}
+function rotOf(lu){const g=k=>PLAYER_INDEX[lu[k]];return [g("P"),g("C1"),g("S1"),g("O"),g("C2"),g("S2")];}
+function rotate(a){return [a[5],a[0],a[1],a[2],a[3],a[4]];}
+function courtView(rot,lib){return rot.map((p,i)=>(i===1||i===2)&&p.role==="C"?{p:lib,lib:true}:{p,lib:false});}
+
+function playRally(sideS,rots,libs,R,rng,homeSide,detail){
+  const sideR=sideS==="h"?"a":"h";
+  const rs=R[sideS],rr=R[sideR];
+  let pR=.64+.0033*((.35*rr.rec+.40*rr.att+.25*rr.set)-(.38*rs.srv+.37*rs.blk+.25*rs.def));
+  pR+=sideR===homeSide?.012:-.012;
+  pR=clamp(pR,.42,.84);
+  const recvWins=rng()<pR;
+  const server=rots[sideS][0];
+  const rview=courtView(rots[sideR],libs[sideR]);
+  const sview=courtView(rots[sideS],libs[sideS]);
+  const receiver=pickW(rview.map(x=>x.p),p=>p.role==="L"?3:p.role==="S"?1.6:p.role==="O"?.2:p.role==="P"?.15:.1,rng);
+  const front=(rot)=>[rot[3],rot[4],rot[5]];
+  const atkR=pickW(front(rots[sideR]),p=>Math.pow(p.att/70,3)*(p.role==="C"?.8:p.role==="P"?.12:1),rng);
+  const atkS=pickW(front(rots[sideS]),p=>Math.pow(p.att/70,3)*(p.role==="C"?.8:p.role==="P"?.12:1),rng);
+  const blkS=pickW(front(rots[sideS]),p=>Math.pow(p.blk/70,3)*(p.role==="C"?1.6:1),rng);
+  const setterR=rots[sideR].find(p=>p.role==="P");
+  let winner,type,actor=null,cred=null;
+  if(recvWins){
+    winner=sideR;
+    if(rng()<.2){type="serr";}
+    else{type="kill";actor=atkR;cred=atkR;}
+  }else{
+    winner=sideS;
+    const x=rng();
+    const aceP=.2+(R[sideS].srv-R[sideR].rec)*.004;
+    if(x<aceP){type="ace";actor=server;cred=server;}
+    else if(x<aceP+.3){type="block";actor=blkS;cred=blkS;}
+    else if(x<aceP+.56){type="att";actor=atkS;cred=atkS;}
+    else{type="rerr";}
+  }
+  return {sideS,sideR,winner,type,actor,cred,server,receiver,atkR,atkS,atk:recvWins?atkR:atkS,atkSide:recvWins?sideR:sideS,setter:setterR,blocker:blkS,
+    sview:detail?sview:null,rview:detail?rview:null};
+}
+
+function simMatch(home,away,lineups,tactics,rng,detail){
+  const R={h:ratingsOf(home,lineups.h,tactics.h,rng,true),a:ratingsOf(away,lineups.a,tactics.a,rng,true)};
+  const libs={h:PLAYER_INDEX[lineups.h.L],a:PLAYER_INDEX[lineups.a.L]};
+  const sets=[],pts={},rallies=[];
+  let hs=0,as=0,set=0,firstServer=rng()<.5?"h":"a";
+  while(hs<3&&as<3){
+    set++;
+    const target=set===5?15:25;
+    let h=0,a=0;
+    const rots={h:rotOf(lineups.h),a:rotOf(lineups.a)};
+    let srv=set===5?(rng()<.5?"h":"a"):(set%2===1?firstServer:(firstServer==="h"?"a":"h"));
+    let guard=0;
+    while(!((h>=target||a>=target)&&Math.abs(h-a)>=2)&&guard++<150){
+      const ry=playRally(srv,rots,libs,R,rng,"h",detail);
+      if(ry.winner==="h")h++;else a++;
+      if(ry.cred)pts[ry.cred.id]=(pts[ry.cred.id]||0)+1;
+      if(detail){ry.set=set;ry.h=h;ry.a=a;ry.sets=[hs,as];rallies.push(ry);}
+      if(ry.winner!==srv){rots[ry.winner]=rotate(rots[ry.winner]);srv=ry.winner;}
+    }
+    sets.push([h,a]);
+    if(h>a)hs++;else as++;
+  }
+  return {sets,hs,as,pts,rallies};
+}
+
+function makeSchedule(n){
+  const ids=[];for(let i=0;i<n;i++)ids.push(i);
+  if(n%2)ids.push(-1);
+  const m=ids.length,rounds=[];
+  let arr=ids.slice();
+  for(let r=0;r<m-1;r++){
+    const pairs=[];
+    for(let i=0;i<m/2;i++){
+      let a=arr[i],b=arr[m-1-i];
+      if(a===-1||b===-1)continue;
+      if(i===0&&r%2===1){const t=a;a=b;b=t;}
+      else if(i>0&&(r+i)%2===1){const t=a;a=b;b=t;}
+      pairs.push([a,b]);
+    }
+    rounds.push(pairs);
+    arr=[arr[0]].concat([arr[m-1]],arr.slice(1,m-1));
+  }
+  const second=rounds.map(rd=>rd.map(([a,b])=>[b,a]));
+  return rounds.concat(second);
+}
+const SCHEDULE={A1:makeSchedule(14),A2:makeSchedule(17),A3A:makeSchedule(8),A3B:makeSchedule(8)};
+
+function standings(lid,results){
+  const teams=WORLD[lid]||[],tb=teams.map(t=>({idx:t.idx,id:t.id,short:t.short,pl:0,w:0,l:0,pts:0,sw:0,sl:0,pf:0,pa:0}));
+  for(const rd of results[lid]||[])for(const m of rd){
+    const H=tb[m.h],A=tb[m.a];
+    if(!H||!A)continue;
+    H.pl++;A.pl++;H.sw+=m.hs;H.sl+=m.as;A.sw+=m.as;A.sl+=m.hs;
+    for(const s of m.sets){H.pf+=s[0];H.pa+=s[1];A.pf+=s[1];A.pa+=s[0];}
+    if(m.hs>m.as){H.w++;A.l++;H.pts+=m.as<=1?3:2;A.pts+=m.as===2?1:0;}
+    else{A.w++;H.l++;A.pts+=m.hs<=1?3:2;H.pts+=m.hs===2?1:0;}
+  }
+  tb.sort((a,b)=>b.pts-a.pts||b.w-a.w||(b.sw/Math.max(1,b.sl))-(a.sw/Math.max(1,a.sl))||(b.pf/Math.max(1,b.pa))-(a.pf/Math.max(1,a.pa))||a.idx-b.idx);
+  return tb;
+}
+function lineupFor(G,team){
+  if(G&&team.lid===G.lid&&team.idx===G.teamIdx&&lineupValid(team,G.lineup))return G.lineup;
+  return autoLineup(team);
+}
+function packMatch(h,a,r){return {h,a,sets:r.sets,hs:r.hs,as:r.as};}
+
+function playRound(G,userRes){
+  const rnd=G.round;
+  const userLeague=G.lid;
+  const activeLeagues=Object.keys(SCHEDULE).filter(l=>SCHEDULE[l]);
+
+  for(const lid of activeLeagues){
+    const sched=SCHEDULE[lid];
+    if(!sched||rnd>=sched.length)continue;
+    if(!G.results[lid])G.results[lid]=[];
+    if(G.results[lid].length>rnd)continue;
+    const out=[];
+    for(const [hi,ai] of sched[rnd]){
+      const home=WORLD[lid][hi],away=WORLD[lid][ai];
+      if(userRes&&lid===userLeague&&(hi===G.teamIdx||ai===G.teamIdx)){out.push(packMatch(hi,ai,userRes));continue;}
+      const isU=lid===userLeague&&(hi===G.teamIdx||ai===G.teamIdx);
+      const tac={h:isU&&hi===G.teamIdx?G.tactic:"bal",a:isU&&ai===G.teamIdx?G.tactic:"bal"};
+      const r=simMatch(home,away,{h:lineupFor(G,home),a:lineupFor(G,away)},tac,Math.random,false);
+      out.push(packMatch(hi,ai,r));
+    }
+    G.results[lid].push(out);
+  }
+
+  // Monitoraggio medico a fine giornata: fatica, recupero e infortuni
+  for(const lid of Object.keys(WORLD)){
+    for(const t of WORLD[lid]){
+      const lu=lineupFor(G,t);
+      const starters=new Set(Object.values(lu));
+      t.players.forEach(p=>{
+        if(p.inj>0){
+          p.inj--;
+          if(p.inj===0)p.injName="";
+        }
+        if(starters.has(p.id)){
+          p.fatigue=clamp((p.fatigue||0)+18,0,100);
+          const injProb=p.fatigue>70?0.08:0.015;
+          if(Math.random()<injProb&&p.inj===0){
+            if(p.fatigue>70){
+              p.inj=Math.floor(Math.random()*2)+1;
+              p.injName="Sovraccarico alla spalla";
+            }else{
+              p.inj=Math.floor(Math.random()*3)+2;
+              p.injName="Distorsione alla caviglia";
+            }
+            if(t.id===myTeam().id)toast(`Infortunio: ${p.name} (${p.injName}, ${p.inj}t stop)`);
+          }
+        }else{
+          p.fatigue=clamp((p.fatigue||0)-35,0,100);
+        }
+      });
+    }
+  }
+  if(!lineupValid(myTeam(),G.lineup))G.lineup=autoLineup(myTeam());
+
+  ensureContracts(myTeam(),G.lid);
+  const wageBill=payrollFor(myTeam());
+  G.budget-=wageBill;
+  G.round=rnd+1;
+
+  // Transizione Serie A3 alle Pool
+  if(G.phase===1&&G.results["A3A"]&&G.results["A3A"].length>=14&&G.results["A3B"]&&G.results["A3B"].length>=14){
+    G.phase=2;
+    const stA=standings("A3A",G.results);
+    const stB=standings("A3B",G.results);
+
+    WORLD["A3_PROM"]=[];
+    WORLD["A3_RETR"]=[];
+
+    for(let i=0;i<4;i++){
+      WORLD["A3_PROM"].push({...WORLD["A3A"][stA[i].idx]});
+      WORLD["A3_PROM"].push({...WORLD["A3B"][stB[i].idx]});
+    }
+    for(let i=4;i<8;i++){
+      WORLD["A3_RETR"].push({...WORLD["A3A"][stA[i].idx]});
+      WORLD["A3_RETR"].push({...WORLD["A3B"][stB[i].idx]});
+    }
+
+    WORLD["A3_PROM"].forEach((t,i)=>{t.lid="A3_PROM";t.idx=i;});
+    WORLD["A3_RETR"].forEach((t,i)=>{t.lid="A3_RETR";t.idx=i;});
+
+    LEAGUES["A3_PROM"]={name:"Serie A3 - Pool Promozione",rounds:14,teams:WORLD["A3_PROM"]};
+    LEAGUES["A3_RETR"]={name:"Serie A3 - Pool Retrocessione",rounds:14,teams:WORLD["A3_RETR"]};
+
+    SCHEDULE["A3_PROM"]=makeSchedule(8);
+    SCHEDULE["A3_RETR"]=makeSchedule(8);
+    delete SCHEDULE["A3A"];
+    delete SCHEDULE["A3B"];
+
+    G.results["A3_PROM"]=[];
+    G.results["A3_RETR"]=[];
+
+    if(G.lid==="A3A"||G.lid==="A3B"){
+      const isFromA=G.lid==="A3A";
+      const oldRank=(isFromA?stA:stB).findIndex(r=>r.idx===G.teamIdx);
+      const oldId=WORLD[G.lid][G.teamIdx].id;
+      G.lid=oldRank<4?"A3_PROM":"A3_RETR";
+      G.teamIdx=WORLD[G.lid].findIndex(t=>t.id===oldId);
+      G.round=0;
+      toast("Fine Regular Season: Iniziano le Pool di Serie A3!");
+    }
+  }
+}
+
+function nextFixture(G){
+  const sched=SCHEDULE[G.lid];
+  if(!sched||G.round>=sched.length)return null;
+  for(const [h,a] of sched[G.round])if(h===G.teamIdx||a===G.teamIdx)return {h,a,home:h===G.teamIdx};
+  return {rest:true};
+}
+
+const SAVE_KEY="volley-manager-italia-v3";
+let G=null;
+const UI={tab:"home",lg:"A1",rd:null,sel:null,confirm:false,match:null,lgTab:"table",mktTab:"buy"};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const $=s=>document.querySelector(s);
+const myTeam=()=>WORLD[G.lid][G.teamIdx];
+const ovrColor=v=>v>=85?"#d6336c":v>=75?"#d98a1f":v>=65?"#2f9e8f":v>=55?"#4f86c6":"#7a869a";
+const ovrChip=v=>`<span class="ovr" style="background:${ovrColor(v)}">${Math.round(v)}</span>`;
+const formatEur=v=>"€ "+Number(v).toLocaleString("it-IT");
+
+function persist(){ if(!G)return; G.t=Date.now(); try{localStorage.setItem(SAVE_KEY,JSON.stringify(G));}catch(e){} }
+function loadLocal(){try{const s=localStorage.getItem(SAVE_KEY);return s?JSON.parse(s):null;}catch(e){return null;}}
+function validSave(s){return s&&s.v===3&&WORLD[s.lid]&&WORLD[s.lid][s.teamIdx]&&s.results&&typeof s.round==="number";}
+
+function toast(msg){ const el=document.createElement("div");el.className="toast";el.textContent=msg;el.setAttribute("role","status"); document.body.appendChild(el);setTimeout(()=>el.remove(),3200); }
+function initBudget(lid,tier){ if(lid==="A1")return Math.round(tier*750000); if(lid==="A2")return Math.round(tier*110000); return Math.round(tier*75000); }
+
+function newGame(lid,idx){
+  const t=WORLD[lid][idx];
+  G={
+    v:3,t:0,lid,teamIdx:idx,round:0,season:1,phase:1,
+    budget:initBudget(lid,t.tier),
+    freeAgents:FREE_AGENTS.slice(),
+    results:{A1:[],A2:[],A3A:[],A3B:[]},
+    lineup:autoLineup(t),tactic:"bal"
+  };
+  ensureContracts(t,lid);
+  UI.tab="home";UI.lg=lid;UI.rd=null;UI.sel=null;
+  persist();render();
+}
+
+function render(){
+  const app=$("#app");
+  if(UI.match)return;
+  if(!G){app.innerHTML=startHTML();return;}
+  const t=myTeam(),total=SCHEDULE[G.lid]?SCHEDULE[G.lid].length:0;
+  const head=`<div class="top"><div class="brand">${crest(t)}<div style="min-width:0"><b>${esc(t.short)}</b><span class="muted small">${LEAGUES[G.lid]?LEAGUES[G.lid].name:G.lid} · Budget: <b style="color:var(--good)">${formatEur(G.budget)}</b></span></div></div><span class="pill acc">2026/27</span></div><div class="season-strip"><div><span>Stagione</span><b>${G.season||1}ª · 2026/27</b></div><div><span>Giornata</span><b>${Math.min((G.round||0)+1,total||1)} / ${total||"—"}</b></div><div><span>Club</span><b>${esc(t.city||t.short)}</b></div></div>`;
+  let body="";
+  if(UI.tab==="home")body=homeHTML();
+  else if(UI.tab==="squad")body=squadHTML();
+  else if(UI.tab==="lineup")body=lineupHTML();
+  else if(UI.tab==="market")body=marketHTML();
+  else body=leagueHTML();
+
+  const nav=[["home",ICON.home,"Home"],["squad",ICON.squad,"Rosa"],["lineup",ICON.lineup,"Modulo"],["market",ICON.market,"Mercato"],["league",ICON.league,"Campionato"]].map(([k,i,l])=>`<button data-act="tab" data-v="${k}" aria-current="${UI.tab===k}"><span class="nav-icon">${i}</span><span>${l}</span></button>`).join("");
+  app.style.setProperty("--team",Gx.kit(t).main);
+  app.innerHTML=head+body+`<nav class="nav" aria-label="Sezioni">${nav}</nav>`;
+}
+
+const ICON = {
+  home: '<svg viewBox="0 0 24 24"><path d="M3.5 11 12 4l8.5 7"/><path d="M5.5 10v9.5h13V10"/><path d="M10 19.5v-5h4v5"/></svg>',
+  squad: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c.4-3.6 3-5.4 6-5.4s5.6 1.8 6 5.4"/><circle cx="17.2" cy="9" r="2.5"/><path d="M16.5 14.2c2.6.2 4.2 1.8 4.5 4.8"/></svg>',
+  lineup: '<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="1.5"/><path d="M12 5v14M3.5 12h17"/><circle cx="7.5" cy="8.5" r=".6"/><circle cx="16.5" cy="15.5" r=".6"/></svg>',
+  market: '<svg viewBox="0 0 24 24"><path d="M4 8h14l-3-3.5M20 16H6l3 3.5"/></svg>',
+  league: '<svg viewBox="0 0 24 24"><path d="M7 4h10v4.5a5 5 0 0 1-10 0z"/><path d="M7 6H4.5c0 2.6 1 4 2.9 4.4M17 6h2.5c0 2.6-1 4-2.9 4.4"/><path d="M12 13.5V17M8.5 20h7M9.5 20l.5-3h4l.5 3"/></svg>'
+};
+
+function startHTML(){
+  const block=lid=>{
+    const teams=WORLD[lid].slice().sort((a,b)=>teamStrength(b,autoLineup(b))-teamStrength(a,autoLineup(a)));
+    return `<section style="margin-top:22px"><div class="row" style="justify-content:space-between;margin-bottom:10px"><h2>${LEAGUES[lid].name}</h2><span class="muted small">${teams.length} squadre · ${LEAGUES[lid].rounds} giornate</span></div>
+    <div class="pick">${teams.map(t=>`<button data-act="start" data-lid="${lid}" data-i="${t.idx}">${crest(t)}<span style="min-width:0;flex:1"><b>${esc(t.short)}</b><span class="muted small" style="display:block">${esc(t.city)}</span></span><span class="st">${Math.round(teamStrength(t,autoLineup(t)))}</span></button>`).join("")}</div></section>`;
+  };
+  const saved=loadLocal();
+  const cont=validSave(saved)?`<div class="card row" style="justify-content:space-between;margin-top:18px"><span>Hai una carriera con <b>${esc(WORLD[saved.lid][saved.teamIdx].short)}</b>.</span><button class="btn primary" data-act="continue">Continua</button></div>`:"";
+  return `<div class="hero" style="margin-top:8px"><span class="pill acc" style="justify-self:start">Pallavolo femminile · 2026/27 · 3D Edition</span><h1>Volley Manager Italia</h1>
+  <p class="sub">Guida la tua squadra tra Serie A1, Serie A2 e Serie A3 con live coaching, multicamera 3D e volleymercato.</p></div>${cont}
+  ${block("A1")}${block("A2")}${block("A3A")}${block("A3B")}`;
+}
+
+function cmpHTML(u,o){
+  const rows=[["att","Attacco"],["blk","Muro"],["srv","Battuta"],["rec","Ricezione"],["def","Difesa"],["set","Alzata"]];
+  return rows.map(([k,l])=>`<div><div class="lab">${l}</div><div class="cmp"><span class="c">${Math.round(u[k])}</span><div class="tr"><i style="width:${(u[k]/(u[k]+o[k])*100).toFixed(1)}%"></i></div><span class="c muted">${Math.round(o[k])}</span></div></div>`).join("");
+}
+
+function homeHTML(){
+  const t=myTeam(),total=SCHEDULE[G.lid]?SCHEDULE[G.lid].length:0,fx=nextFixture(G);
+  const st=standings(G.lid,G.results),pos=st.findIndex(r=>r.idx===G.teamIdx);
+  let next="";
+  if(!fx){
+    const champ=WORLD[G.lid][st[0].idx];
+    next=`<div class="card"><h3>Fase conclusa</h3><h2 style="margin:6px 0">${esc(t.short)} chiude al ${pos+1}º posto</h2><p class="sub">${esc(champ.short)} vince il girone con ${st[0].pts} punti.</p><div class="row" style="margin-top:12px"><button class="btn primary big" data-act="newseason">Nuova stagione</button></div></div>`;
+  }else if(fx.rest){
+    next=`<div class="card"><h3>Giornata ${G.round+1}</h3><h2 style="margin:6px 0">Turno di riposo</h2><div class="row" style="margin-top:12px"><button class="btn primary big" data-act="rest">Avanza</button></div></div>`;
+  }else{
+    const home=WORLD[G.lid][fx.h],away=WORLD[G.lid][fx.a],opp=fx.home?away:home;
+    const u=ratingsOf(t,lineupFor(G,t),G.tactic,null,false),o=ratingsOf(opp,autoLineup(opp),"bal",null,false);
+    const tac=[["bal","Equilibrata"],["srv","Battuta forte"],["def","Muro e difesa"]].map(([k,l])=>`<button data-act="tactic" data-v="${k}" aria-pressed="${G.tactic===k}">${l}</button>`).join("");
+    next=`<div class="card"><div class="row" style="justify-content:space-between"><h3>Prossima gara · giornata ${G.round+1}</h3><span class="pill ${fx.home?"acc":""}">${fx.home?"In casa":"Trasferta"}</span></div>
+    <div class="vs" style="margin:14px 0">${crestBlock(home)}<span class="num" style="font-size:22px;color:var(--muted)">VS</span>${crestBlock(away)}</div>
+    <div class="grid" style="gap:8px;margin:6px 0 14px">${cmpHTML(u,o)}</div>
+    <div class="muted small" style="margin-bottom:6px">Tattica</div><div class="seg">${tac}</div>
+    <div class="row" style="margin-top:14px"><button class="btn primary big" data-act="play" style="flex:1">Gioca la partita (3D)</button><button class="btn" data-act="quick">Simula</button></div></div>`;
+  }
+  const from=clamp(pos-2,0,Math.max(0,st.length-5)),sl=st.slice(from,from+5);
+  const mini=`<div class="card"><div class="row" style="justify-content:space-between"><h3>Classifica</h3><button class="btn" data-act="tab" data-v="league" style="min-height:36px;padding:6px 12px">Completa</button></div>
+  <div class="scroll"><table><thead><tr><th>#</th><th class="l">Squadra</th><th>G</th><th>Pt</th></tr></thead><tbody>${sl.map((r,i)=>`<tr class="${r.idx===G.teamIdx?"me":""}"><td>${from+i+1}</td><td class="l">${esc(r.short)}</td><td>${r.pl}</td><td>${r.pts}</td></tr>`).join("")}</tbody></table></div></div>`;
+  let last="";
+  for(let r=G.results[G.lid].length-1;r>=0&&!last;r--){
+    const m=G.results[G.lid][r].find(x=>x.h===G.teamIdx||x.a===G.teamIdx);
+    if(m)last=`<div class="card"><h3>Ultimo match · giornata ${r+1}</h3>${resRow(G.lid,m)}<div class="setline">${m.sets.map(s=>`<span class="pill">${s[0]}-${s[1]}</span>`).join("")}</div></div>`;
+  }
+  const reset=`<div class="row" style="margin-top:6px"><button class="btn" data-act="reset">${UI.confirm?"Conferma: cancella carriera":"Nuova carriera"}</button>${UI.confirm?`<button class="btn" data-act="noreset">Annulla</button>`:""}</div>`;
+  return `<div class="grid g2">${next}<div class="grid" style="align-content:start">${mini}${last}</div></div>${reset}`;
+}
+
+function crestBlock(t){return `<div style="display:grid;gap:6px;justify-items:center">${crest(t)}<span class="nm">${esc(t.short)}</span><span class="at num">${Math.round(teamStrength(t,lineupFor(G,t)))}</span></div>`;}
+function resRow(lid,m){
+  const h=WORLD[lid][m.h],a=WORLD[lid][m.a],me=lid===G.lid&&(m.h===G.teamIdx||m.a===G.teamIdx);
+  return `<div class="res ${me?"me":""}"><span>${esc(h.short)}</span><span class="sc">${m.hs} - ${m.as}</span><span class="r">${esc(a.short)}</span></div>`;
+}
+
+function squadHTML(){
+  const t=myTeam(),lu=lineupFor(G,t),start=new Set(Object.values(lu));
+  let out="";
+  for(const role of ROLE_ORDER){
+    const ps=t.players.filter(p=>p.role===role).sort((a,b)=>b.ovr-a.ovr);
+    const label=role==="S"?"Schiacciatrici":role==="C"?"Centrali":role==="P"?"Palleggiatrici":role==="O"?"Opposti":"Libero";
+    out+=`<div class="card" style="margin-bottom:14px"><h3>${label}</h3>`;
+    for(const p of ps){
+      const statusPill=p.inj>0
+        ?`<span class="pill bad">${esc(p.injName)} (${p.inj}t)</span>`
+        :(p.fatigue>50?`<span class="pill warn">Fatica ${p.fatigue}%</span>`:"");
+      out+=`<button class="prow" data-act="player" data-id="${esc(p.id)}">${avatar(p,44)}
+        <span class="nm"><b>${esc(p.name)}${start.has(p.id)?" ●":""}</b>
+        <span class="muted small">${p.age} anni · Valore: ${formatEur(p.val||calcETV(p))} ${statusPill}</span></span>
+        ${ovrChip(p.ovr)}</button>`;
+      if(UI.sel===p.id)out+=playerDetail(p);
+    }
+    out+=`</div>`;
+  }
+  return `<div class="row" style="justify-content:space-between;margin-bottom:10px"><h2>Rosa</h2><span class="muted small">● titolare · tocca per dettagli</span></div>${out}`;
+}
+function playerDetail(p){
+  const rows=[["att","Attacco"],["blk","Muro"],["srv","Battuta"],["rec","Ricezione"],["def","Difesa"],["set","Alzata"]];
+  return `<div style="padding:10px 4px 14px;border-bottom:1px solid var(--line)">
+    <div class="row"><span class="pill">Nata nel ${p.est?"~":""}${p.year}</span>${p.pot>p.ovr?`<span class="pill acc">Potenziale ${p.pot}</span>`:""}<span class="pill good">Valore ${formatEur(p.val||calcETV(p))}</span><span class="pill ${p.fatigue>60?'warn':'panel2'}">Fatica: ${p.fatigue||0}%</span></div>
+    <div class="attrs">${rows.map(([k,l])=>`<div><span>${l}<b class="num">${p[k]}</b></span><div class="bar"><i style="width:${clamp(p[k],0,100)}%"></i></div></div>`).join("")}</div></div>`;
+}
+
+function lineupHTML(){
+  const t=myTeam(),lu=lineupFor(G,t);
+  const slots=[["P","Palleggio","P"],["O","Opposto","O"],["S1","Schiacciatrice 1","S"],["S2","Schiacciatrice 2","S"],["C1","Centrale 1","C"],["C2","Centrale 2","C"],["L","Libero","L"]];
+  const r=ratingsOf(t,lu,G.tactic,null,false);
+  const sel=slots.map(([k,l,role])=>{
+    const ps=t.players.filter(p=>p.role===role).sort((a,b)=>b.ovr-a.ovr);
+    return `<div class="slot"><label for="sl-${k}" class="muted small" style="font-weight:600">${l}</label><select id="sl-${k}" data-act="slot" data-k="${k}">${ps.map(p=>`<option value="${esc(p.id)}"${lu[k]===p.id?" selected":""}${p.inj>0?" disabled":""}>${esc(p.name)} · ${p.ovr}${p.inj>0?" (INF)":""}${p.fatigue>60?" [FAT]":""}</option>`).join("")}</select></div>`;
+  }).join("");
+  return `<div class="row" style="justify-content:space-between;margin-bottom:10px"><h2>Formazione</h2><button class="btn" data-act="autolineup">Automatica</button></div>
+  <div class="grid g2"><div class="card">${sel}</div>
+  <div class="card"><h3>Livello Squadra</h3><div class="attrs" style="grid-template-columns:repeat(2,1fr)">${[["att","Attacco"],["blk","Muro"],["srv","Battuta"],["rec","Ricezione"],["def","Difesa"],["set","Alzata"]].map(([k,l])=>`<div><span>${l}<b class="num">${Math.round(r[k])}</b></span><div class="bar"><i style="width:${clamp(r[k],0,100)}%"></i></div></div>`).join("")}</div></div></div>`;
+}
+
+function marketHTML(){
+  const t=myTeam();
+  const tabs=[["buy","Acquisti"],["sell","Cessioni"]].map(([k,l])=>`<button data-act="mkttab" data-v="${k}" aria-pressed="${UI.mktTab===k}">${l}</button>`).join("");
+  let body="";
+  if(UI.mktTab==="buy"){
+    const list=G.freeAgents||[];
+    body=`<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:10px"><h3>Atlete disponibili (${list.length})</h3></div>
+    ${list.length===0?`<div class="empty">Nessuna atleta disponibile sul mercato.</div>`:list.map(p=>{
+      const cost=p.val||calcETV(p);
+      const canAfford=G.budget>=cost;
+      return `<div class="prow">${avatar(p,44)}
+        <span class="nm"><b>${esc(p.name)}</b><span class="muted small">${p.age} anni · Pot: ${p.pot} · ${formatEur(cost)}</span></span>
+        <div style="display:flex;gap:8px;align-items:center">${ovrChip(p.ovr)}<button class="btn primary" style="min-height:36px;padding:6px 12px;font-size:13px" data-act="buyplayer" data-id="${esc(p.id)}" ${canAfford?"":"disabled"}>Ingaggia</button></div>
+      </div>`;
+    }).join("")}</div>`;
+  }else{
+    const lu=lineupFor(G,t);
+    const start=new Set(Object.values(lu));
+    body=`<div class="card"><h3>Rosa Trasferibili</h3>
+    ${t.players.map(p=>{
+      const val=p.val||calcETV(p);
+      const isStarter=start.has(p.id);
+      const same=t.players.filter(x=>x.role===p.role).length;
+      const canSell=!isStarter && same>1;
+      return `<div class="prow">${avatar(p,44)}
+        <span class="nm"><b>${esc(p.name)}${isStarter?" ●":""}</b><span class="muted small">${p.age} anni · Valore: ${formatEur(val)}</span></span>
+        <div style="display:flex;gap:8px;align-items:center">${ovrChip(p.ovr)}<button class="btn" style="min-height:36px;padding:6px 12px;font-size:13px;color:var(--bad)" data-act="sellplayer" data-id="${esc(p.id)}" ${canSell?"":"disabled"}>Vendi</button></div>
+      </div>`;
+    }).join("")}</div>`;
+  }
+  return `<div class="row" style="justify-content:space-between;margin-bottom:10px"><h2>Volleymercato</h2><span class="pill good" style="font-size:15px">Budget: <b>${formatEur(G.budget)}</b></span></div>
+  <div class="tabs">${tabs}</div>${body}`;
+}
+
+function leagueHTML(){
+  const lid=UI.lg,teams=WORLD[lid]||[];
+  const validLids=["A1","A2","A3A","A3B","A3_PROM","A3_RETR"].filter(k=>WORLD[k]&&WORLD[k].length>0);
+  const lgBtns=validLids.map(k=>`<button data-act="lg" data-v="${k}" aria-pressed="${UI.lg===k}">${LEAGUES[k]?LEAGUES[k].name:k}</button>`).join("");
+  const modeBtns=[["table","Classifica"],["res","Risultati"]].map(([k,l])=>`<button data-act="lgtab" data-v="${k}" aria-pressed="${UI.lgTab===k}">${l}</button>`).join("");
+  let body="";
+  if(UI.lgTab==="table"){
+    const st=standings(lid,G.results),n=st.length;
+    body=`<div class="card scroll"><table><thead><tr><th>#</th><th class="l">Squadra</th><th>G</th><th>V</th><th>P</th><th>Set</th><th>Pt</th></tr></thead><tbody>${st.map((r,i)=>{
+      let z="";
+      if(lid==="A2"){if(i===0)z="zone-up";else if(i>=n-4)z="zone-down";}
+      else if(lid==="A3A"||lid==="A3B"){if(i<4)z="zone-up";else z="zone-down";}
+      else if(lid==="A3_PROM"){if(i<4)z="zone-up";}
+      else if(lid==="A3_RETR"){if(i>=4)z="zone-down";}
+      return `<tr class="${r.idx===G.teamIdx&&lid===G.lid?"me":""} ${z}"><td>${i+1}</td><td class="l"><span class="team-cell"><span class="dot" style="background:${teams[r.idx]?teams[r.idx].color:'#ccc'}"></span>${esc(r.short)}</span></td><td>${r.pl}</td><td>${r.w}</td><td>${r.l}</td><td>${r.sw}-${r.sl}</td><td><b>${r.pts}</b></td></tr>`;}).join("")}</tbody></table></div>`;
+  }else{
+    const played=(G.results[lid]||[]).length,total=SCHEDULE[lid]?SCHEDULE[lid].length:0;
+    if(UI.rd===null||UI.rd>=total)UI.rd=Math.max(0,Math.min(played-1,total-1));
+    const rd=UI.rd;
+    const rows=played>rd?G.results[lid][rd]:(SCHEDULE[lid]&&SCHEDULE[lid][rd]?SCHEDULE[lid][rd].map(([h,a])=>({h,a,hs:null})):[]);
+    body=`<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:8px"><button class="btn" data-act="rd" data-v="-1" ${rd<=0?"disabled":""}>‹</button><b class="num" style="font-size:20px">Giornata ${rd+1} / ${total}</b><button class="btn" data-act="rd" data-v="1" ${rd>=total-1?"disabled":""}>›</button></div>
+    ${rows.map(m=>m.hs===null?`<div class="res"><span>${esc(teams[m.h].short)}</span><span class="sc muted">–</span><span class="r">${esc(teams[m.a].short)}</span></div>`:resRow(lid,m)).join("")}</div>`;
+  }
+  return `<div class="row" style="justify-content:space-between;margin-bottom:10px"><h2>Campionato</h2></div><div class="tabs">${lgBtns}</div><div class="tabs">${modeBtns}</div>${body}`;
+}
+
+/* ===== RENDERING PARTITA CON LIVE COACHING E MULTICAMERA 3D ===== */
+const BASE=[[2.4,7.6],[2.6,4.5],[2.4,1.4],[7.0,1.4],[7.0,4.5],[7.0,7.6]];
+function rallyUV(M, side, i) {
+  const sg = side === M.userSide ? 1 : -1, b = BASE[i];
+  return [sg * (9 - b[0]), (b[1] - 4.5) * sg];
+}
+
+function startMatch(){
+  const fx=nextFixture(G),home=WORLD[G.lid][fx.h],away=WORLD[G.lid][fx.a];
+  const lu={h:lineupFor(G,home),a:lineupFor(G,away)};
+  const tac={h:fx.home?G.tactic:"bal",a:fx.home?"bal":G.tactic};
+  const res=simMatch(home,away,lu,tac,Math.random,true);
+  UI.match={fx,home,away,res,i:0,speed:1,paused:false,done:false,anim:null,sh:0,sa:0,setScores:[],userSide:fx.home?"h":"a",
+    view:{h:courtView(rotOf(lu.h),PLAYER_INDEX[lu.h.L]),a:courtView(rotOf(lu.a),PLAYER_INDEX[lu.a.L])},
+    cur:null,last:0,raf:0,frame:0};
+  renderMatch();
+}
+
+function renderMatch() {
+  const M = UI.match;
+  M.pos = {}; M.shake = 0; M.excite = 0; M.t = 0; M.anim = null; M.script = null; M.fxList = []; M.trail = [];
+  M.timeoutsLeft = 2;
+  M.kits = Gx.matchKits(M.home, M.away);
+  const kh = M.kits.h, ka = M.kits.a;
+  
+  const row = (side, team, kit) => `<div class="sb-row" style="--kit:${kit.main}"><i id="sv-${side}" class="srv" style="visibility:hidden"></i>${crest(team, 30)}<b class="sb-name">${esc(team.short)}</b><span class="pips" id="pips-${side}"></span><span class="sb-pts num" id="sc-${side}">0</span></div>`;
+  const ctxLabel = `${esc(LEAGUES[G.lid] ? LEAGUES[G.lid].name : '')} · Giornata ${(G.round || 0) + 1}`;
+  
+  const camBtns = ["tv", "side", "endline"].map(m => 
+    `<button class="btn" style="min-height:34px;padding:4px 10px;font-size:12px;background:rgba(10,18,32,0.85);color:#fff;border-color:rgba(255,255,255,0.2)" data-act="cam" data-v="${m}">${CAM_PRESETS[m].label}</button>`
+  ).join("");
+
+  $("#app").innerHTML = `
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <div class="row" style="gap:6px">${camBtns}</div>
+    <span class="pill acc" id="to-badge" style="font-size:12px">Time-out disp: 2</span>
+  </div>
+  <div class="arena" id="arena">
+    <canvas id="cv" class="cv" role="img" aria-label="Partita di pallavolo"></canvas>
+    <div class="scorebug" role="status" aria-live="polite">
+      <div class="sb-ctx">${ctxLabel}</div>
+      ${row('h', M.home, kh)}${row('a', M.away, ka)}
+      <div class="sb-set" id="sets">SET 1 · 0-0</div>
+    </div>
+    <div class="caption" id="feed">Le squadre completano il riscaldamento.</div>
+    <div class="banner" id="banner" hidden></div>
+  </div>
+  <div class="setline" id="setline"></div>
+  <div id="ctl" class="matchctl" style="justify-content:space-between">
+    <div class="seg" role="group" aria-label="Velocità" style="min-width:180px">
+      <button data-act="speed" data-v="1" aria-pressed="true">1×</button>
+      <button data-act="speed" data-v="2" aria-pressed="false">2×</button>
+      <button data-act="speed" data-v="4" aria-pressed="false">4×</button>
+    </div>
+    <div class="row" style="gap:6px">
+      <button class="btn primary" data-act="calltimeout" id="tobtn">⏱️ Chiama Time-Out</button>
+      <button class="btn" data-act="livesub" id="subbtn">🔄 Cambio Volante</button>
+      <button class="btn" data-act="pause" id="pausebtn">Pausa</button>
+      <button class="btn" data-act="skip">Salta alla fine</button>
+    </div>
+  </div>
+  <div id="live-modal"></div>
+  <div id="sum"></div>`;
+  
+  sizeCanvas();
+  M.last = performance.now();
+  M.raf = requestAnimationFrame(tick);
+}
+
+function sizeCanvas() {
+  const M = UI.match, cv = $("#cv"); if (!cv || !M) return;
+  const portrait = window.innerHeight > window.innerWidth * 1.05 && window.innerWidth < 900;
+  const W = portrait ? 900 : 1280, H = portrait ? 1100 : 720;
+  cv.style.aspectRatio = `${W} / ${H}`;
+  const cssW = cv.clientWidth || (portrait ? 400 : 800), dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = Math.round(cssW * dpr); cv.height = Math.round(cv.width * H / W);
+  M.k = cv.width / W; camSetup(W, H);
+  M.arena = arenaBuild(M, M.k);
+}
+
+function buildScript(M, ry) {
+  const S = ry.sideS, R = ry.sideR;
+  const sS = S === M.userSide ? 1 : -1, sR = R === M.userSide ? 1 : -1;
+  const tracks = {}, ball = [], fx = [];
+  const key = (pid, t, u, v, pose) => { (tracks[pid] || (tracks[pid] = [])).push({ t, u, v, pose: POSE[pose] || POSE.ready }); };
+  const seg = (t0, d, A, B, arc) => ball.push({ t0, t1: t0 + d, A, B, arc: arc || 0 });
+
+  const su = sS * 9.5, sv = 0;
+  seg(0, 0.6, [su, sv, 1.2], [su, sv, 2.8], 0.5);
+  key(ry.server.id, 0, su, sv, 'toss');
+  key(ry.server.id, 0.6, su, sv, 'serveHit');
+
+  const tgt = [sR * 6.5, 0];
+  seg(0.6, 0.8, [su, sv, 2.8], [tgt[0], tgt[1], 1.0], 2.2);
+  key(ry.receiver.id, 0.6, tgt[0], tgt[1], 'receive');
+  key(ry.receiver.id, 1.4, tgt[0], tgt[1], 'bump');
+
+  const setPos = [sR * 1.5, 1.0];
+  seg(1.4, 0.7, [tgt[0], tgt[1], 1.0], [setPos[0], setPos[1], 2.4], 2.0);
+  key(ry.setter.id, 1.4, setPos[0], setPos[1], 'setReady');
+  key(ry.setter.id, 2.1, setPos[0], setPos[1], 'set');
+
+  const atkPos = [sR * 0.9, -1.0];
+  seg(2.1, 0.45, [setPos[0], setPos[1], 2.4], [atkPos[0], atkPos[1], 3.1], 1.2);
+  key(ry.atkR.id, 1.8, atkPos[0] + sR*1.5, atkPos[1], 'cock');
+  key(ry.atkR.id, 2.55, atkPos[0], atkPos[1], 'spikeTop');
+
+  let land = [sS * 4.5, 0];
+  if(ry.type==="serr") land = [sR * 9.8, 0];
+  else if(ry.type==="kill") land = [sS * 5.0, 1.5];
+  else if(ry.type==="block") land = [sR * 2.0, -1.0];
+  else land = [sS * 9.8, 0];
+
+  seg(2.55, 0.45, [atkPos[0], atkPos[1], 3.1], [land[0], land[1], 0], 0.2);
+
+  return { tracks, ball, fx, point: 3.0, end: 3.8, view: M.view };
+}
+
+function sampleTrack(tr, t) {
+  if (!tr || !tr.length) return null;
+  if (t <= tr[0].t) return tr[0];
+  for (let i = 0; i < tr.length - 1; i++) {
+    if (t >= tr[i].t && t <= tr[i + 1].t) {
+      const f = (t - tr[i].t) / (tr[i + 1].t - tr[i].t);
+      return { u: tr[i].u + (tr[i+1].u - tr[i].u) * f, v: tr[i].v + (tr[i+1].v - tr[i].v) * f, pose: poseBlend(tr[i].pose, tr[i+1].pose, f) };
+    }
+  }
+  return tr[tr.length - 1];
+}
+
+function sampleBall(ball, t) {
+  if (!ball.length) return null;
+  if (t <= ball[0].t0) return { u: ball[0].A[0], v: ball[0].A[1], z: ball[0].A[2] };
+  for (const s of ball) {
+    if (t >= s.t0 && t <= s.t1) {
+      const f = (t - s.t0) / (s.t1 - s.t0);
+      return { 
+        u: s.A[0] + (s.B[0] - s.A[0]) * f, 
+        v: s.A[1] + (s.B[1] - s.A[1]) * f, 
+        z: s.A[2] + (s.B[2] - s.A[2]) * f + s.arc * 4 * f * (1 - f) 
+      };
+    }
+  }
+  const l = ball[ball.length - 1];
+  return { u: l.B[0], v: l.B[1], z: l.B[2] };
+}
+
+function startNext() {
+  const M = UI.match;
+  if (M.i >= M.res.rallies.length) { finishMatch(); return; }
+  const ry = M.res.rallies[M.i], script = buildScript(M, ry);
+  const next = M.res.rallies[M.i + 1], setEnd = !next || next.set !== ry.set;
+  M.anim = { ry, script, t: 0, scored: false, setEnd };
+  $("#sv-h").style.visibility = ry.sideS === 'h' ? 'visible' : 'hidden';
+  $("#sv-a").style.visibility = ry.sideS === 'a' ? 'visible' : 'hidden';
+}
+
+function updateBoard(ry, setEnd) {
+  const M = UI.match;
+  $("#sc-h").textContent = ry.h; $("#sc-a").textContent = ry.a;
+  $("#sv-h").style.visibility = ry.winner === 'h' ? 'visible' : 'hidden';
+  $("#sv-a").style.visibility = ry.winner === 'a' ? 'visible' : 'hidden';
+  if (setEnd) {
+    if (M) {
+      M.timeoutsLeft = 2;
+      const b = document.getElementById("to-badge");
+      if (b) b.textContent = "Time-out disp: 2";
+    }
+    if (ry.h > ry.a) M.sh++; else M.sa++;
+    M.setScores.push([ry.h, ry.a]);
+    $("#setline").innerHTML = M.setScores.map((s, i) => `<span class="pill">Set ${i + 1}: ${s[0]}-${s[1]}</span>`).join('');
+    $("#sets").textContent = `SET ${ry.set} CHIUSO · ${M.sh}-${M.sa}`;
+  } else {
+    $("#sets").textContent = `SET ${ry.set} · ${M.sh}-${M.sa}`;
+  }
+}
+
+function tick(ts) {
+  const M = UI.match; if (!M) return;
+  M.raf = requestAnimationFrame(tick);
+  const dt = Math.min(.05, (ts - M.last) / 1000 || 0); M.last = ts;
+  if (!M.done && !M.paused) {
+    if (!M.anim) startNext();
+    else {
+      const a = M.anim; a.t += dt * M.speed;
+      if (!a.scored && a.t >= a.script.point) {
+        a.scored = true;
+        updateBoard(a.ry, a.setEnd);
+        $("#feed").textContent = feedText(a.ry);
+      }
+      if (a.t >= a.script.end) {
+        M.i++; M.anim = null;
+        if (M.i >= M.res.rallies.length) finishMatch();
+      }
+    }
+    M.t += dt;
+  }
+  drawScene(M);
+}
+
+function feedText(ry) {
+  const n = p => p ? p.name : "";
+  switch(ry.type){
+    case "ace": return `Ace vincente di ${n(ry.server)}!`;
+    case "block": return `Muro punto di ${n(ry.blocker)}!`;
+    case "kill": return `Attacco a segno di ${n(ry.atkR)}.`;
+    case "serr": return `Errore al servizio per ${n(ry.server)}.`;
+    default: return `Punto assegnato.`;
+  }
+}
+
+function drawScene(M) {
+  const cv = $("#cv"); if (!cv || !M.arena) return;
+  const c = cv.getContext('2d'), W = Cam.W, H = Cam.H;
+  c.setTransform(M.k, 0, 0, M.k, 0, 0);
+  c.drawImage(M.arena.cv, 0, 0, W, H);
+
+  const a = M.anim, t = a ? a.t : 0, ents = [];
+  for (const side of ['h', 'a']) {
+    M.view[side].forEach((o, i) => {
+      const p = o.p, tr = a ? a.script.tracks[p.id] : null;
+      let u, v, pose = POSE.ready;
+      const sm = tr ? sampleTrack(tr, t) : null;
+      if (sm) { u = sm.u; v = sm.v; pose = sm.pose; }
+      else { const b = rallyUV(M, side, i); u = b[0]; v = b[1]; }
+      ents.push({ kind: 'p', side, p, u, v, pose });
+    });
+  }
+
+  let ballPos = null;
+  if (a) {
+    ballPos = sampleBall(a.script.ball, t);
+    if (ballPos) ents.push({ kind: 'b', u: ballPos.u, v: ballPos.v, z: ballPos.z });
+  }
+
+  ents.sort((x, y) => x.u - y.u);
+  let netDrawn = false;
+  for (const e of ents) {
+    if (!netDrawn && e.u >= 0) { drawNet(c); netDrawn = true; }
+    if (e.kind === 'b') { drawBall(c, e); continue; }
+    const pr = proj(e.u, e.v);
+    const kit = M.kits[e.side];
+    const look = e.p._look || (e.p._look = avatarLook(e.p));
+    drawFigure(c, pr.x, pr.y, pr.s, { pose: e.pose, kit, look });
+  }
+  if (!netDrawn) drawNet(c);
+}
+
+/* Rendering 3D Avanzato della Palla e Parabola */
+function drawBall(c, b) {
+  const g = proj(b.u, b.v, 0);    // Ombra a terra
+  const p = proj(b.u, b.v, b.z);  // Posizione in aria 3D
+  const r = Math.max(4.5, 0.16 * p.s * (1 + b.z * 0.05));
+
+  // 1. Linea di quota verticale (Altitude Drop-line) se la palla è in aria
+  if (b.z > 0.4) {
+    c.strokeStyle = "rgba(255, 255, 255, 0.25)";
+    c.lineWidth = 1.2;
+    c.setLineDash([3, 3]);
+    c.beginPath();
+    c.moveTo(g.x, g.y);
+    c.lineTo(p.x, p.y);
+    c.stroke();
+    c.setLineDash([]);
+  }
+
+  // 2. Ombra tridimensionale sul taraflex
+  const shSpread = Math.max(0.3, 1 - b.z * 0.14);
+  c.fillStyle = `rgba(5, 10, 25, ${0.38 * shSpread})`;
+  c.beginPath();
+  c.ellipse(g.x, g.y, r * 1.2 * shSpread, r * 0.45 * shSpread, 0, 0, 7);
+  c.fill();
+
+  // 3. Sfera della palla tridimensionale con riflesso
+  c.save();
+  c.translate(p.x, p.y);
+  c.fillStyle = '#ffffff';
+  c.beginPath(); c.arc(0, 0, r, 0, 7); c.fill();
+  
+  // Strisce ufficiali Mikasa/Molten blu e gialle
+  c.fillStyle = '#1d4ed8';
+  c.beginPath(); c.arc(0, 0, r, -0.6, 1.2); c.fill();
+  c.fillStyle = '#facc15';
+  c.beginPath(); c.arc(0, 0, r, 1.6, 2.8); c.fill();
+
+  c.strokeStyle = 'rgba(0,0,0,0.4)';
+  c.lineWidth = 1;
+  c.beginPath(); c.arc(0, 0, r, 0, 7); c.stroke();
+  c.restore();
+}
+
+function skipMatch(){
+  const M=UI.match;if(!M||M.done)return;
+  const rs=M.res.rallies;
+  M.setScores=[];M.sh=0;M.sa=0;
+  rs.forEach((ry,j)=>{const nx=rs[j+1];if(!nx||nx.set!==ry.set){M.setScores.push([ry.h,ry.a]);if(ry.h>ry.a)M.sh++;else M.sa++;}});
+  const last=rs[rs.length-1];
+  $("#sc-h").textContent=last.h;$("#sc-a").textContent=last.a;
+  $("#sets").textContent=`FINALE · ${M.sh}-${M.sa}`;
+  $("#setline").innerHTML=M.setScores.map((s,i)=>`<span class="pill">Set ${i+1}: ${s[0]}-${s[1]}</span>`).join("");
+  M.anim=null;M.i=rs.length;finishMatch();
+}
+
+function finishMatch(){
+  const M=UI.match;if(!M||M.done)return;
+  M.done=true;
+  const res=M.res,mine=M.fx.home?[res.hs,res.as]:[res.as,res.hs];
+  const win=mine[0]>mine[1];
+  const pts=win?(mine[1]<=1?3:2):(mine[0]===2?1:0);
+  const inc=M.fx.home?(win?8500:4200):(win?2500:800);
+  G.budget+=inc;
+
+  $("#feed").textContent=`Finale: ${M.home.short} ${res.hs}-${res.as} ${M.away.short}.`;
+  $("#sets").textContent=`FINALE · ${res.hs}-${res.as}`;
+  $("#ctl").innerHTML="";
+  $("#sum").innerHTML=`<div class="card" style="margin-top:6px">
+    <h3>${win?"Vittoria":"Sconfitta"} · ${pts} punti conquistati</h3>
+    <p class="muted small">Incasso gara: <b style="color:var(--good)">+${formatEur(inc)}</b></p>
+    <div class="row" style="margin-top:14px"><button class="btn primary big" data-act="endmatch">Continua</button></div>
+  </div>`;
+}
+
+function endMatch(){
+  const M=UI.match;if(!M)return;
+  cancelAnimationFrame(M.raf);
+  playRound(G,M.res);
+  persist();
+  UI.match=null;UI.tab="home";
+  render();window.scrollTo(0,0);
+}
+
+function buyPlayer(pid){
+  const p=G.freeAgents.find(x=>x.id===pid);
+  if(!p)return;
+  const cost=p.val||calcETV(p);
+  if(G.budget<cost){toast("Budget insufficiente!");return;}
+  G.budget-=cost;
+  G.freeAgents=G.freeAgents.filter(x=>x.id!==pid);
+  p.teamId=myTeam().id;
+  p.lid=G.lid;
+  p.fatigue=0;
+  p.inj=0;
+  myTeam().players.push(p);
+  myTeam().players.sort((a,b)=>ROLE_ORDER.indexOf(a.role)-ROLE_ORDER.indexOf(b.role)||b.ovr-a.ovr);
+  toast(`Hai ingaggiato ${p.name}!`);
+  persist();render();
+}
+
+function sellPlayer(pid){
+  const t=myTeam();
+  const idx=t.players.findIndex(x=>x.id===pid);
+  if(idx<0)return;
+  const p=t.players[idx];
+  const price=Math.round((p.val||calcETV(p))*0.85);
+  t.players.splice(idx,1);
+  p.teamId=null;p.lid=null;
+  G.freeAgents.push(p);
+  G.budget+=price;
+  toast(`Cessione completata: ${p.name} per ${formatEur(price)}!`);
+  persist();render();
+}
+
+/* ===== GESTORE EVENTI CLICK E LIVE COACHING ===== */
+document.addEventListener("click",e=>{
+  const el=e.target.closest("[data-act]");if(!el||el.tagName==="SELECT")return;
+  const act=el.dataset.act,v=el.dataset.v;
+  if(act==="start"){newGame(el.dataset.lid,+el.dataset.i);return;}
+  if(act==="continue"){
+    const s=loadLocal();
+    if(validSave(s)){
+      G=s;UI.lg=G.lid;
+      if(!G.budget)G.budget=initBudget(G.lid,myTeam().tier);
+      if(!G.freeAgents)G.freeAgents=FREE_AGENTS.slice();
+      if(!lineupValid(myTeam(),G.lineup))G.lineup=autoLineup(myTeam());
+      render();
+    }
+    return;
+  }
+  if(act==="cam"){
+    setCamMode(v);
+    document.querySelectorAll('[data-act="cam"]').forEach(b=>b.style.borderColor=b.dataset.v===v?"var(--accent)":"rgba(255,255,255,0.2)");
+    return;
+  }
+  if(act==="calltimeout"){
+    const M=UI.match;
+    if(!M||M.done||M.paused)return;
+    if(M.timeoutsLeft<=0){toast("Time-out esauriti per questo set!");return;}
+    M.timeoutsLeft--;
+    document.getElementById("to-badge").textContent=`Time-out disp: ${M.timeoutsLeft}`;
+    M.paused=true;
+    myTeam().players.forEach(p=>{p.fatigue=clamp((p.fatigue||0)-8,0,100);});
+    toast("Time-out chiamato: la squadra rifiata (-8% fatica).");
+    const b=$("#banner");
+    b.innerHTML=`<span>TIME-OUT TATTICO</span><b>${esc(myTeam().short)}</b><em>Indicazioni del Coach</em>`;
+    b.hidden=false;b.className="banner show";
+    setTimeout(()=>{
+      if(b){b.hidden=true;b.className="banner";}
+      if(M&&!M.done)M.paused=false;
+    },2500);
+    return;
+  }
+  if(act==="livesub"){
+    const M=UI.match;
+    if(!M||M.done)return;
+    M.paused=true;
+    const modal=document.getElementById("live-modal");
+    const lu=lineupFor(G,myTeam());
+    const bench=myTeam().players.filter(p=>!Object.values(lu).includes(p.id)&&!p.inj);
+    modal.innerHTML=`
+    <div class="card" style="margin-top:10px;border:2px solid var(--accent)">
+      <div class="row" style="justify-content:space-between">
+        <h3>Sostituzione Volante</h3>
+        <button class="btn" data-act="closesub">Chiudi</button>
+      </div>
+      <p class="muted small">Seleziona una riserva per sostituire la titolare dello stesso ruolo:</p>
+      <div class="grid" style="gap:8px;max-height:220px;overflow-y:auto">
+        ${bench.map(p=>`
+          <div class="prow" style="padding:6px 0">
+            ${avatar(p,36)}
+            <span class="nm"><b>${esc(p.name)}</b><span class="muted small">${p.role} · OVR ${p.ovr} · Fatica ${p.fatigue||0}%</span></span>
+            <button class="btn primary" style="min-height:32px;padding:4px 8px;font-size:12px" data-act="applysub" data-pid="${p.id}" data-role="${p.role}">Metti dentro</button>
+          </div>
+        `).join("")}
+      </div>
+    </div>`;
+    return;
+  }
+  if(act==="closesub"){
+    document.getElementById("live-modal").innerHTML="";
+    if(UI.match&&!UI.match.done)UI.match.paused=false;
+    return;
+  }
+  if(act==="applysub"){
+    const M=UI.match;
+    const pid=el.dataset.pid,role=el.dataset.role;
+    const lu=G.lineup||autoLineup(myTeam());
+    let slotKey=null;
+    if(role==="P")slotKey="P";
+    else if(role==="O")slotKey="O";
+    else if(role==="L")slotKey="L";
+    else if(role==="S")slotKey=lu.S1? "S2":"S1";
+    else if(role==="C")slotKey=lu.C1? "C2":"C1";
+    if(slotKey){
+      lu[slotKey]=pid;
+      G.lineup=lu;
+      persist();
+      toast(`Cambio: entra ${PLAYER_INDEX[pid].name}.`);
+    }
+    document.getElementById("live-modal").innerHTML="";
+    if(M&&!M.done)M.paused=false;
+    return;
+  }
+  if(act==="speed"){if(!UI.match)return;UI.match.speed=+v;document.querySelectorAll('[data-act="speed"]').forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===v)));return;}
+  if(act==="pause"){const M=UI.match;if(!M)return;M.paused=!M.paused;el.textContent=M.paused?"Riprendi":"Pausa";return;}
+  if(act==="skip"){skipMatch();return;}
+  if(act==="endmatch"){endMatch();return;}
+  if(!G)return;
+  if(act==="tab"){UI.tab=v;UI.sel=null;render();window.scrollTo(0,0);}
+  else if(act==="mkttab"){UI.mktTab=v;render();}
+  else if(act==="buyplayer"){buyPlayer(el.dataset.id);}
+  else if(act==="sellplayer"){sellPlayer(el.dataset.id);}
+  else if(act==="tactic"){G.tactic=v;persist();render();}
+  else if(act==="play"){startMatch();window.scrollTo(0,0);}
+  else if(act==="quick"){
+    const fx=nextFixture(G);if(!fx||fx.rest)return;
+    const home=WORLD[G.lid][fx.h],away=WORLD[G.lid][fx.a];
+    const res=simMatch(home,away,{h:lineupFor(G,home),a:lineupFor(G,away)},{h:fx.home?G.tactic:"bal",a:fx.home?"bal":G.tactic},Math.random,false);
+    const win=(fx.home?res.hs:res.as)>(fx.home?res.as:res.hs);
+    const inc=fx.home?(win?8500:4200):(win?2500:800);
+    G.budget+=inc;
+    playRound(G,res);persist();render();
+  }
+  else if(act==="rest"){playRound(G,null);persist();render();}
+  else if(act==="newseason"){
+    G.round=0;G.season++;G.phase=1;
+    G.results={A1:[],A2:[],A3A:[],A3B:[]};
+    if(G.lid.includes("A3"))G.lid="A3A";
+    G.budget+=Math.round(initBudget(G.lid,myTeam().tier)*0.6);
+    persist();render();window.scrollTo(0,0);
+  }
+  else if(act==="reset"){if(!UI.confirm){UI.confirm=true;render();}else{UI.confirm=false;try{localStorage.removeItem(SAVE_KEY);}catch(x){}G=null;render();window.scrollTo(0,0);}}
+  else if(act==="noreset"){UI.confirm=false;render();}
+  else if(act==="player"){UI.sel=UI.sel===el.dataset.id?null:el.dataset.id;render();}
+  else if(act==="autolineup"){G.lineup=autoLineup(myTeam());persist();render();}
+  else if(act==="lg"){UI.lg=v;UI.rd=null;render();}
+  else if(act==="lgtab"){UI.lgTab=v;render();}
+  else if(act==="rd"){UI.rd=(UI.rd||0)+ +v;render();}
+});
+
+document.addEventListener("change",e=>{
+  const el=e.target;if(!G||el.dataset.act!=="slot")return;
+  const lu={...lineupFor(G,myTeam())};lu[el.dataset.k]=el.value;
+  if(lineupValid(myTeam(),lu)){G.lineup=lu;persist();render();}
+});
+
+window.addEventListener("resize",()=>{if(UI.match)sizeCanvas();});
+
+(function boot(){
+  const s=loadLocal();
+  if(validSave(s)){
+    G=s;UI.lg=G.lid;
+    if(!G.budget)G.budget=initBudget(G.lid,myTeam().tier);
+    if(!G.freeAgents)G.freeAgents=FREE_AGENTS.slice();
+    ensureContracts(myTeam(),G.lid);
+    if(!lineupValid(myTeam(),G.lineup))G.lineup=autoLineup(myTeam());
+  }
+  render();
+})();
+</script>
+</body>
+</html>
