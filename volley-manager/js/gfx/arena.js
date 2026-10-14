@@ -29,6 +29,13 @@ function lineWorld(c, u1, v1, u2, v2, wMeters, steps) {
 const LOGO_IMG = {};
 function loadLogos(M, done) {
   let pending = 0, changed = false;
+  for (const sp of LEAGUE_SPONSORS) {
+    const f = SPONSOR_FILE[sp.id], key = 's:' + sp.id;
+    if (!f || (LOGO_IMG[key] && LOGO_IMG[key].src.endsWith(f))) continue;
+    const im = new Image(); LOGO_IMG[key] = im; pending++;
+    im.onload = im.onerror = () => { changed = true; if (--pending === 0) done(); };
+    im.src = f;
+  }
   for (const t of [M.home, M.away]) {
     if (!t.logo || (LOGO_IMG[t.id] && LOGO_IMG[t.id].src === t.logo)) continue;
     const im = new Image(); LOGO_IMG[t.id] = im; pending++;
@@ -129,19 +136,22 @@ function arenaBuild(M, k) {
     c.strokeStyle = 'rgba(255,255,255,.25)'; c.lineWidth = 1; polyPath(c, [a, b, b2, a2]); c.stroke();
     boards.push({ x: (a.x + b.x) / 2, y: (a2.y + a.y) / 2, w: b.x - a.x, h: a.y - a2.y });
   }
-  const labels = [(M.home.city || M.home.short).toUpperCase(), 'VOLLEY MANAGER', 'PALLAVOLO FEMMINILE', M.home.short.toUpperCase(), 'ITALIA 2026/27', (M.home.city || '').toUpperCase(), 'VOLLEY MANAGER'];
+  const items = [{ k: 't', s: (M.home.city || M.home.short).toUpperCase() }, { k: 's', id: 'fineco' }, { k: 's', id: 'frecciarossa' }, { k: 'c', t: M.home }, { k: 's', id: 'fiat' }, { k: 's', id: 'md' }, { k: 'c', t: M.away }];
   c.textAlign = 'center'; c.textBaseline = 'middle';
-  const logoAt = { 1: M.home, 5: M.away, 3: M.home };
+  const drawImgBoard = (b, im) => {
+    const s = Math.min(b.w * .8 / im.naturalWidth, b.h * .8 / im.naturalHeight);
+    c.fillStyle = 'rgba(255,255,255,.92)'; c.fillRect(b.x - b.w * .46, b.y - b.h * .46, b.w * .92, b.h * .92);
+    c.drawImage(im, b.x - im.naturalWidth * s / 2, b.y - im.naturalHeight * s / 2, im.naturalWidth * s, im.naturalHeight * s);
+  };
   boards.forEach((b, i) => {
-    const lt = logoAt[i], im = lt && lt.logo && LOGO_IMG[lt.id];
-    if (im && im.complete && im.naturalWidth) {
-      const s = Math.min(b.w * .8 / im.naturalWidth, b.h * .8 / im.naturalHeight);
-      c.fillStyle = 'rgba(255,255,255,.92)'; c.fillRect(b.x - b.w * .46, b.y - b.h * .46, b.w * .92, b.h * .92);
-      c.drawImage(im, b.x - im.naturalWidth * s / 2, b.y - im.naturalHeight * s / 2, im.naturalWidth * s, im.naturalHeight * s); return;
-    }
+    const it = items[i]; let im = null, txt = '';
+    if (it.k === 's') { im = LOGO_IMG['s:' + it.id]; txt = (LEAGUE_SPONSORS.find(x => x.id === it.id) || {}).name || ''; }
+    else if (it.k === 'c') { im = it.t.logo && LOGO_IMG[it.t.id]; txt = it.t.short.toUpperCase(); }
+    else txt = it.s;
+    if (im && im.complete && im.naturalWidth) { drawImgBoard(b, im); return; }
     c.fillStyle = i % 2 ? '#dfe8f7' : Gx.onColor(homeKit.shade);
     c.font = `700 ${Math.max(9, b.h * .5)}px "Barlow Condensed",Arial Narrow,sans-serif`;
-    c.fillText(labels[i], b.x, b.y, b.w * .9);
+    c.fillText(txt, b.x, b.y, b.w * .9);
   });
   /* vignettatura */
   const vg = c.createRadialGradient(W / 2, H * .55, H * .35, W / 2, H * .55, H * .95);

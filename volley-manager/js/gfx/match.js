@@ -155,8 +155,8 @@ function camTarget(M, ents, shot) {
   const ball = a ? sampleBall(a.script.ball, t) : null;
   if (shot.cam === 'serve' && a && a.script.srvU !== undefined) {
     const near = a.script.srvU > 0, sp = proj(a.script.srvU, a.script.srvV, 1.1);
-    z = (near ? 1.8 : 2.2) * k; fx = Cam.cx + (sp.x - Cam.cx) * .75;
-    fy = sp.y + (near ? -.22 : .22) * Cam.H / z;
+    z = (near ? 1.6 : 2.2) * k; fx = Cam.cx + (sp.x - Cam.cx) * .75;
+    fy = sp.y + (near ? -.3 : .22) * Cam.H / z;
   } else if (shot.cam === 'zoom' && a) {
     const p = proj(shot.u, shot.v, 2.3); z = 1.65 * k; fx = p.x; fy = p.y + 10;
     if (ball) { const bp = proj(ball.u, ball.v, ball.z), w = Math.max(0, Math.min(1, (t - shot.tHit + .05) / .45)) * .65; fx += (bp.x - fx) * w; fy += (bp.y - fy) * w; }
