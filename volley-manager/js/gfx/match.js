@@ -51,6 +51,7 @@ function sizeCanvas() {
   cv.width = Math.round(cssW * dpr); cv.height = Math.round(cv.width * H / W);
   M.k = cv.width / W; camSetup(W, H);
   M.arena = arenaBuild(M, Math.min(M.k * 1.5, 2.6));
+  if (!M._logos) { M._logos = true; loadLogos(M, () => { if (UI.match === M) M.arena = arenaBuild(M, Math.min(M.k * 1.5, 2.6)); }); }
 }
 
 function startNext() {
