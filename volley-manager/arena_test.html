@@ -1,0 +1,22 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#000}canvas{display:block;width:1280px}</style></head><body>
+<canvas id="c"></canvas>
+<script src="js/gfx/kit.js"></script><script src="js/gfx/figure.js"></script><script src="js/gfx/avatar.js"></script><script src="js/gfx/arena.js"></script><script>
+const _crestUid=0, esc=s=>s; const WORLD={};
+const W=+(location.hash.slice(1).split('x')[0]||1280),H=+(location.hash.slice(1).split('x')[1]||720);
+camSetup(W,H);const cv=document.getElementById('c');cv.width=W;cv.height=H;cv.style.width=W+'px';
+const c=cv.getContext('2d');
+const M={home:{id:'con',short:'Conegliano',city:'Conegliano',color:'#1d4ed8'}};
+const A=arenaBuild(M,1);
+c.drawImage(A.cv,0,0,W,H);
+drawCrowd(c,A.crowd,0,0);
+drawRefStand(c);
+const kitA=Gx.kit({id:'a',color:'#d6336c'}),kitB=Gx.kit({id:'b',color:'#1d4ed8'});
+const items=[];
+const slots=[[2.4,7.6],[2.6,4.5],[2.4,1.4],[7.0,1.4],[7.0,4.5],[7.0,7.6]];
+for(const side of [1,-1]){slots.forEach(([bx,by],i)=>{const u=side*(9-bx-.0+0.0)*1; const d=(bx); items.push({u:side*d,v:(by-6)*(side>0?1:-1),k:side>0?kitA:kitB,front:side<0,pose:POSE[i==3?'block':i==1?'receive':'ready'],no:i+1+(side<0?10:0),i});});}
+items.sort((a,b)=>a.u-b.u);
+let netDrawn=false;
+for(const it of items){ if(!netDrawn&&it.u>=0){drawNet(c);netDrawn=true;}
+ const p=proj(it.u,it.v);drawFigure(c,p.x,p.y,p.s,{pose:it.pose,front:it.front,kit:it.k,look:{skin:SKIN[1],hair:HAIR[it.i%5],style:it.i%5},no:it.no});}
+if(!netDrawn)drawNet(c);
+</script></body></html>

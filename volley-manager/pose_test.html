@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#2a3b57}canvas{display:block}</style></head><body>
+<canvas id="c" width="1500" height="640"></canvas>
+<script src="js/gfx/kit.js"></script><script src="js/gfx/figure.js"></script><script src="js/gfx/avatar.js"></script><script>
+const _crestUid=0, esc=s=>s; const WORLD={};
+const c=document.getElementById('c').getContext('2d');
+c.fillStyle='#d9a066';c.fillRect(0,0,1500,640);
+const names=Object.keys(POSE);
+const kitA={main:'#d6336c',trim:'#fff',shorts:'#7a1d3e',num:'#fff',shade:'#a82557'}, kitB={main:'#1f5fbf',trim:'#fff',shorts:'#143c78',num:'#fff',shade:'#17468c'};
+names.forEach((n,i)=>{
+  const col=i%9,row=Math.floor(i/9);
+  const L={skin:SKIN[1],hair:HAIR[2],style:i%5};
+  const x=90+col*160, y=210+row*300;
+  drawFigure(c,x,y,115,{pose:POSE[n],front:false,kit:kitA,look:{...L},no:i+3});
+  drawFigure(c,x+55,y+0,65,{pose:POSE[n],front:true,kit:kitB,look:{...L,style:(i+2)%5},no:i+9});
+  c.fillStyle='#fff';c.font='14px sans-serif';c.textAlign='center';c.fillText(n,x+28,y+30);
+});
+</script></body></html>
