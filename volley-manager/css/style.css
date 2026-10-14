@@ -243,3 +243,14 @@ button.prow:hover{background:var(--panel2)}
 .scorebug .flag{color:#ffd24a;letter-spacing:.1em;margin-left:6px;animation:flagp 1s ease-in-out infinite}
 @keyframes flagp{50%{opacity:.45}}
 @media (prefers-reduced-motion:reduce){.scorebug .flag{animation:none}}
+
+.lower{position:absolute;left:14px;bottom:72px;display:flex;align-items:stretch;background:rgba(6,10,20,.88);color:#fff;border-radius:10px;overflow:hidden;font:600 15px/1 var(--f-disp);letter-spacing:.04em;animation:lw .35s cubic-bezier(.2,1,.3,1);backdrop-filter:blur(6px)}
+.lower i{width:6px}
+.lower span{padding:10px 10px;background:rgba(255,255,255,.08);font-size:12px;letter-spacing:.14em;color:#ffd24a;display:flex;align-items:center}
+.lower b{padding:10px 12px;font-size:20px;letter-spacing:.02em;text-transform:uppercase}
+.lower em{padding:10px 12px 10px 0;font-style:normal;opacity:.6;display:flex;align-items:center;text-transform:uppercase}
+.lower.out{opacity:0;transform:translateX(-12px);transition:.3s}
+@keyframes lw{from{opacity:0;transform:translateX(-24px)}}
+.rbadge{position:absolute;right:16px;top:14px;background:#e0316a;color:#fff;font:700 15px var(--f-disp);letter-spacing:.16em;padding:7px 12px;border-radius:8px;animation:flagp 1s ease-in-out infinite}
+@media (max-width:640px){.lower{left:8px;bottom:60px}.lower b{font-size:16px}}
+@media (prefers-reduced-motion:reduce){.lower,.rbadge{animation:none}}

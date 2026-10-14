@@ -28,10 +28,12 @@ function renderMatch() {
     </div>
     <div class="caption" id="feed">Le squadre completano il riscaldamento.</div>
     <div class="banner" id="banner" hidden></div>
+    <div class="lower" id="lower" hidden></div>
+    <div class="rbadge" id="rbadge" hidden>REPLAY</div>
   </div>
   <div class="setline" id="setline"></div>
   <div id="ctl" class="matchctl">
-    <div class="seg" role="group" aria-label="Velocità"><button data-act="speed" data-v="1" aria-pressed="true">1×</button><button data-act="speed" data-v="2" aria-pressed="false">2×</button><button data-act="speed" data-v="4" aria-pressed="false">4×</button></div>
+    <div class="seg" role="group" aria-label="Velocità"><button data-act="speed" data-v="1" aria-pressed="true">1×</button><button data-act="speed" data-v="2" aria-pressed="false">2×</button><button data-act="speed" data-v="4" aria-pressed="false">4×</button><button data-act="speed" data-v="8" aria-pressed="false">8×</button></div>
     <button class="btn" data-act="pause" id="pausebtn">Pausa</button><button class="btn" data-act="replay" id="replaybtn">Replay</button><button class="btn" data-act="skip">Salta alla fine</button>
   </div>
   <div id="sum"></div>`;
@@ -48,7 +50,7 @@ function sizeCanvas() {
   const cssW = cv.clientWidth || (portrait ? 400 : 800), dpr = Math.min(2, window.devicePixelRatio || 1);
   cv.width = Math.round(cssW * dpr); cv.height = Math.round(cv.width * H / W);
   M.k = cv.width / W; camSetup(W, H);
-  M.arena = arenaBuild(M, M.k);
+  M.arena = arenaBuild(M, Math.min(M.k * 1.5, 2.6));
 }
 
 function startNext() {
@@ -61,6 +63,7 @@ function startNext() {
   $("#sv-h").style.visibility = ry.sideS === 'h' ? 'visible' : 'hidden';
   $("#sv-a").style.visibility = ry.sideS === 'a' ? 'visible' : 'hidden';
   M.trail = [];
+  { const lw = $("#lower"); if (lw && script.server) { const nm = String(script.server.name).trim(), no = playerNo(M, script.server), sd = ry.sideS === 'h' ? M.home : M.away; lw.innerHTML = `<i style="background:${M.kits[ry.sideS].main}"></i><span>AL SERVIZIO</span><b>${no ? no + ' ' : ''}${esc(nm)}</b><em>${esc(sd.short)}</em>`; lw.hidden = false; lw.classList.remove('out'); clearTimeout(M._lwt); M._lwt = setTimeout(() => { lw.classList.add('out'); setTimeout(() => { lw.hidden = true; }, 350); }, 2300 / Math.max(1, M.speed)); } }
   const pv = (M.i > 0 && M.res.rallies[M.i - 1].set === ry.set) ? M.res.rallies[M.i - 1] : { h: 0, a: 0 }, tg = ry.set === 5 ? 15 : 25;
   let flag = '';
   for (const sd of ['h', 'a']) { const o = sd === 'h' ? 'a' : 'h'; if (pv[sd] >= tg - 1 && pv[sd] > pv[o]) flag = ((sd === 'h' ? M.sh : M.sa) >= 2) ? 'MATCH POINT' : 'SET POINT'; }
@@ -128,7 +131,7 @@ function tick(ts) {
         else if (f.type === 'text' && f.text) M.fxList.push({ ...f, born: M.t, win: M.anim.ry.winner === M.userSide });
       }
       if (!a.scored && a.t >= a.script.point) { a.scored = true; applyPoint(a); }
-      if (a.replay) { if (a.t >= a.script.end + .6) { M.anim = null; M.replay = false; M.speed = M.replaySpeed || 1; $("#feed").textContent = M.feedKeep || ''; } }
+      if (a.replay) { if (a.t >= a.script.end + .6) { const rb = $('#rbadge'); if (rb) rb.hidden = true; M.anim = null; M.replay = false; M.speed = M.replaySpeed || 1; $("#feed").textContent = M.feedKeep || ''; } }
       else if (a.t >= a.script.end + (a.setEnd ? 1.1 : 0) + (a.hold || 0)) endRallyAnim(a);
     }
     M.t += dt * Math.max(1, Math.min(2, M.speed));
@@ -136,20 +139,49 @@ function tick(ts) {
   M.zoom = Math.max(0, (M.zoom || 0) - dt * .7);
   M.excite = Math.max(0, M.excite - dt * .55);
   M.shake = Math.max(0, M.shake - dt * 18);
-  drawScene(M);
+  drawScene(M, dt);
 }
 
-function drawScene(M) {
+function camShot(M) {
+  const a = M.anim; let shot = { cam: 'wide' };
+  if (a && a.replay && a.script.finalHit) { const f = a.script.finalHit; return { cam: 'zoom', u: f.u, v: f.v, tHit: f.t, t: 0 }; }
+  if (a && a.script.shots) for (const s of a.script.shots) { if (s.t <= a.t) shot = s; else break; }
+  return shot;
+}
+function camTarget(M, ents, shot) {
+  const a = M.anim, t = a ? a.t : 0, k = Cam.portrait ? .8 : 1, ctr = proj(0, 0, .9);
+  let fx = Cam.cx, fy = ctr.y, z = Cam.portrait ? 1.1 : 1.2;
+  const ball = a ? sampleBall(a.script.ball, t) : null;
+  if (shot.cam === 'serve' && a && a.script.srvU !== undefined) {
+    const near = a.script.srvU > 0, sp = proj(a.script.srvU, a.script.srvV, 1.1);
+    z = (near ? 1.8 : 2.2) * k; fx = Cam.cx + (sp.x - Cam.cx) * .75;
+    fy = sp.y + (near ? -.22 : .22) * Cam.H / z;
+  } else if (shot.cam === 'zoom' && a) {
+    const p = proj(shot.u, shot.v, 2.3); z = 1.65 * k; fx = p.x; fy = p.y + 10;
+    if (ball) { const bp = proj(ball.u, ball.v, ball.z), w = Math.max(0, Math.min(1, (t - shot.tHit + .05) / .45)) * .65; fx += (bp.x - fx) * w; fy += (bp.y - fy) * w; }
+  } else if (shot.cam === 'react') {
+    let sx = 0, sy = 0, n = 0;
+    for (const e of ents) if (e.kind === 'p' && e.side === shot.side) { const p = proj(e.u, e.v, 1); sx += p.x; sy += p.y; n++; }
+    if (n) { fx = sx / n; fy = sy / n; z = 1.6 * k; }
+  } else if (ball) {
+    const bp = proj(ball.u, ball.v, ball.z); fx = Cam.cx + (bp.x - Cam.cx) * .38; fy = ctr.y + (bp.y - ctr.y) * .16;
+  }
+  if (shot.cam === 'wide' && a && a.script.srvU > 0 && t < 3.2) fy += 36 * (1 - t / 3.2);
+  return { fx, fy, z: Math.max(1, z) };
+}
+function updateCam(M, ents, dt) {
+  const cs = M.cam || (M.cam = { x: Cam.cx, y: proj(0, 0, .9).y, z: 1.2, id: null, fast: 0 }), shot = camShot(M);
+  const id = shot.cam + (shot.t || 0);
+  if (cs.id !== id) { cs.id = id; cs.fast = .4; }
+  cs.fast = Math.max(0, cs.fast - dt);
+  const tg = camTarget(M, ents, shot), rate = cs.fast > 0 ? 11 : 4.2, f = 1 - Math.exp(-dt * rate);
+  cs.x += (tg.fx - cs.x) * f; cs.y += (tg.fy - cs.y) * f; cs.z += (tg.z - cs.z) * f;
+  return cs;
+}
+function drawScene(M, dt) {
   const cv = $("#cv"); if (!cv || !M.arena) return;
   const c = cv.getContext('2d'), k = M.k, W = Cam.W, H = Cam.H;
   c.setTransform(k, 0, 0, k, 0, 0);
-  const sh = M.shake > .2 ? [(Math.random() - .5) * M.shake, (Math.random() - .5) * M.shake] : [0, 0];
-  c.save(); c.translate(sh[0], sh[1]);
-  const zm = 1 + .04 * Math.min(1, M.zoom || 0) * Math.min(1, (M.zoom || 0) * 2); if (zm > 1.001) { c.translate(W / 2, H * .62); c.scale(zm, zm); c.translate(-W / 2, -H * .62); }
-  c.drawImage(M.arena.cv, 0, 0, W, H);
-  drawCrowd(c, M.arena.crowd, M.t, M.excite);
-  drawRefStand(c);
-
   /* entita' da disegnare in ordine di profondita' */
   const a = M.anim, t = a ? a.t : 0, ents = [];
   for (const side of ['h', 'a']) {
@@ -173,6 +205,16 @@ function drawScene(M) {
     });
   }
   if (a) { const b = sampleBall(a.script.ball, t); if (b) ents.push({ kind: 'b', u: b.u, v: b.v, z: b.z }); }
+  const cs = updateCam(M, ents, dt || .016);
+  const sh = M.shake > .2 ? [(Math.random() - .5) * M.shake, (Math.random() - .5) * M.shake] : [0, 0];
+  c.save(); c.translate(sh[0], sh[1]);
+  const z = cs.z * (1 + .03 * Math.min(1, M.zoom || 0)), dx = Math.sin(M.t * .8) * 1.5, dy = Math.cos(M.t * .6) * 1.2;
+  const tx = Math.max(W * (1 - z), Math.min(0, W / 2 - cs.x * z + dx)), ty = Math.max(H * (1 - z), Math.min(0, H / 2 - cs.y * z + dy));
+  c.translate(tx, ty); c.scale(z, z);
+  c.drawImage(M.arena.cv, 0, 0, W, H);
+  drawCrowd(c, M.arena.crowd, M.t, M.excite);
+  drawRefStand(c);
+
   ents.sort((x, y) => x.u - y.u);
   let net = false; const labels = [];
   for (const e of ents) {
@@ -242,5 +284,5 @@ document.addEventListener('click', e => {
   const el = e.target.closest('[data-act="replay"]'), M = UI.match; if (!el || !M || M.replay || !M.lastA) return;
   const l = M.lastA; M.replay = true; M.replaySpeed = M.speed; M.speed = .5; M.feedKeep = $("#feed").textContent;
   $("#feed").textContent = 'REPLAY · ' + M.feedKeep; M.paused = false;
-  M.anim = { ry: l.ry, script: l.script, t: 0, scored: true, setEnd: false, fired: new Set(), replay: true };
+  M.anim = { ry: l.ry, script: l.script, t: l.script.finalHit ? Math.max(0, l.script.finalHit.t - 2.2) : Math.max(0, l.script.point - 2.5), scored: true, setEnd: false, fired: new Set(), replay: true }; { const rb = $('#rbadge'); if (rb) rb.hidden = false; }
 });
