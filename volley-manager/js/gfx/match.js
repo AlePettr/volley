@@ -1,0 +1,246 @@
+/* ===== Partita: schermata, ciclo di animazione e disegno della scena ===== */
+const ACTIVE_POSES = new Set(['serveHit', 'bump', 'set', 'spike', 'spikeTop', 'block', 'blockUp', 'dig', 'dive', 'receive']);
+
+function assignNumbers(team) {
+  if (team._nums) return;
+  const R = Gx.rng(Gx.hash(team.id + 'num')), pool = []; for (let i = 1; i <= 20; i++) pool.push(i);
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  team._nums = {}; let n = 0;
+  team.players.forEach(p => { team._nums[p.id] = pool[n++ % pool.length]; });
+}
+function playerNo(M, p) { const t = M.home.id === p.teamId ? M.home : M.away; return (t._nums && t._nums[p.id]) || ''; }
+
+function renderMatch() {
+  const M = UI.match;
+  M.pos = {}; M.shake = 0; M.excite = 0; M.t = 0; M.anim = null; M.script = null; M.fxList = []; M.trail = [];
+  assignNumbers(M.home); assignNumbers(M.away);
+  M.kits = Gx.matchKits(M.home, M.away);
+  const kh = M.kits.h, ka = M.kits.a;
+  const row = (side, team, kit) => `<div class="sb-row" style="--kit:${kit.main}"><i id="sv-${side}" class="srv" style="visibility:hidden"></i>${crest(team, 30)}<b class="sb-name">${esc(team.short)}</b><span class="pips" id="pips-${side}"></span><span class="sb-pts num" id="sc-${side}">0</span></div>`;
+  const ctxLabel = M.event ? esc(M.event.stage || 'Fase finale') : `${esc(LEAGUES[G.lid] ? LEAGUES[G.lid].name : '')} · Giornata ${(G.round || 0) + 1}`;
+  $("#app").innerHTML = `
+  <div class="arena" id="arena">
+    <canvas id="cv" class="cv" role="img" aria-label="Partita di pallavolo in corso"></canvas>
+    <div class="scorebug" role="status" aria-live="polite">
+      <div class="sb-ctx">${ctxLabel}</div>
+      ${row('h', M.home, kh)}${row('a', M.away, ka)}
+      <div class="sb-set" id="sets">SET 1 · 0-0</div>
+    </div>
+    <div class="caption" id="feed">Le squadre completano il riscaldamento.</div>
+    <div class="banner" id="banner" hidden></div>
+  </div>
+  <div class="setline" id="setline"></div>
+  <div id="ctl" class="matchctl">
+    <div class="seg" role="group" aria-label="Velocità"><button data-act="speed" data-v="1" aria-pressed="true">1×</button><button data-act="speed" data-v="2" aria-pressed="false">2×</button><button data-act="speed" data-v="4" aria-pressed="false">4×</button></div>
+    <button class="btn" data-act="pause" id="pausebtn">Pausa</button><button class="btn" data-act="replay" id="replaybtn">Replay</button><button class="btn" data-act="skip">Salta alla fine</button>
+  </div>
+  <div id="sum"></div>`;
+  sizeCanvas();
+  M.last = performance.now();
+  M.raf = requestAnimationFrame(tick);
+}
+
+function sizeCanvas() {
+  const M = UI.match, cv = $("#cv"); if (!cv || !M) return;
+  const portrait = window.innerHeight > window.innerWidth * 1.05 && window.innerWidth < 900;
+  const W = portrait ? 900 : 1280, H = portrait ? 1100 : 720;
+  cv.style.aspectRatio = `${W} / ${H}`;
+  const cssW = cv.clientWidth || (portrait ? 400 : 800), dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = Math.round(cssW * dpr); cv.height = Math.round(cv.width * H / W);
+  M.k = cv.width / W; camSetup(W, H);
+  M.arena = arenaBuild(M, M.k);
+}
+
+function startNext() {
+  const M = UI.match;
+  if (M.i >= M.res.rallies.length) { finishMatch(); return; }
+  const ry = M.res.rallies[M.i], script = buildScript(M, ry);
+  M.view[ry.sideS] = script.view[ry.sideS]; M.view[ry.sideR] = script.view[ry.sideR];
+  const next = M.res.rallies[M.i + 1], setEnd = !next || next.set !== ry.set;
+  M.anim = { ry, script, t: 0, scored: false, setEnd, fired: new Set() };
+  $("#sv-h").style.visibility = ry.sideS === 'h' ? 'visible' : 'hidden';
+  $("#sv-a").style.visibility = ry.sideS === 'a' ? 'visible' : 'hidden';
+  M.trail = [];
+  const pv = (M.i > 0 && M.res.rallies[M.i - 1].set === ry.set) ? M.res.rallies[M.i - 1] : { h: 0, a: 0 }, tg = ry.set === 5 ? 15 : 25;
+  let flag = '';
+  for (const sd of ['h', 'a']) { const o = sd === 'h' ? 'a' : 'h'; if (pv[sd] >= tg - 1 && pv[sd] > pv[o]) flag = ((sd === 'h' ? M.sh : M.sa) >= 2) ? 'MATCH POINT' : 'SET POINT'; }
+  M.flag = flag; const se = $("#sets"); if (se) se.innerHTML = `SET ${ry.set} · ${M.sh}-${M.sa}` + (flag ? ` <b class="flag">${flag}</b>` : '');
+}
+function applyPoint(a) {
+  const M = UI.match, ry = a.ry;
+  updateBoard(ry, a.setEnd);
+  $("#feed").textContent = feedText(ry) + (a.setEnd ? ` Set ${ry.set} a ${ry.h > ry.a ? M.home.short : M.away.short}.` : '');
+  const sc = ry.winner === 'h' ? ry.h : ry.a;
+  if (!a.setEnd && ry.set < 5 && (sc === 8 || sc === 16) && !M.replay) {
+    a.hold = 1.5; const b = $("#banner");
+    b.innerHTML = `<span>SET ${ry.set}</span><b>TIME-OUT TECNICO</b><em>${ry.h}-${ry.a}</em>`; b.hidden = false; b.className = 'banner show';
+    setTimeout(() => { const bb = $("#banner"); if (bb) { bb.hidden = true; bb.className = 'banner'; } }, 1400);
+  }
+  const mine = ry.winner === M.userSide;
+  M.excite = 1; M.mine = mine;
+  /* serie di punti, scambi lunghi, ace e muri: festa di gruppo e piccolo zoom */
+  M.streak = (M.lastWin === ry.winner) ? (M.streak || 0) + 1 : 1; M.lastWin = ry.winner;
+  const long = (a.script.ball ? a.script.ball.length : 0) >= 7, big = ry.type === 'ace' || ry.type === 'block';
+  if (!a.setEnd && !M.replay && (M.streak >= 3 || long || big)) { a.huddle = true; a.hold = Math.max(a.hold || 0, .8); }
+  if (big || long || a.setEnd) M.zoom = 1;
+  if (a.setEnd) {
+    const b = $("#banner"), w = ry.h > ry.a ? M.home : M.away;
+    b.innerHTML = `<span>SET ${ry.set}</span><b>${esc(w.short)}</b><em>${ry.h}-${ry.a}</em>`; b.hidden = false; b.className = 'banner show';
+    setTimeout(() => { const bb = $("#banner"); if (bb) { bb.hidden = true; bb.className = 'banner'; } }, 1700);
+  }
+}
+function updateBoard(ry, setEnd) {
+  const M = UI.match;
+  $("#sc-h").textContent = ry.h; $("#sc-a").textContent = ry.a;
+  $("#sv-h").style.visibility = ry.winner === 'h' ? 'visible' : 'hidden';
+  $("#sv-a").style.visibility = ry.winner === 'a' ? 'visible' : 'hidden';
+  if (setEnd) {
+    if (ry.h > ry.a) M.sh++; else M.sa++;
+    M.setScores.push([ry.h, ry.a]);
+    $("#setline").innerHTML = M.setScores.map((s, i) => `<span class="pill">Set ${i + 1}: ${s[0]}-${s[1]}</span>`).join('');
+    $("#sets").textContent = `SET ${ry.set} CHIUSO · ${M.sh}-${M.sa}`;
+    const pip = (id, n) => { const el = $(id); if (el) el.innerHTML = '<i class="on"></i>'.repeat(n) + '<i></i>'.repeat(Math.max(0, 3 - n)); };
+    pip('#pips-h', M.sh); pip('#pips-a', M.sa);
+  } else {
+    $("#sets").textContent = `SET ${ry.set} · ${M.sh}-${M.sa}`;
+  }
+}
+function endRallyAnim(a) {
+  const M = UI.match, tr = a.script.tracks;
+  for (const pid in tr) { const l = tr[pid][tr[pid].length - 1]; M.pos[pid] = [l.u, l.v]; }
+  M.lastA = a; M.i++; M.anim = null;
+  if (M.i >= M.res.rallies.length) finishMatch();
+}
+
+function tick(ts) {
+  const M = UI.match; if (!M) return;
+  M.raf = requestAnimationFrame(tick);
+  const dt = Math.min(.05, (ts - M.last) / 1000 || 0); M.last = ts;
+  if (!M.done && !M.paused) {
+    if (!M.anim) startNext();
+    else {
+      const a = M.anim; a.t += dt * M.speed;
+      /* effetti nel momento giusto */
+      for (const f of a.script.fx) if (a.t >= f.t && !a.fired.has(f)) {
+        a.fired.add(f);
+        if (f.type === 'ring') { M.shake = 4; M.fxList.push({ ...f, born: M.t }); }
+        else if (f.type === 'dust') { M.fxList.push({ ...f, born: M.t }); }
+        else if (f.type === 'text' && f.text) M.fxList.push({ ...f, born: M.t, win: M.anim.ry.winner === M.userSide });
+      }
+      if (!a.scored && a.t >= a.script.point) { a.scored = true; applyPoint(a); }
+      if (a.replay) { if (a.t >= a.script.end + .6) { M.anim = null; M.replay = false; M.speed = M.replaySpeed || 1; $("#feed").textContent = M.feedKeep || ''; } }
+      else if (a.t >= a.script.end + (a.setEnd ? 1.1 : 0) + (a.hold || 0)) endRallyAnim(a);
+    }
+    M.t += dt * Math.max(1, Math.min(2, M.speed));
+  }
+  M.zoom = Math.max(0, (M.zoom || 0) - dt * .7);
+  M.excite = Math.max(0, M.excite - dt * .55);
+  M.shake = Math.max(0, M.shake - dt * 18);
+  drawScene(M);
+}
+
+function drawScene(M) {
+  const cv = $("#cv"); if (!cv || !M.arena) return;
+  const c = cv.getContext('2d'), k = M.k, W = Cam.W, H = Cam.H;
+  c.setTransform(k, 0, 0, k, 0, 0);
+  const sh = M.shake > .2 ? [(Math.random() - .5) * M.shake, (Math.random() - .5) * M.shake] : [0, 0];
+  c.save(); c.translate(sh[0], sh[1]);
+  const zm = 1 + .04 * Math.min(1, M.zoom || 0) * Math.min(1, (M.zoom || 0) * 2); if (zm > 1.001) { c.translate(W / 2, H * .62); c.scale(zm, zm); c.translate(-W / 2, -H * .62); }
+  c.drawImage(M.arena.cv, 0, 0, W, H);
+  drawCrowd(c, M.arena.crowd, M.t, M.excite);
+  drawRefStand(c);
+
+  /* entita' da disegnare in ordine di profondita' */
+  const a = M.anim, t = a ? a.t : 0, ents = [];
+  for (const side of ['h', 'a']) {
+    M.view[side].forEach((o, i) => {
+      const p = o.p, tr = a ? a.script.tracks[p.id] : null;
+      let u, v, pose = POSE.ready, name = '';
+      const sm = tr ? sampleTrack(tr, t) : null;
+      if (sm) { u = sm.u; v = sm.v; pose = sm.pose; name = sm.name; }
+      else { const b = M.pos[p.id] || rallyUV(M, side, i); u = b[0]; v = b[1]; }
+      if (a && a.setEnd && !a.replay && a.t > a.script.end - .2 && a.ry.winner === side) {
+        const h = Math.min(1, (a.t - a.script.end + .2) / .7), e = h * h * (3 - 2 * h), sg = side === M.userSide ? 1 : -1;
+        u += (sg * 5.2 - u) * e; v += ((i - 2.5) * .55 - v) * e;
+        pose = Math.sin(M.t * 9 + i) > 0 ? POSE.cheerUp : POSE.cheer;
+      }
+      if (a && a.huddle && !a.replay && a.ry.winner === side && a.t > a.script.end - .35) {
+        const h = Math.min(1, (a.t - a.script.end + .35) / .6), e = h * h * (3 - 2 * h), sg = side === M.userSide ? 1 : -1, an = i * 1.047 + .4;
+        u += (sg * 3.4 + Math.cos(an) * .75 - u) * e; v += (Math.sin(an) * .95 - v) * e;
+        pose = Math.sin(M.t * 8 + i * 1.7) > 0 ? POSE.cheerUp : POSE.cheer;
+      }
+      ents.push({ kind: 'p', side, p, lib: o.lib, u, v, pose, name, sway: Math.sin(M.t * 4 + i) });
+    });
+  }
+  if (a) { const b = sampleBall(a.script.ball, t); if (b) ents.push({ kind: 'b', u: b.u, v: b.v, z: b.z }); }
+  ents.sort((x, y) => x.u - y.u);
+  let net = false; const labels = [];
+  for (const e of ents) {
+    if (!net && e.u >= 0) { drawNet(c); net = true; }
+    if (e.kind === 'b') { drawBall(c, M, e); continue; }
+    const pr = proj(e.u, e.v);
+    /* leggero ondeggiamento quando ferme: respiro */
+    const breath = e.pose === POSE.ready ? Math.sin(M.t * 3 + e.u * 2 + e.v) * .012 : 0;
+    const pose = breath ? { ...e.pose, cr: e.pose.cr + breath } : e.pose;
+    const kit = e.lib ? { ...M.kits[e.side], main: M.kits.lib, num: M.kits.libNum, shorts: Gx.dark(M.kits.lib, .5), shade: Gx.dark(M.kits.lib, .2), trim: Gx.lum(M.kits.lib) > .5 ? '#1b2234' : '#fff' } : M.kits[e.side];
+    const front = e.side !== M.userSide;
+    const look = e.p._look || (e.p._look = avatarLook(e.p));
+    const fig = drawFigure(c, pr.x, pr.y, pr.s, { pose, front, kit, look, no: playerNo(M, e.p), sway: e.sway });
+    if (ACTIVE_POSES.has(e.name) && a && !M.paused) labels.push({ x: fig.head[0], y: fig.head[1] - pr.s * .27 - Math.max(0, pose.lf) * 0, s: pr.s, p: e.p, side: e.side, lf: pose.lf });
+  }
+  if (!net) drawNet(c);
+
+  /* effetti */
+  drawEffects(c, M);
+  for (const l of labels.slice(0, 3)) drawNameTag(c, l, M);
+  c.restore();
+}
+
+function drawBall(c, M, b) {
+  const g = proj(b.u, b.v, 0), p = proj(b.u, b.v, b.z), r = Math.max(5.5, .16 * p.s);
+  /* scia */
+  M.trail.push({ x: p.x, y: p.y }); if (M.trail.length > 7) M.trail.shift();
+  for (let i = 0; i < M.trail.length - 1; i++) { const q = M.trail[i]; c.fillStyle = `rgba(255,255,255,${.06 + i * .02})`; c.beginPath(); c.arc(q.x, q.y, r * (.45 + i * .06), 0, 7); c.fill(); }
+  const sh = Math.max(.35, 1 - b.z * .12);
+  c.fillStyle = `rgba(5,8,16,${.32 * sh})`; c.beginPath(); c.ellipse(g.x, g.y, r * 1.05 * sh, r * .42 * sh, 0, 0, 7); c.fill();
+  c.save(); c.translate(p.x, p.y); c.rotate((M.t * 6) % 6.283);
+  c.fillStyle = '#fdfdfb'; c.beginPath(); c.arc(0, 0, r, 0, 7); c.fill();
+  c.save(); c.beginPath(); c.arc(0, 0, r, 0, 7); c.clip();
+  c.fillStyle = '#2257d6'; c.beginPath(); c.moveTo(-r, -r * .1); c.quadraticCurveTo(0, -r * .7, r, -r * .1); c.lineTo(r, r * .25); c.quadraticCurveTo(0, -r * .35, -r, r * .25); c.closePath(); c.fill();
+  c.fillStyle = '#f7c62d'; c.beginPath(); c.moveTo(-r, r * .45); c.quadraticCurveTo(0, -r * .1, r, r * .45); c.lineTo(r, r * .8); c.quadraticCurveTo(0, r * .25, -r, r * .8); c.closePath(); c.fill();
+  c.restore();
+  c.strokeStyle = 'rgba(20,30,60,.5)'; c.lineWidth = Math.max(1, r * .1); c.beginPath(); c.arc(0, 0, r, 0, 7); c.stroke();
+  c.restore();
+}
+function drawNameTag(c, l, M) {
+  const nm = String(l.p.name).trim().split(/\s+/).slice(-1)[0].toUpperCase(), no = playerNo(M, l.p);
+  const fs = 15; c.font = `700 ${fs}px "Barlow Condensed",Arial Narrow,sans-serif`;
+  const txt = `${no ? no + '  ' : ''}${nm}`, w = c.measureText(txt).width + 18, h = fs + 8;
+  const x = Math.max(w / 2 + 4, Math.min(Cam.W - w / 2 - 4, l.x)), y = Math.max(h + 4, l.y);
+  c.fillStyle = 'rgba(8,12,22,.82)'; c.beginPath(); c.roundRect(x - w / 2, y - h, w, h, 6); c.fill();
+  c.fillStyle = M.kits[l.side].main; c.fillRect(x - w / 2, y - h + 3, 3.5, h - 6);
+  c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(txt, x + 2, y - h / 2 + 1);
+}
+function drawEffects(c, M) {
+  const keep = [];
+  for (const f of M.fxList) {
+    const age = M.t - f.born;
+    if (f.type === 'ring' && age < .35) { const p = proj(f.u, f.v, f.z), q = age / .35; c.strokeStyle = `rgba(255,255,255,${.85 * (1 - q)})`; c.lineWidth = 3 * (1 - q) + 1; c.beginPath(); c.arc(p.x, p.y, 8 + q * 46, 0, 7); c.stroke(); c.fillStyle = `rgba(255,236,170,${.5 * (1 - q)})`; c.beginPath(); c.arc(p.x, p.y, 6 + q * 14, 0, 7); c.fill(); keep.push(f); }
+    else if (f.type === 'dust' && age < .55) { const p = proj(f.u, f.v, 0), q = age / .55; c.fillStyle = `rgba(255,255,255,${.22 * (1 - q)})`; for (let i = 0; i < 6; i++) { const an = i * 1.047 + .3, rr = (5 + q * 26) * p.s / 55; c.beginPath(); c.arc(p.x + Math.cos(an) * rr * 1.6, p.y + Math.sin(an) * rr * .5, 3 + q * 5, 0, 7); c.fill(); } keep.push(f); }
+    else if (f.type === 'text' && age < 1.25) {
+      const p = proj(f.u, f.v, f.z + age * .9), q = Math.min(1, age / .18), sc = 1 + (1 - q) * .6, fade = age > .9 ? 1 - (age - .9) / .35 : 1;
+      c.save(); c.translate(p.x, Math.max(40, p.y)); c.scale(sc, sc); c.globalAlpha = Math.max(0, fade);
+      c.font = `700 ${Cam.portrait ? 44 : 40}px "Barlow Condensed",Arial Narrow,sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.lineWidth = 8; c.strokeStyle = 'rgba(8,12,22,.85)'; c.lineJoin = 'round'; c.strokeText(f.text, 0, 0);
+      c.fillStyle = f.win ? '#7af0c0' : '#ff9a8c'; c.fillText(f.text, 0, 0); c.restore(); keep.push(f);
+    }
+  }
+  M.fxList = keep;
+}
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act="replay"]'), M = UI.match; if (!el || !M || M.replay || !M.lastA) return;
+  const l = M.lastA; M.replay = true; M.replaySpeed = M.speed; M.speed = .5; M.feedKeep = $("#feed").textContent;
+  $("#feed").textContent = 'REPLAY · ' + M.feedKeep; M.paused = false;
+  M.anim = { ry: l.ry, script: l.script, t: 0, scored: true, setEnd: false, fired: new Set(), replay: true };
+});
