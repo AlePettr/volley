@@ -1,3 +1,2 @@
-/* Elenco dei loghi disponibili. Chiave = id (club o sponsor), valore = nome del file nella cartella.
-   Esempio: window.LOGO_MANIFEST = { clubs: { con: "con.png" }, sponsors: { fineco: "fineco.svg" } }; */
-window.LOGO_MANIFEST = { clubs: {}, sponsors: {} };
+/* Elenco dei loghi disponibili. Chiave = id (club o sponsor), valore = nome del file nella cartella. */
+window.LOGO_MANIFEST = { clubs: {"alt": "alt.png", "avs": "avs.png", "cas": "cas.png", "cos": "cos.png", "fas": "fas.png", "fut": "fut.png", "imo": "imo.png", "ita": "ita.png", "mar2": "mar2.png", "mel": "mel.png", "mes": "mes.png", "mon": "mon.png", "off": "off.png", "pad": "pad.png", "per": "per.png", "rom": "rom.png", "tre": "tre.png"}, sponsors: {} };
