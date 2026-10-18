@@ -841,22 +841,35 @@ function applyRealStats(){
     const m={series:rows[0].series,apps:s("apps"),attacks:s("attacks"),attackPts:s("attackPts"),points:s("points"),serves:s("serves"),aces:s("aces"),errs:s("serveErrors"),blocks:s("blocks"),rec:s("recPerfect")};
     if(m.apps<4)continue; p._m=m; prof.push(p);
   }
-  LVF_CALIBRATION.total=all.length;LVF_CALIBRATION.matched=prof.length;
+  /* 3b) ricezione A1 2025/26 per cognome (comprende le liberi): aggancio solo se il cognome e' univoco */
+  const recPl=[];
+  for(const r of LVF_RECEPTION_A1_2526){
+    const key=normalizeStatKey(r[0]); let c=all.filter(p=>{const n=normalizeStatKey(p.name);return n===key||n.endsWith(" "+key);});
+    if(c.length>1){const l=c.filter(p=>p.role==="L");if(l.length===1)c=l;}
+    if(c.length!==1||c[0]._rec)continue;
+    const p=c[0]; p._rec={per:r[1],err:r[2],ta:r[3],pct:r[4]}; recPl.push(p);
+    const k=normalizeStatKey(p.name)+"|2025/26|A1",prev=LVF_STATS_MERGED.get(k)||{series:"A1",season:"2025/26",name:p.name};
+    LVF_STATS_MERGED.set(k,{...prev,recTA:r[3],recPct:r[4],recPerfect:prev.recPerfect!=null?prev.recPerfect:r[1]});
+  }
+  LVF_HISTORICAL_STATS.splice(0,LVF_HISTORICAL_STATS.length,...LVF_STATS_MERGED.values());
+  for(const p of recPl){p.history=playerHistory(p.name); if(!prof.includes(p)){p._m={series:"A1"};prof.push(p);}}
+  LVF_CALIBRATION.total=all.length;LVF_CALIBRATION.matched=prof.length;LVF_CALIBRATION.reception=recPl.length;
   const stat=(arr)=>{const n=arr.length,mu=arr.reduce((a,b)=>a+b,0)/Math.max(1,n),sd=Math.sqrt(arr.reduce((a,b)=>a+(b-mu)*(b-mu),0)/Math.max(1,n))||1;return {mu,sd};};
-  const groups={}; for(const p of prof){(groups[p._m.series+"|"+p.role]=groups[p._m.series+"|"+p.role]||[]).push(p);}
+  const groups={}; for(const p of prof){ if(!p._m.apps&&!p._rec)continue;(groups[p._m.series+"|"+p.role]=groups[p._m.series+"|"+p.role]||[]).push(p);}
   const dist={};
   for(const g of Object.values(groups)){
     const mets={
       att:p=>p._m.attacks>=60?{v:.6*(p._m.attackPts/p._m.attacks)+.4*(p._m.points/p._m.apps/20),n:p._m.attacks,n0:150}:null,
-      blk:p=>({v:p._m.blocks/p._m.apps,n:p._m.apps,n0:12}),
+      blk:p=>p._m.apps?({v:p._m.blocks/p._m.apps,n:p._m.apps,n0:12}):null,
       srv:p=>p._m.serves>=80?{v:(p._m.aces-.35*p._m.errs)/p._m.serves,n:p._m.serves,n0:150}:null,
-      rec:p=>({v:p._m.rec/p._m.apps,n:p._m.apps,n0:12})
+      rec:p=>p._rec?{v:p._rec.pct,n:p._rec.ta,n0:150}:null,
+      rec2:p=>!p._rec&&p._m.apps?{v:p._m.rec/p._m.apps,n:p._m.apps,n0:12}:null
     };
-    const use={P:["blk","srv"],O:["att","blk","srv"],S:["att","blk","srv","rec"],C:["att","blk","srv"],L:["rec"]}[g[0].role];
+    const use={P:["blk","srv"],O:["att","blk","srv"],S:["att","blk","srv","rec","rec2"],C:["att","blk","srv"],L:["rec","rec2"]}[g[0].role];
     for(const k of use){
       const vals=g.map(p=>mets[k](p)).filter(Boolean); if(vals.length<5)continue;
       const {mu,sd}=stat(vals.map(x=>x.v));
-      for(const p of g){const x=mets[k](p); if(!x)continue; const z=clampN((x.v-mu)/sd,-2.5,2.5),w=x.n/(x.n+x.n0);const d=Math.round(clampN(z*4.2*w,-8,8));p._d=p._d||{};p._d[k]=d;}
+      for(const p of g){const x=mets[k](p); if(!x)continue; const z=clampN((x.v-mu)/sd,-2.5,2.5),w=x.n/(x.n+x.n0);const d=Math.round(clampN(z*4.2*w,-8,8));p._d=p._d||{};p._d[k==='rec2'?'rec':k]=d;}
     }
   }
   for(const p of prof){
@@ -869,4 +882,78 @@ function applyRealStats(){
   for(const p of all){delete p._old;delete p._m;delete p._d;}
   return LVF_CALIBRATION;
 }
+
+/* ===== Ricezione A1 2025/26 per atleta (Volleyball World / dati LVF): cognome, ricezioni perfette, errori, ricezioni totali, % perfette.
+   Include le liberi, assenti dalle tabelle per club. Colonne: cognome, perfette, errori, totali, %. ===== */
+const LVF_RECEPTION_A1_2526 = [
+["Knollema",266,26,843,31.55],
+["Lanier",266,32,775,34.32],
+["Alsmeier",265,32,728,36.40],
+["Künzler",261,48,902,28.94],
+["Armini",252,18,664,37.95],
+["Davyskiba",239,54,813,29.40],
+["Piva",237,23,671,35.32],
+["Gabi",218,22,509,42.83],
+["De Bortoli",215,26,575,37.39],
+["Bosetti",213,34,609,34.98],
+["Gardini",209,51,830,25.18],
+["Ishikawa",203,20,500,40.60],
+["Pucelj",203,51,896,22.66],
+["Omoruyi",202,52,806,25.06],
+["De Nardi",197,32,521,37.81],
+["Mlejnkova",196,24,729,26.89],
+["Nardo",191,26,626,30.51],
+["Fersino",189,21,423,44.68],
+["Caforio",184,21,439,41.91],
+["Nervini",183,23,641,28.55],
+["De Gennaro",175,24,423,41.37],
+["Giovannini",170,15,510,33.33],
+["Pelloni",168,15,479,35.07],
+["D'Odorico",165,25,630,26.19],
+["Moro",165,13,454,36.34],
+["Spirito",160,14,433,36.95],
+["Perinelli",159,29,510,31.18],
+["Castillo",158,13,382,41.36],
+["Parra",154,31,571,26.97],
+["Tanase",146,23,557,26.21],
+["Battista",139,39,709,19.61],
+["Kokkonen",139,34,582,23.88],
+["Bolzonetti",138,21,493,27.99],
+["Rivero",136,19,535,25.42],
+["Valoppi",135,17,418,32.30],
+["Kockarevic",134,28,492,27.24],
+["Pietrini",133,12,417,31.89],
+["Daalderop",125,18,350,35.71],
+["Herbots",125,14,432,28.94],
+["Gennari",121,24,553,21.88],
+["Sillah",119,25,430,27.67],
+["Bardaro",119,17,336,35.42],
+["Piovesan",114,18,410,27.80],
+["Piomboni",109,16,421,25.89],
+["Bracchi",103,26,405,25.43],
+["Ailama",98,30,425,23.06],
+["Ungureanu",96,27,376,25.53],
+["Villani",93,25,408,22.79],
+["Mosser",91,34,357,25.49],
+["Bresciani",85,18,251,33.86],
+["Recchia",83,11,222,37.39],
+["Tellone",77,14,244,31.56],
+["Sirressi",76,16,235,32.34],
+["Franklin",72,14,318,22.64],
+["Magnani",72,13,265,27.17],
+["Carletti",58,9,215,26.98],
+["Pritchard",55,19,262,20.99],
+["Degradi",54,12,187,28.88],
+["Scognamillo",51,7,130,39.23],
+["Panetoni",51,5,134,38.06],
+["Leonardi",42,5,100,42.00],
+["Fiesoli",40,10,167,23.95],
+["Marring",40,5,170,23.53],
+["Meeto",38,7,121,31.40],
+["Ribechi",30,4,79,37.97],
+["Gelin",29,4,66,43.94],
+["Parlangeli",23,3,83,27.71],
+["Cecchetto",23,3,73,31.51],
+["Feduzzi",22,3,80,27.50]
+];
 applyRealStats();
