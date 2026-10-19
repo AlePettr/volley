@@ -1,0 +1,37 @@
+# Volley Manager Italia – guida per chi continua il lavoro
+
+Gioco manageriale di pallavolo femminile (Serie A1, A2, A3) per uso personale, giocabile da iPad/telefono nel browser.
+Solo HTML, CSS e JavaScript: **nessuna build, nessun framework**. Si apre `index.html` (o la versione online su GitHub Pages).
+
+## Come lavorare
+- Modifica un file alla volta e non rinominare funzioni o variabili globali già usate in altri file (i file si caricano in ordine e si parlano tramite variabili globali).
+- Dopo ogni modifica controlla la sintassi: `node --check js/nomefile.js`.
+- Versione "tutto in un file" (per incollarla altrove): `python3 tools/build_single.py` crea `volley-manager-singolo.html`.
+- Salvataggio: `localStorage`, chiave `volley-manager-italia-v1` (partita) e `...-w` (rose). Cambiare i dati delle giocatrici NON cambia le carriere già salvate: serve una nuova carriera.
+
+## Ordine di caricamento (index.html)
+`gfx/kit, crest, avatar, figure, arena, rally, icons` → `logos/manifest.js` → `gfx/identity, logos, led` → `data.js` → `engine.js` → `stats_lvf.js` → `ui.js` → `club.js` → `match_logic.js` → `gfx/match.js` → `manager.js` → `app.js`.
+
+## Mappa dei file
+| File | Cosa contiene |
+|---|---|
+| `js/data.js` | Rose reali di A1, A2, A3 (`LEAGUES`), bonus stelle, storico statistiche (`LVF_HISTORICAL_STATS`), `playerHistory()` |
+| `js/engine.js` | Creazione giocatrici (`makePlayer`, generatore casuale con seme fisso), mondo (`WORLD`), simulazione partite, calendari, stagione, coppe, playoff, stipendi |
+| `js/stats_lvf.js` | Statistiche reali LVF 2024/25 e 2025/26 (A1/A2) e `applyRealStats()`, che corregge attacco/muro/battuta/ricezione dopo la creazione del mondo; ricezione A1 2025/26 per le liberi |
+| `js/ui.js` | Schermate (home, rosa, mercato, scouting, viaggi, campionato), salvataggio/esportazione |
+| `js/club.js`, `js/manager.js`, `js/match_logic.js` | Gestione club, allenamento/morale/conferenza stampa, logica della partita |
+| `js/gfx/arena.js` | Telecamera (`camSetup`, `proj(u,v,z)`), palazzetto, campo (parquet + zona libera viola), tre viste: laterale, da fondo, da fondo alta |
+| `js/gfx/match.js` | Disegno della scena, regia (zoom, replay, nomi), controlli sotto la partita |
+| `js/gfx/rally.js`, `figure.js` | Coreografia dello scambio e disegno delle giocatrici con pose |
+| `js/gfx/led.js` | Cartelloni LED con i video della Lega (`logos/led/*.mp4`) |
+| `js/gfx/logos.js`, `identity.js`, `logos/manifest.js` | Loghi dei club/sponsor e personalizzazione colori e loghi dal gioco |
+
+## Regole importanti
+1. **Mondo con seme fisso.** `buildWorld()` in `engine.js` usa un generatore casuale con seme: aggiungere o togliere chiamate a `rng()` dentro `makePlayer` cambia TUTTE le rose. Le correzioni successive vanno fatte dopo, come in `applyRealStats()`.
+2. **Coordinate del campo.** `u` = distanza dalla rete lungo il campo (±9 m), `v` = lato (±4,5 m), `z` = altezza in metri. Si disegna sempre con `proj(u, v, z)`.
+3. **Loghi.** Nome del file = id del club (es. `con.png`); l'elenco è in `logos/manifest.js` e gli id sono in `logos/README.md`. Mancano ancora i 16 club di A3.
+4. **Statistiche.** I dati LVF provengono dalle pagine ufficiali (statistiche per club) e da Volleyball World (ricezione A1 2025/26). Le liberi non hanno dati nelle tabelle per club.
+5. **Colori dei club.** Molti sono stime: si correggono dal gioco, scheda "Identità club".
+
+## Idee ancora aperte
+Loghi A3 e sponsor di partita; colori reali dei club; statistiche delle liberi A2 e 2024/25; giocatrici di profilo nella vista laterale; allenamento, giovani, infortuni e trattative (rimandati).
