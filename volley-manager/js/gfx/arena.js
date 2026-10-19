@@ -99,20 +99,25 @@ function arenaBuild(M, k) {
   const F = (u, v) => proj(u, v);
   const freeQ = [F(-12, -8.6), F(-12, 8.6), F(12, 8.6), F(12, -8.6)];
   const fg = c.createLinearGradient(0, F(-12, 0).y, 0, F(12, 0).y);
-  fg.addColorStop(0, '#0f3463'); fg.addColorStop(1, '#1a5896');
+  /* Taraflex ufficiale LVF 2026/27: campo parquet con zona libera viola (A1: viola profondo con cornice; A2: viola piu' chiaro) */
+  const isA1 = ((M.home && M.home.lid) || (typeof G !== 'undefined' && G && G.lid) || 'A1') !== 'A2';
+  if (isA1) { fg.addColorStop(0, '#3b1a6b'); fg.addColorStop(1, '#5a2f99'); } else { fg.addColorStop(0, '#4a2f86'); fg.addColorStop(1, '#6f52b8'); }
   c.fillStyle = fg; polyPath(c, freeQ); c.fill();
   /* doghe */
-  c.strokeStyle = 'rgba(255,255,255,.045)';
+  c.strokeStyle = 'rgba(255,255,255,.03)';
   for (let v = -8.4; v <= 8.4; v += .55) lineWorld(c, -12, v, 12, v, .03, 6);
   /* campo */
   const courtQ = [F(-9, -4.5), F(-9, 4.5), F(9, 4.5), F(9, -4.5)];
   const cg = c.createLinearGradient(0, F(-9, 0).y, 0, F(9, 0).y);
-  cg.addColorStop(0, '#d29a5c'); cg.addColorStop(1, '#e8bb82');
+  cg.addColorStop(0, '#d8a867'); cg.addColorStop(1, '#efca94');
   c.fillStyle = cg; polyPath(c, courtQ); c.fill();
   /* zone d'attacco leggermente piu' scure */
   c.fillStyle = 'rgba(120,70,20,.10)';
   polyPath(c, [F(-3, -4.5), F(-3, 4.5), F(0, 4.5), F(0, -4.5)]); c.fill();
   polyPath(c, [F(0, -4.5), F(0, 4.5), F(3, 4.5), F(3, -4.5)]); c.fill();
+  /* listoni del parquet */
+  for (let v = -4.5, k = 0; v < 4.5; v += .36, k++) { if (k % 2) continue; c.fillStyle = 'rgba(255,240,205,.10)'; polyPath(c, [F(-9, v), F(-9, Math.min(4.5, v + .36)), F(9, Math.min(4.5, v + .36)), F(9, v)]); c.fill(); }
+  if (isA1) { c.strokeStyle = 'rgba(214,170,255,.55)'; c.lineCap = 'butt'; lineWorld(c, -12, -8.6, -12, 8.6, .10, 1); lineWorld(c, 12, -8.6, 12, 8.6, .10, 1); lineWorld(c, -12, -8.6, 12, -8.6, .10, 12); lineWorld(c, -12, 8.6, 12, 8.6, .10, 12); }
   c.strokeStyle = 'rgba(90,50,10,.12)';
   for (let v = -4.3; v <= 4.4; v += .45) lineWorld(c, -9, v, 9, v, .02, 8);
   /* riflessi di luce */
