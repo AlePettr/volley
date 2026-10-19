@@ -2,8 +2,19 @@
 const Cam = { W: 1280, H: 720, F: 1000, K: 12000, Hc: 12, hy: -100, cx: 640, xs: 1.4, Dc: 26, portrait: false };
 function camSetup(W, H) {
   Cam.W = W; Cam.H = H; Cam.portrait = H > W * 0.95;
-  const tv = (typeof UI !== 'undefined' && UI.camView === 'tv');
-  Cam.tv = tv; Cam.Dc = tv ? 31 : 26; Cam.Hc = tv ? 21 : 12;
+  const view = (typeof UI !== 'undefined' && UI.camView) || 'side';
+  const tv = view === 'tv', side = view === 'side';
+  Cam.tv = tv; Cam.side = side;
+  if (side) {
+    /* regia laterale: camera rialzata sul lato lungo, il campo scorre in orizzontale */
+    Cam.Dc = 21; Cam.Hc = 9;
+    const zN = Cam.Dc - 4.5, zF = Cam.Dc + 4.5;
+    const top = Cam.portrait ? 0.46 : 0.58, bot = Cam.portrait ? 0.67 : 0.86;
+    Cam.K = H * (bot - top) / (1 / zN - 1 / zF); Cam.F = Cam.K / Cam.Hc; Cam.hy = H * bot - Cam.K / zN; Cam.cx = W / 2;
+    const half = (Cam.portrait ? 0.47 : 0.43) * W; Cam.xs = half / (9 * Cam.F / zN);
+    return;
+  }
+  Cam.Dc = tv ? 31 : 26; Cam.Hc = tv ? 21 : 12;
   const zN = Cam.Dc - 9, zF = Cam.Dc + 9;
   const top = tv ? (Cam.portrait ? 0.30 : 0.31) : (Cam.portrait ? 0.34 : 0.38), bot = tv ? (Cam.portrait ? 0.86 : 0.89) : (Cam.portrait ? 0.79 : 0.83);
   Cam.K = H * (bot - top) / (1 / zN - 1 / zF);
@@ -15,6 +26,7 @@ function camSetup(W, H) {
 }
 /* u: distanza dalla rete (positivo = lato vicino alla camera), v: sinistra/destra, zh: altezza in metri */
 function proj(u, v, zh) {
+  if (Cam.side) { const z = Cam.Dc - v, sc = Cam.F / z; return { x: Cam.cx - u * sc * Cam.xs, y: Cam.hy + Cam.K / z - (zh || 0) * sc, s: sc }; }
   const z = Cam.Dc - u, sc = Cam.F / z;
   return { x: Cam.cx + v * sc * Cam.xs, y: Cam.hy + Cam.K / z - (zh || 0) * sc, s: sc };
 }
@@ -47,6 +59,7 @@ function loadLogos(M, done) {
 }
 const CROWD_PAL = ['#e8edf5', '#c3cddd', '#8da2c4', '#f2a43a', '#d6336c', '#2f6fdb', '#3a465c', '#f4d9c4'];
 function arenaBuild(M, k) {
+  if (Cam.side) return arenaBuildSide(M, k);
   const W = Cam.W, H = Cam.H, cv = document.createElement('canvas');
   cv.width = Math.round(W * k); cv.height = Math.round(H * k);
   const c = cv.getContext('2d'); c.setTransform(k, 0, 0, k, 0, 0);
@@ -207,7 +220,7 @@ function drawNet(c) {
   }
 }
 function drawRefStand(c) {
-  const v = 6.1, sc = proj(0, v).s, g = proj(0, v, 0), seat = proj(0, v, 1.85);
+  const v = Cam.side ? -6.1 : 6.1, sc = proj(0, v).s, g = proj(0, v, 0), seat = proj(0, v, 1.85);
   c.strokeStyle = '#3a4560'; c.lineWidth = Math.max(2, .07 * sc); c.lineCap = 'round';
   for (const dv of [-.35, .35]) { const a = proj(.35, v + dv, 0), b = proj(.35, v + dv, 1.8), a2 = proj(-.35, v + dv, 0), b2 = proj(-.35, v + dv, 1.8); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.moveTo(a2.x, a2.y); c.lineTo(b2.x, b2.y); c.stroke(); }
   c.fillStyle = '#26304a'; c.fillRect(seat.x - .45 * sc, seat.y - .06 * sc, .9 * sc, .12 * sc);
@@ -216,4 +229,53 @@ function drawRefStand(c) {
   c.fillStyle = '#e0b08a'; c.beginPath(); c.arc(seat.x, seat.y - .86 * sc, .115 * sc, 0, 7); c.fill();
   c.fillStyle = '#2b1f18'; c.beginPath(); c.arc(seat.x, seat.y - .9 * sc, .12 * sc, Math.PI, 0); c.fill();
   c.fillStyle = '#26304a'; c.fillRect(seat.x - .2 * sc, seat.y - .02 * sc, .4 * sc, .22 * sc);
+}
+
+/* ===== Palazzetto visto dal lato lungo (regia laterale) ===== */
+function arenaBuildSide(M, k) {
+  const W = Cam.W, H = Cam.H, cv = document.createElement('canvas');
+  cv.width = Math.round(W * k); cv.height = Math.round(H * k);
+  const c = cv.getContext('2d'); c.setTransform(k, 0, 0, k, 0, 0);
+  const R = Gx.rng(Gx.hash(M.home.id + 'arena')), homeKit = Gx.kit(M.home);
+  const isA1 = ((M.home && M.home.lid) || (typeof G !== 'undefined' && G && G.lid) || 'A1') !== 'A2';
+  const wall = c.createLinearGradient(0, 0, 0, H * .6); wall.addColorStop(0, '#05080f'); wall.addColorStop(1, '#122036');
+  c.fillStyle = wall; c.fillRect(0, 0, W, H);
+  for (let i = 0; i < 9; i++) { const lx = W * (.06 + i * .11), g = c.createRadialGradient(lx, 6, 2, lx, 6, H * .38); g.addColorStop(0, 'rgba(210,225,255,.20)'); g.addColorStop(1, 'rgba(210,225,255,0)'); c.fillStyle = g; c.fillRect(0, 0, W, H * .6); }
+  const crowd = [], tint = [homeKit.main, Gx.light(homeKit.main, .4), '#f5f7fb', '#1d2a44'];
+  const addRow = (a, b, n, rr) => { for (let i = 0; i < n; i++) { const f = (i + R() * .6) / n, x = a.x + (b.x - a.x) * f, y = a.y + (b.y - a.y) * f; const col = R() < .55 ? tint[Math.floor(R() * tint.length)] : CROWD_PAL[Math.floor(R() * CROWD_PAL.length)]; crowd.push({ x, y, r: rr * (.85 + R() * .3), col, ph: R() * 6.28 }); } };
+  /* tribuna sul lato lungo opposto */
+  const rows = [];
+  for (let r = 0; r < 8; r++) { const v = -7.4 - r * 1.1, zh = 1.1 + r * .95; rows.push([proj(15, v, zh), proj(-15, v, zh), v]); }
+  for (let r = rows.length - 1; r >= 0; r--) { const [a, b] = rows[r]; c.fillStyle = r % 2 ? '#0d1626' : '#101b2f'; polyPath(c, [a, b, { x: b.x, y: b.y + 60 }, { x: a.x, y: a.y + 60 }]); c.fill(); }
+  for (let r = rows.length - 1; r >= 0; r--) { const [a, b, v] = rows[r]; const rr = Math.max(2.2, proj(0, v).s * .2); addRow(a, b, Math.round(Math.abs(b.x - a.x) / (rr * 2.1)), rr); }
+  /* tribune di testata */
+  for (const sd of [-1, 1]) for (let r = 0; r < 5; r++) {
+    const u = sd * (12.6 + r * 1.2), zh = .9 + r * 1.0, a = proj(u, -7.2, zh), b = proj(u, 6.5, zh);
+    c.fillStyle = r % 2 ? '#0d1626' : '#101b2f'; polyPath(c, [a, b, { x: b.x, y: b.y + 80 }, { x: a.x, y: a.y + 80 }]); c.fill();
+    const rr = Math.max(2.6, proj(u, 0).s * .2); addRow(a, b, Math.round(Math.hypot(b.x - a.x, b.y - a.y) / (rr * 2.4)), rr);
+  }
+  /* pavimento: zona libera viola + campo parquet */
+  const F = (u, v) => proj(u, v);
+  const freeQ = [F(-12.2, -7), F(12.2, -7), F(12.2, 9), F(-12.2, 9)];
+  const fg = c.createLinearGradient(0, F(0, -7).y, 0, F(0, 9).y);
+  if (isA1) { fg.addColorStop(0, '#3b1a6b'); fg.addColorStop(1, '#5a2f99'); } else { fg.addColorStop(0, '#4a2f86'); fg.addColorStop(1, '#6f52b8'); }
+  c.fillStyle = fg; polyPath(c, freeQ); c.fill();
+  if (isA1) { c.strokeStyle = 'rgba(214,170,255,.55)'; c.lineCap = 'butt'; lineWorld(c, -12.2, -7, 12.2, -7, .10, 12); lineWorld(c, -12.2, -7, -12.2, 9, .10, 6); lineWorld(c, 12.2, -7, 12.2, 9, .10, 6); }
+  const courtQ = [F(-9, -4.5), F(9, -4.5), F(9, 4.5), F(-9, 4.5)];
+  const cg = c.createLinearGradient(0, F(0, -4.5).y, 0, F(0, 4.5).y); cg.addColorStop(0, '#d8a867'); cg.addColorStop(1, '#efca94');
+  c.fillStyle = cg; polyPath(c, courtQ); c.fill();
+  c.fillStyle = 'rgba(120,70,20,.10)'; polyPath(c, [F(-3, -4.5), F(3, -4.5), F(3, 4.5), F(-3, 4.5)]); c.fill();
+  for (let v = -4.5, kk = 0; v < 4.5; v += .36, kk++) { if (kk % 2) continue; c.fillStyle = 'rgba(255,240,205,.10)'; polyPath(c, [F(-9, v), F(9, v), F(9, Math.min(4.5, v + .36)), F(-9, Math.min(4.5, v + .36))]); c.fill(); }
+  c.strokeStyle = 'rgba(90,50,10,.12)'; for (let v = -4.3; v <= 4.4; v += .45) lineWorld(c, -9, v, 9, v, .02, 8);
+  const rf = c.createRadialGradient(Cam.cx, F(0, 0).y, 10, Cam.cx, F(0, 0).y, W * .5); rf.addColorStop(0, 'rgba(255,255,255,.16)'); rf.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = rf; polyPath(c, freeQ); c.fill();
+  c.strokeStyle = '#ffffff'; c.lineCap = 'butt';
+  lineWorld(c, -9, -4.5, 9, -4.5, .06, 10); lineWorld(c, -9, 4.5, 9, 4.5, .06, 10); lineWorld(c, -9, -4.5, -9, 4.5, .06, 4); lineWorld(c, 9, -4.5, 9, 4.5, .06, 4);
+  lineWorld(c, 0, -4.5, 0, 4.5, .06, 4); lineWorld(c, -3, -4.5, -3, 4.5, .06, 4); lineWorld(c, 3, -4.5, 3, 4.5, .06, 4);
+  /* base del cartellone LED (le animazioni vengono disegnate sopra) */
+  const bu = -6.7, a = proj(-12.2, bu, 0), b = proj(12.2, bu, 0), a2 = proj(-12.2, bu, 1.1), b2 = proj(12.2, bu, 1.1);
+  c.fillStyle = '#0b1a33'; polyPath(c, [a, b, b2, a2]); c.fill();
+  c.fillStyle = '#dfe8f7'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = `700 ${Math.max(9, (a.y - a2.y) * .5)}px "Barlow Condensed",Arial Narrow,sans-serif`;
+  for (let i = 0; i < 4; i++) { const p = proj(-9 + i * 6, bu, .55); c.fillText(i % 2 ? M.away.short.toUpperCase() : M.home.short.toUpperCase(), p.x, p.y, 200); }
+  const vg = c.createRadialGradient(W / 2, H * .6, H * .35, W / 2, H * .6, H * .95); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.5)'); c.fillStyle = vg; c.fillRect(0, 0, W, H);
+  return { cv, crowd, led: null };
 }

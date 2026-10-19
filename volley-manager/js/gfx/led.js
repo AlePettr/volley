@@ -25,10 +25,10 @@ function ledAdvance(v) {
 }
 function ledSlot(k) { const v = LED.vids[LED.slots[k % LED.slots.length]]; return v && !v._bad && v.readyState >= 2 ? v : null; }
 /* disegna un tratto di cartellone lungo la direzione indicata: pos = coordinata che varia, fixed = l'altra */
-function ledStrip(c, back, fixed, a, b, tileOff) {
+function ledStrip(c, back, fixed, a, b, tileOff, flip) {
   const L = LED.L, step = L / 28;
   for (let p = a; p < b - 1e-6; p += step) {
-    const q = Math.min(b, p + step), pos = p - a + tileOff, tile = Math.floor(pos / L + 1e-9), fr = (pos - tile * L) / L;
+    const q = Math.min(b, p + step), pos = (flip ? b - q : p - a) + tileOff, tile = Math.floor(pos / L + 1e-9), fr = (pos - tile * L) / L;
     const v = ledSlot(tile); if (!v) continue;
     const sw = Math.min(v.videoWidth * (q - p) / L, v.videoWidth - fr * v.videoWidth);
     const P1 = back ? proj(fixed, p, LED.H) : proj(p, fixed, LED.H), P2 = back ? proj(fixed, q, 0) : proj(q, fixed, 0);
@@ -43,6 +43,13 @@ function drawLed(c, r) {
   for (const k of [0, 1, 2]) { const v = LED.vids[LED.slots[k]]; if (v && v.paused && !v._bad) ledPlay(v); }
   if (!ledSlot(0) && !ledSlot(1)) return;
   c.save();
+  if (Cam.side) {
+    const H = LED.H, a = proj(-12.2, -6.7, 0), b = proj(12.2, -6.7, H);
+    c.fillStyle = '#05080f'; c.fillRect(Math.min(a.x, b.x), b.y, Math.abs(b.x - a.x), a.y - b.y);
+    ledStrip(c, false, -6.7, -12.2, 12.2, 0, true);
+    c.fillStyle = 'rgba(0,0,0,.12)'; c.fillRect(Math.min(a.x, b.x), b.y, Math.abs(b.x - a.x), a.y - b.y);
+    c.restore(); return;
+  }
   const base = (u1, v1, u2, v2) => { const a = proj(u1, v1, 0), b = proj(u2, v2, 0), a2 = proj(u1, v1, LED.H), b2 = proj(u2, v2, LED.H); c.fillStyle = '#05080f'; polyPath(c, [a, b, b2, a2]); c.fill(); };
   base(-11.2, -9, -11.2, 9); base(-11.2, -8.8, 11.5, -8.8); base(-11.2, 8.8, 11.5, 8.8);
   ledStrip(c, true, -11.2, -9, 9, 0);          // fondo

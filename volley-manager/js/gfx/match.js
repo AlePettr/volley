@@ -33,7 +33,7 @@ function renderMatch() {
   </div>
   <div class="setline" id="setline"></div>
   <div id="ctl" class="matchctl">
-    <div class="seg" role="group" aria-label="Telecamera"><button data-act="camview" data-v="reg" aria-pressed="${UI.camView !== 'tv'}">Regia</button><button data-act="camview" data-v="tv" aria-pressed="${UI.camView === 'tv'}">TV alta</button></div>
+    <div class="seg" role="group" aria-label="Telecamera"><button data-act="camview" data-v="side" aria-pressed="${UI.camView === 'side'}">Laterale</button><button data-act="camview" data-v="reg" aria-pressed="${UI.camView === 'reg'}">Da fondo</button><button data-act="camview" data-v="tv" aria-pressed="${UI.camView === 'tv'}">Da fondo alta</button></div>
     <div class="seg" role="group" aria-label="Velocità"><button data-act="speed" data-v="1" aria-pressed="true">1×</button><button data-act="speed" data-v="2" aria-pressed="false">2×</button><button data-act="speed" data-v="4" aria-pressed="false">4×</button><button data-act="speed" data-v="8" aria-pressed="false">8×</button></div>
     <button class="btn" data-act="pause" id="pausebtn">Pausa</button><button class="btn" data-act="replay" id="replaybtn">Replay</button><button class="btn" data-act="skip">Salta alla fine</button>
   </div>
@@ -172,11 +172,11 @@ function camTarget(M, ents, shot) {
   return { fx, fy, z: Math.max(1, z) };
 }
 function updateCam(M, ents, dt) {
-  const cs = M.cam || (M.cam = { x: Cam.cx, y: proj(0, 0, .9).y, z: 1.2, id: null, fast: 0 }), shot = camShot(M);
+  const cs = M.cam || (M.cam = { x: Cam.cx, y: proj(0, 0, .9).y, z: Cam.side ? 1 : 1.2, id: null, fast: 0 }), shot = camShot(M);
   const id = shot.cam + (shot.t || 0);
   if (cs.id !== id) { cs.id = id; cs.fast = .4; }
   cs.fast = Math.max(0, cs.fast - dt);
-  const tg = Cam.tv ? { fx: Cam.W / 2, fy: Cam.H / 2, z: 1 } : camTarget(M, ents, shot), rate = cs.fast > 0 ? 11 : 4.2, f = 1 - Math.exp(-dt * rate);
+  const tg0 = Cam.tv ? { fx: Cam.W / 2, fy: Cam.H / 2, z: 1 } : camTarget(M, ents, shot), tg = Cam.side ? { fx: tg0.fx, fy: tg0.fy, z: 1 + (tg0.z - 1) * .5 } : tg0, rate = cs.fast > 0 ? 11 : 4.2, f = 1 - Math.exp(-dt * rate);
   cs.x += (tg.fx - cs.x) * f; cs.y += (tg.fy - cs.y) * f; cs.z += (tg.z - cs.z) * f;
   return cs;
 }
@@ -218,10 +218,10 @@ function drawScene(M, dt) {
   if (typeof drawLed === 'function') drawLed(c, M.arena.led);
   drawRefStand(c);
 
-  ents.sort((x, y) => x.u - y.u);
+  if (Cam.side) { ents.sort((x, y) => x.v - y.v); drawNet(c); } else ents.sort((x, y) => x.u - y.u);
   let net = false; const labels = [];
   for (const e of ents) {
-    if (!net && e.u >= 0) { drawNet(c); net = true; }
+    if (!net && (Cam.side || e.u >= 0)) { if (!Cam.side) drawNet(c); net = true; }
     if (e.kind === 'b') { drawBall(c, M, e); continue; }
     const pr = proj(e.u, e.v);
     /* leggero ondeggiamento quando ferme: respiro */
@@ -230,7 +230,9 @@ function drawScene(M, dt) {
     const kit = e.lib ? { ...M.kits[e.side], main: M.kits.lib, num: M.kits.libNum, shorts: Gx.dark(M.kits.lib, .5), shade: Gx.dark(M.kits.lib, .2), trim: Gx.lum(M.kits.lib) > .5 ? '#1b2234' : '#fff' } : M.kits[e.side];
     const front = e.side !== M.userSide;
     const look = e.p._look || (e.p._look = avatarLook(e.p));
-    const fig = drawFigure(c, pr.x, pr.y, pr.s, { pose, front, kit, look, no: playerNo(M, e.p), sway: e.sway });
+    if (Cam.side) { c.save(); c.translate(pr.x, 0); c.scale(.82, 1); c.translate(-pr.x, 0); }
+    const fig = drawFigure(c, pr.x, pr.y, pr.s, { pose, front: Cam.side ? true : front, kit, look, no: playerNo(M, e.p), sway: e.sway });
+    if (Cam.side) c.restore();
     if (ACTIVE_POSES.has(e.name) && a && !M.paused) labels.push({ x: fig.head[0], y: fig.head[1] - pr.s * .27 - Math.max(0, pose.lf) * 0, s: pr.s, p: e.p, side: e.side, lf: pose.lf });
   }
   if (!net) drawNet(c);
@@ -292,8 +294,8 @@ document.addEventListener('click', e => {
 
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act="camview"]'); if (!el || !UI.match) return;
-  UI.camView = el.dataset.v; try { localStorage.setItem('vm-camview', UI.camView); } catch (x) { }
+  UI.camView = el.dataset.v; try { localStorage.setItem('vm-camview2', UI.camView); } catch (x) { }
   document.querySelectorAll('[data-act="camview"]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === UI.camView)));
   UI.match.cam = null; sizeCanvas();
 });
-try { if (typeof UI !== 'undefined' && !UI.camView) UI.camView = localStorage.getItem('vm-camview') || 'reg'; } catch (x) { }
+try { if (typeof UI !== 'undefined' && !UI.camView) UI.camView = localStorage.getItem('vm-camview2') || 'side'; } catch (x) { }
