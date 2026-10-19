@@ -214,6 +214,7 @@ function drawScene(M, dt) {
   c.translate(tx, ty); c.scale(z, z);
   c.drawImage(M.arena.cv, 0, 0, W, H);
   drawCrowd(c, M.arena.crowd, M.t, M.excite);
+  if (typeof drawLed === 'function') drawLed(c, M.arena.led);
   drawRefStand(c);
 
   ents.sort((x, y) => x.u - y.u);

@@ -157,7 +157,8 @@ function arenaBuild(M, k) {
   const vg = c.createRadialGradient(W / 2, H * .55, H * .35, W / 2, H * .55, H * .95);
   vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.55)');
   c.fillStyle = vg; c.fillRect(0, 0, W, H);
-  return { cv, crowd };
+  const la = proj(bu, -9, .95), lb = proj(bu, 9, 0);
+  return { cv, crowd, led: { x: la.x, y: la.y, w: lb.x - la.x, h: lb.y - la.y } };
 }
 
 function drawCrowd(c, crowd, t, excite) {
