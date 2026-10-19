@@ -1,14 +1,16 @@
 /* ===== Palazzetto: camera in prospettiva, campo, tribune e rete ===== */
 const Cam = { W: 1280, H: 720, F: 1000, K: 12000, Hc: 12, hy: -100, cx: 640, xs: 1.4, Dc: 26, portrait: false };
 function camSetup(W, H) {
-  Cam.W = W; Cam.H = H; Cam.portrait = H > W * 0.95; Cam.Dc = 26; Cam.Hc = 12;
+  Cam.W = W; Cam.H = H; Cam.portrait = H > W * 0.95;
+  const tv = (typeof UI !== 'undefined' && UI.camView === 'tv');
+  Cam.tv = tv; Cam.Dc = tv ? 31 : 26; Cam.Hc = tv ? 21 : 12;
   const zN = Cam.Dc - 9, zF = Cam.Dc + 9;
-  const top = Cam.portrait ? 0.34 : 0.38, bot = Cam.portrait ? 0.79 : 0.83;
+  const top = tv ? (Cam.portrait ? 0.30 : 0.31) : (Cam.portrait ? 0.34 : 0.38), bot = tv ? (Cam.portrait ? 0.86 : 0.89) : (Cam.portrait ? 0.79 : 0.83);
   Cam.K = H * (bot - top) / (1 / zN - 1 / zF);
   Cam.F = Cam.K / Cam.Hc;
   Cam.hy = H * bot - Cam.K / zN;
   Cam.cx = W / 2;
-  const half = (Cam.portrait ? 0.47 : 0.325) * W;
+  const half = (Cam.portrait ? 0.47 : (tv ? 0.36 : 0.325)) * W;
   Cam.xs = half / (4.5 * Cam.F / zN);
 }
 /* u: distanza dalla rete (positivo = lato vicino alla camera), v: sinistra/destra, zh: altezza in metri */

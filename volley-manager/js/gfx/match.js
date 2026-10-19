@@ -33,6 +33,7 @@ function renderMatch() {
   </div>
   <div class="setline" id="setline"></div>
   <div id="ctl" class="matchctl">
+    <div class="seg" role="group" aria-label="Telecamera"><button data-act="camview" data-v="reg" aria-pressed="${UI.camView !== 'tv'}">Regia</button><button data-act="camview" data-v="tv" aria-pressed="${UI.camView === 'tv'}">TV alta</button></div>
     <div class="seg" role="group" aria-label="Velocità"><button data-act="speed" data-v="1" aria-pressed="true">1×</button><button data-act="speed" data-v="2" aria-pressed="false">2×</button><button data-act="speed" data-v="4" aria-pressed="false">4×</button><button data-act="speed" data-v="8" aria-pressed="false">8×</button></div>
     <button class="btn" data-act="pause" id="pausebtn">Pausa</button><button class="btn" data-act="replay" id="replaybtn">Replay</button><button class="btn" data-act="skip">Salta alla fine</button>
   </div>
@@ -175,7 +176,7 @@ function updateCam(M, ents, dt) {
   const id = shot.cam + (shot.t || 0);
   if (cs.id !== id) { cs.id = id; cs.fast = .4; }
   cs.fast = Math.max(0, cs.fast - dt);
-  const tg = camTarget(M, ents, shot), rate = cs.fast > 0 ? 11 : 4.2, f = 1 - Math.exp(-dt * rate);
+  const tg = Cam.tv ? { fx: Cam.W / 2, fy: Cam.H / 2, z: 1 } : camTarget(M, ents, shot), rate = cs.fast > 0 ? 11 : 4.2, f = 1 - Math.exp(-dt * rate);
   cs.x += (tg.fx - cs.x) * f; cs.y += (tg.fy - cs.y) * f; cs.z += (tg.z - cs.z) * f;
   return cs;
 }
@@ -288,3 +289,11 @@ document.addEventListener('click', e => {
   $("#feed").textContent = 'REPLAY · ' + M.feedKeep; M.paused = false;
   M.anim = { ry: l.ry, script: l.script, t: l.script.finalHit ? Math.max(0, l.script.finalHit.t - 2.2) : Math.max(0, l.script.point - 2.5), scored: true, setEnd: false, fired: new Set(), replay: true }; { const rb = $('#rbadge'); if (rb) rb.hidden = false; }
 });
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act="camview"]'); if (!el || !UI.match) return;
+  UI.camView = el.dataset.v; try { localStorage.setItem('vm-camview', UI.camView); } catch (x) { }
+  document.querySelectorAll('[data-act="camview"]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === UI.camView)));
+  UI.match.cam = null; sizeCanvas();
+});
+try { if (typeof UI !== 'undefined' && !UI.camView) UI.camView = localStorage.getItem('vm-camview') || 'reg'; } catch (x) { }
