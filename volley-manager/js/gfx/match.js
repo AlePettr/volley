@@ -35,13 +35,14 @@ function renderMatch() {
   <div id="ctl" class="matchctl">
     <div class="seg" role="group" aria-label="Telecamera"><button data-act="camview" data-v="side" aria-pressed="${UI.camView === 'side'}">Laterale</button><button data-act="camview" data-v="reg" aria-pressed="${UI.camView === 'reg'}">Da fondo</button><button data-act="camview" data-v="tv" aria-pressed="${UI.camView === 'tv'}">Da fondo alta</button></div>
     <div class="seg" role="group" aria-label="Velocità"><button data-act="speed" data-v="1" aria-pressed="true">1×</button><button data-act="speed" data-v="2" aria-pressed="false">2×</button><button data-act="speed" data-v="4" aria-pressed="false">4×</button><button data-act="speed" data-v="8" aria-pressed="false">8×</button></div>
-    <button class="btn" data-act="pause" id="pausebtn">Pausa</button><button class="btn" data-act="replay" id="replaybtn">Replay</button><button class="btn" data-act="skip">Salta alla fine</button>
+    <button class="btn" data-act="pause" id="pausebtn">Pausa</button><button class="btn primary" data-act="submodal">Cambi</button><button class="btn" data-act="replay" id="replaybtn">Replay</button><button class="btn" data-act="skip">Salta alla fine</button>
   </div>
   <div id="sum"></div>`;
   sizeCanvas();
   M.last = performance.now();
   M.raf = requestAnimationFrame(tick);
 }
+
 
 function sizeCanvas() {
   const M = UI.match, cv = $("#cv"); if (!cv || !M) return;
@@ -100,6 +101,7 @@ function updateBoard(ry, setEnd) {
   $("#sv-h").style.visibility = ry.winner === 'h' ? 'visible' : 'hidden';
   $("#sv-a").style.visibility = ry.winner === 'a' ? 'visible' : 'hidden';
   if (setEnd) {
+    M.subsUsed = 0; // RESETTA I 6 CAMBI A FINE SET
     if (ry.h > ry.a) M.sh++; else M.sa++;
     M.setScores.push([ry.h, ry.a]);
     $("#setline").innerHTML = M.setScores.map((s, i) => `<span class="pill">Set ${i + 1}: ${s[0]}-${s[1]}</span>`).join('');
@@ -110,6 +112,7 @@ function updateBoard(ry, setEnd) {
     $("#sets").textContent = `SET ${ry.set} · ${M.sh}-${M.sa}`;
   }
 }
+
 function endRallyAnim(a) {
   const M = UI.match, tr = a.script.tracks;
   for (const pid in tr) { const l = tr[pid][tr[pid].length - 1]; M.pos[pid] = [l.u, l.v]; }
