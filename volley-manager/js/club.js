@@ -5,26 +5,104 @@ function sellPlayer(pid){const t=myTeam(),idx=t.players.findIndex(x=>x.id===pid)
 
 function renewPlayer(pid){const p=myTeam().players.find(x=>x.id===pid);if(!p)return;ensureContracts(myTeam(),G.lid);const newWage=Math.round((p.wage||salaryFor(p,G.lid))*1.10),fee=newWage*2;if(G.budget<fee){toast("Budget insufficiente per il bonus rinnovo.");return;}G.budget-=fee;p.wage=newWage;p.contractYears=1;p.contractStatus="renewed";toast(`Rinnovo completato: ${p.name} per la prossima stagione.`);persist();render();}
 
-function buyFromClub(pid) {
-  const target = PLAYER_INDEX[pid];
-  if (!target || !target.teamId || target.teamId === myTeam().id) return;
-  const seller = WORLD[target.lid]?.find(t => t.id === target.teamId);
-  if (!seller) return;
-  const buyout = Math.round((target.val || calcETV(target)) * 1.15);
-  const wage = salaryFor(target, G.lid);
-  const totalRequired = buyout + wage * 2;
-  if (G.budget < totalRequired) { toast(`Fondi insufficienti: servono ${formatEur(totalRequired)} (Cartellino + 2 rate stipendio).`); return; }
-  G.budget -= totalRequired;
-  seller.budget = (seller.budget || 0) + buyout;
-  seller.players = seller.players.filter(p => p.id !== target.id);
-  try { repairRoster(seller); } catch(e) {}
-  target.teamId = myTeam().id; target.lid = G.lid; target.wage = wage; target.contractYears = 1; target.contractStatus = "signed"; target.fatigue = 0; target.inj = 0;
-  myTeam().players.push(target);
-  myTeam().players.sort((a,b) => ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role) || b.ovr - a.ovr);
-  marketNews(`Colpo di mercato: ${target.name} acquistata da ${seller.short} per ${formatEur(buyout)}!`);
-  toast(`Acquisto completato! ${target.name} firma per 1 stagione.`);
-  persist(); render();
+/* Apertura Pannello Trattativa */
+function openNegotiation(pid) {
+  const p = PLAYER_INDEX[pid];
+  if (!p) return;
+  const baseVal = p.val || calcETV(p);
+  const baseWage = salaryFor(p, G.lid);
+
+  const html = `
+  <div class="modal-backdrop" id="nego-modal" style="position:fixed;inset:0;background:rgba(5,8,16,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:14px;">
+    <div class="card" style="max-width:400px;width:100%;">
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3>Trattativa per ${esc(p.name)}</h3>
+        <button class="btn" onclick="document.getElementById('nego-modal').remove()">X</button>
+      </div>
+      <p class="muted small" style="margin-bottom:12px">Fai la tua offerta. Devi convincere il club proprietario a cedere il cartellino e la giocatrice ad accettare l'ingaggio. Le controparti non ti diranno esattamente quanto vogliono.</p>
+      
+      <div style="margin-bottom:14px">
+        <label class="muted small" style="display:block;margin-bottom:4px">Offerta al Club (Cartellino)</label>
+        <span class="muted small" style="display:block;margin-bottom:4px">Valore stimato: ${formatEur(baseVal)}</span>
+        <input type="number" id="offer-fee" value="${baseVal}" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--line)" min="${Math.round(baseVal*0.5)}" step="500">
+      </div>
+
+      <div style="margin-bottom:14px">
+        <label class="muted small" style="display:block;margin-bottom:4px">Offerta alla Giocatrice (Ingaggio per giornata)</label>
+        <span class="muted small" style="display:block;margin-bottom:4px">Stipendio base stimato: ${formatEur(baseWage)}</span>
+        <input type="number" id="offer-wage" value="${baseWage}" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--line)" min="${Math.round(baseWage*0.5)}" step="50">
+      </div>
+
+      <div class="row" style="margin-top:16px;">
+        <button class="btn primary big" style="flex:1" onclick="submitOffer('${p.id}')">Invia Offerta</button>
+      </div>
+    </div>
+  </div>`;
+  
+  const existing = document.getElementById("nego-modal"); if (existing) existing.remove();
+  document.body.insertAdjacentHTML("beforeend", html);
 }
+
+/* Valutazione dell'offerta */
+function submitOffer(pid) {
+  const p = PLAYER_INDEX[pid];
+  const feeOffered = parseInt(document.getElementById('offer-fee').value) || 0;
+  const wageOffered = parseInt(document.getElementById('offer-wage').value) || 0;
+  
+  const seller = WORLD[p.lid]?.find(t => t.id === p.teamId);
+  if (!seller) return;
+
+  const baseVal = p.val || calcETV(p);
+  const baseWage = salaryFor(p, G.lid);
+
+  // Generatore causale basato sulla giornata: le pretese non cambiano finché non passi al turno successivo
+  const rng = mulberry32(Gx.hash(p.id + (G.round || 0) + (G.season || 1)));
+  
+  // Il club chiede tra il +5% e il +35% in più del valore base
+  const expectedFee = Math.round(baseVal * (1.05 + (rng() * 0.30)));
+  // La giocatrice chiede tra il +0% e il +20% in più dello stipendio base
+  const expectedWage = Math.round(baseWage * (1.00 + (rng() * 0.20)));
+
+  if (feeOffered < expectedFee) {
+    toast(`Il club ${seller.short} ritiene l'offerta di ${formatEur(feeOffered)} troppo bassa per il cartellino.`);
+    return;
+  }
+  if (wageOffered < expectedWage) {
+    toast(`${p.name} ha rifiutato: l'ingaggio di ${formatEur(wageOffered)} a giornata non la soddisfa.`);
+    return;
+  }
+
+  const totalRequired = feeOffered + (wageOffered * 2); // Cartellino + 2 giornate di stipendio per il bonus firma
+  if (G.budget < totalRequired) {
+    toast(`Fondi insufficienti: l'operazione costa ${formatEur(totalRequired)}, hai solo ${formatEur(G.budget)}.`);
+    return;
+  }
+
+  // Trattativa conclusa con successo
+  G.budget -= totalRequired;
+  seller.budget = (seller.budget || 0) + feeOffered;
+  seller.players = seller.players.filter(x => x.id !== p.id);
+  try { repairRoster(seller); } catch(e) {}
+
+  p.teamId = myTeam().id; 
+  p.lid = G.lid; 
+  p.wage = wageOffered; 
+  p.contractYears = 1; 
+  p.contractStatus = "signed"; 
+  p.fatigue = 0; 
+  p.inj = 0;
+  
+  myTeam().players.push(p);
+  myTeam().players.sort((a,b) => ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role) || b.ovr - a.ovr);
+  
+  document.getElementById('nego-modal').remove();
+  marketNews(`Accordo raggiunto! ${p.name} acquistata da ${seller.short} per ${formatEur(feeOffered)}.`);
+  toast(`Trattativa conclusa! ${p.name} è una tua giocatrice.`);
+  
+  persist(); 
+  render();
+}
+
 
 function travelCity(team){return team.id==="ita"?"Parma":team.city;}
 function travelDistance(a,b){const ca=TRAVEL_CITY[travelCity(a)],cb=TRAVEL_CITY[travelCity(b)];if(!ca||!cb)return 250;const rad=x=>x*Math.PI/180,lat1=rad(ca[0]),lat2=rad(cb[0]),dlat=lat2-lat1,dlon=rad(cb[1]-ca[1]);const h=Math.sin(dlat/2)**2+Math.cos(lat1)*Math.cos(lat2)*Math.sin(dlon/2)**2;return Math.round(6371*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h))*1.25);}
