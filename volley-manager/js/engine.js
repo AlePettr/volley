@@ -5,7 +5,14 @@ function calcETV(p){ const baseFactor = Math.pow(p.ovr / 40, 3.8); let val = bas
 
 function salaryFor(p,lid){const tier=lid==="A1"?1:lid==="A2"?0.42:0.25;return Math.round((180+Math.pow(Math.max(35,p.ovr),2)*0.25)*tier/50)*50;}
 
-function ensureContracts(team,lid){team.players.forEach(p=>{if(!Number.isFinite(p.wage))p.wage=salaryFor(p,lid);if(!Number.isFinite(p.contractYears))p.contractYears=2;if(!p.contractStatus)p.contractStatus="signed";});}
+function ensureContracts(team,lid){
+  team.players.forEach(p=>{
+    if(!Number.isFinite(p.wage)) p.wage=salaryFor(p,lid);
+    if(!Number.isFinite(p.contractYears)) p.contractYears=1;
+    if(!p.contractStatus) p.contractStatus="signed";
+  });
+}
+
 
 function payrollFor(team){return team.players.reduce((n,p)=>n+(p.wage||salaryFor(p,team.lid||G.lid)),0);}
 
@@ -86,11 +93,13 @@ function lineupFor(G,team){ if(G&&team.lid===G.lid&&team.idx===G.teamIdx&&lineup
 function packMatch(h,a,r){return {h,a,sets:r.sets,hs:r.hs,as:r.as};}
 
 function playRound(G,userRes){ aiMarketMove(); const rnd=G.round; const userLeague=G.lid; const activeLeagues=Object.keys(SCHEDULE).filter(l=>SCHEDULE[l]); for(const lid of activeLeagues){ const sched=SCHEDULE[lid]; if(!sched)continue; if(!G.results[lid])G.results[lid]=[]; const leagueRound=G.results[lid].length; if(leagueRound>=sched.length)continue; const out=[]; for(const [hi,ai] of sched[leagueRound]){ const home=WORLD[lid][hi],away=WORLD[lid][ai]; if(userRes&&lid===userLeague&&(hi===G.teamIdx||ai===G.teamIdx)){out.push(packMatch( hi,ai,userRes));continue;} const isU=lid===userLeague&&(hi===G.teamIdx||ai===G.teamIdx); const tac={h:isU&&hi===G.teamIdx?G.tactic:"bal",a:isU&&ai===G.teamIdx?G.tactic:"bal"}; const r=simMatch(home,away,{h:lineupFor(G,home),a:lineupFor(G,away)},tac,Math.random,false); out.push(packMatch(hi,ai,r)); } G.results[lid].push(out); }
-// Monitoraggio medico a fine giornata: fatica, recupero e infortuni
-for(const lid of Object.keys(WORLD)){ for(const t of WORLD[lid]){ const lu=lineupFor(G,t); const starters=new Set(Object.values(lu)); t.players.forEach(p=>{ if(p.inj>0){ p.inj--; if(p.inj===0)p.injName=""; } if(starters.has(p.id)){ p.fatigue=clamp((p.fatigue||0)+18,0,100); const injProb=p.fatigue>70?0.08:0.015; if(Math.random()<injProb&&p.inj===0){ if(p.fatigue>70){ p.inj=Math.floor(Math.random()*2)+1; p.injName="Sovraccarico alla spalla"; }else{ p.inj=Math.floor(Math.random()*3)+2; p.injName="Distorsione alla caviglia"; } if(t.id===myTeam().id)toast(`Infortunio: ${p.name} (${p.injName}, ${p.inj}t stop)`); } }else{ p.fatigue=clamp((p.fatigue||0)-35,0,100); } }); } } if(!lineupValid(myTeam(),G.lineup))G.lineup=autoLineup(myTeam()); // Finanze e contratti: stipendi pagati a ogni giornata, durata ridotta a fine stagione
+// Monitoraggio medico a fine giornata: fatica e infortuni
+for(const lid of Object.keys(WORLD)){ for(const t of WORLD[lid]){ const lu=lineupFor(G,t); const starters=new Set(Object.values(lu)); t.players.forEach(p=>{ if(p.inj>0){ p.inj--; if(p.inj===0)p.injName=""; } if(starters.has(p.id)){ const roleStrain = (p.role === "C" || p.role === "L") ? 9 : 12; p.fatigue=clamp((p.fatigue||0)+roleStrain-4,0,100); const injProb=p.fatigue>80?0.04:(p.fatigue>65?0.012:0.003); if(Math.random()<injProb&&p.inj===0){ p.inj=Math.floor(Math.random()*2)+1; p.injName=p.fatigue>75?"Sovraccarico muscolare":"Distorsione alla caviglia"; if(t.id===myTeam().id)toast(`Infortunio: ${p.name} (${p.injName}, ${p.inj}t stop)`); } }else{ p.fatigue=clamp((p.fatigue||0)-60,0,100); } }); } } if(!lineupValid(myTeam(),G.lineup))G.lineup=autoLineup(myTeam()); 
+// Finanze e contratti
 processTravelForRound();ensureContracts(myTeam(),G.lid);const wageBill=payrollFor(myTeam());G.budget-=wageBill;if(G.budget<0)toast(`Attenzione: budget in rosso (${formatEur(G.budget)}). Riduci il monte ingaggi.`);G.round=rnd+1;
 // Transizione Serie A3 alle Pool
 if(G.phase===1&&G.results["A3A"]&&G.results["A3A"].length>=14&&G.results["A3B"]&&G.results["A3B"].length>=14){ G.phase=2; const stA=standings("A3A",G.results); const stB=standings("A3B",G.results); WORLD["A3_PROM"]=[]; WORLD["A3_RETR"]=[]; for(let i=0;i<4;i++){ WORLD["A3_PROM"].push({...WORLD["A3A"][stA[i].idx]}); WORLD["A3_PROM"].push({...WORLD["A3B"][stB[i].idx]}); } for(let i=4;i<8;i++){ WORLD["A3_RETR"].push({...WORLD["A3A"][stA[i].idx]}); WORLD["A3_RETR"].push({...WORLD["A3B"][stB[i].idx]}); } WORLD["A3_PROM"].forEach((t,i)=>{t.lid="A3_PROM";t.idx=i;}); WORLD["A3_RETR"].forEach((t,i)=>{t.lid="A3_RETR";t.idx=i;}); LEAGUES["A3_PROM"]={name:"Serie A3 - Pool Promozione",rounds:14,teams:WORLD["A3_PROM"]}; LEAGUES["A3_RETR"]={name:"Serie A3 - Pool Retrocessione",rounds:14,teams:WORLD["A3_RETR"]}; SCHEDULE["A3_PROM"]=makeSchedule(8); SCHEDULE["A3_RETR"]=makeSchedule(8); delete SCHEDULE["A3A"]; delete SCHEDULE["A3B"]; G.results["A3_PROM"]=[]; G.results["A3_RETR"]=[]; if(G.lid==="A3A"||G.lid==="A3B"){ const isFromA=G.lid==="A3A"; const oldRank=(isFromA?stA:stB).findIndex(r=>r.idx===G.teamIdx); const oldId=WORLD[G.lid][G.teamIdx].id; G.lid=oldRank<4?"A3_PROM":"A3_RETR"; G.teamIdx=WORLD[G.lid].findIndex(t=>t.id===oldId); G.round=0; toast("Fine Regular Season: Iniziano le Pool di Serie A3!"); } } }
+
 
 function syncClubLeague(team,lid,idx){team.lid=lid;team.idx=idx;team.players.forEach(p=>{p.lid=lid;p.teamId=team.id;PLAYER_INDEX[p.id]=p;});}
 
@@ -216,3 +225,42 @@ function prepareNextPlayoffEvent(ev,won){
 }
 
 function nextFixture(G){ const sched=SCHEDULE[G.lid]; if(!sched||G.round>=sched.length)return null; for(const [h,a] of sched[G.round])if(h===G.teamIdx||a===G.teamIdx)return {h,a,home:h===G.teamIdx}; return {rest:true}; }
+function simRemainingRallies(M) {
+  const currentRy = M.res.rallies[M.i] || { set: 1, h: 0, a: 0 };
+  const targetSet = currentRy.set;
+  let h = currentRy.h, a = currentRy.a;
+  const target = targetSet === 5 ? 15 : 25;
+  const newRallies = [];
+  const rots = { h: rotOf(M.lu.h), a: rotOf(M.lu.a) };
+  const libs = { h: PLAYER_INDEX[M.lu.h.L], a: PLAYER_INDEX[M.lu.a.L] };
+  const R = { h: ratingsOf(M.home, M.lu.h, M.tactic || "bal", Math.random, true), a: ratingsOf(M.away, M.lu.a, "bal", Math.random, true) };
+  let srv = currentRy.winner || "h";
+  let guard = 0;
+  while (!((h >= target || a >= target) && Math.abs(h - a) >= 2) && guard++ < 120) {
+    const ry = playRally(srv, rots, libs, R, Math.random, "h", true);
+    if (ry.winner === "h") h++; else a++;
+    if (ry.cred) M.res.pts[ry.cred.id] = (M.res.pts[ry.cred.id] || 0) + 1;
+    ry.set = targetSet; ry.h = h; ry.a = a; ry.sets = [M.sh, M.sa];
+    newRallies.push(ry);
+    if (ry.winner !== srv) { rots[ry.winner] = rotate(rots[ry.winner]); srv = ry.winner; }
+  }
+  let hs = M.sh + (h > a ? 1 : 0), as = M.sa + (a > h ? 1 : 0);
+  let nextSet = targetSet;
+  while (hs < 3 && as < 3) {
+    nextSet++;
+    const nextTarget = nextSet === 5 ? 15 : 25;
+    let sh = 0, sa = 0;
+    let srvNext = nextSet % 2 === 1 ? "h" : "a"; 
+    let g2 = 0;
+    while (!((sh >= nextTarget || sa >= nextTarget) && Math.abs(sh - sa) >= 2) && g2++ < 120) {
+      const ry = playRally(srvNext, rots, libs, R, Math.random, "h", true);
+      if (ry.winner === "h") sh++; else sa++;
+      if (ry.cred) M.res.pts[ry.cred.id] = (M.res.pts[ry.cred.id] || 0) + 1;
+      ry.set = nextSet; ry.h = sh; ry.a = sa; ry.sets = [hs, as];
+      newRallies.push(ry);
+      if (ry.winner !== srvNext) { rots[ry.winner] = rotate(rots[ry.winner]); srvNext = ry.winner; }
+    }
+    if (sh > sa) hs++; else as++;
+  }
+  M.res.rallies = M.res.rallies.slice(0, M.i + 1).concat(newRallies);
+}
