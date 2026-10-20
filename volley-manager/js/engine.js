@@ -233,9 +233,14 @@ function simRemainingRallies(M) {
   const newRallies = [];
   const rots = { h: rotOf(M.lu.h), a: rotOf(M.lu.a) };
   const libs = { h: PLAYER_INDEX[M.lu.h.L], a: PLAYER_INDEX[M.lu.a.L] };
-  const R = { h: ratingsOf(M.home, M.lu.h, M.tactic || "bal", Math.random, true), a: ratingsOf(M.away, M.lu.a, "bal", Math.random, true) };
+  const R = {
+    h: ratingsOf(M.home, M.lu.h, M.tactic || "bal", Math.random, true),
+    a: ratingsOf(M.away, M.lu.a, "bal", Math.random, true)
+  };
   let srv = currentRy.winner || "h";
   let guard = 0;
+
+  // Completa il set attualmente in corso
   while (!((h >= target || a >= target) && Math.abs(h - a) >= 2) && guard++ < 120) {
     const ry = playRally(srv, rots, libs, R, Math.random, "h", true);
     if (ry.winner === "h") h++; else a++;
@@ -244,13 +249,20 @@ function simRemainingRallies(M) {
     newRallies.push(ry);
     if (ry.winner !== srv) { rots[ry.winner] = rotate(rots[ry.winner]); srv = ry.winner; }
   }
+
+  // Ricostruisce l'elenco dei set completati + il set corrente
+  const updatedSets = M.setScores.map(s => [s[0], s[1]]);
+  updatedSets.push([h, a]);
+
   let hs = M.sh + (h > a ? 1 : 0), as = M.sa + (a > h ? 1 : 0);
   let nextSet = targetSet;
+
+  // Simula gli eventuali set successivi
   while (hs < 3 && as < 3) {
     nextSet++;
     const nextTarget = nextSet === 5 ? 15 : 25;
     let sh = 0, sa = 0;
-    let srvNext = nextSet % 2 === 1 ? "h" : "a"; 
+    let srvNext = nextSet % 2 === 1 ? "h" : "a";
     let g2 = 0;
     while (!((sh >= nextTarget || sa >= nextTarget) && Math.abs(sh - sa) >= 2) && g2++ < 120) {
       const ry = playRally(srvNext, rots, libs, R, Math.random, "h", true);
@@ -260,7 +272,13 @@ function simRemainingRallies(M) {
       newRallies.push(ry);
       if (ry.winner !== srvNext) { rots[ry.winner] = rotate(rots[ry.winner]); srvNext = ry.winner; }
     }
+    updatedSets.push([sh, sa]);
     if (sh > sa) hs++; else as++;
   }
+
+  // Aggiorna sia i rally sia il risultato finale della partita
   M.res.rallies = M.res.rallies.slice(0, M.i + 1).concat(newRallies);
+  M.res.sets = updatedSets;
+  M.res.hs = hs;
+  M.res.as = as;
 }
