@@ -874,13 +874,70 @@ function applyRealStats(){
   }
   for(const p of prof){
     for(const k of ["att","blk","srv","rec","def","set"]){
-      const d=(p._d&&p._d[k])||0; p[k]=Math.round(clampN(p[k]-(p._old[k]||0)+d,25,98));
+      const d=((p._d&&p._d[k])||0)*(p._m.series&&p._m.series!==p.lid?.5:1); /* dati di un'altra serie: peso dimezzato (le due serie non sono confrontabili) */ p[k]=Math.round(clampN(p[k]-(p._old[k]||0)+d,25,115));
     }
     const o=p.ovr; p.ovr=p[KEY_ATTR[p.role]];
     p.pot=p.age<=21?Math.max(p.pot||0,p.ovr):p.ovr; p.val=calcETV(p); LVF_CALIBRATION.bySeries[p._m.series]=(LVF_CALIBRATION.bySeries[p._m.series]||0)+1;
   }
+  apply2026Layer(all);
   for(const p of all){delete p._old;delete p._m;delete p._d;}
+  finalizeOverall();
   return LVF_CALIBRATION;
+}
+
+/* ===== Inizio stagione 2026/27, Serie A1 (Centro Statistiche LVF, regular season, circa 4 giornate; solo le prime 20 di ogni classifica).
+   Colonne: cognome, squadra (short), punti, muri, ace, % ricezione perfetta (0 = non in classifica).
+   Campione minuscolo e senza i valori delle atlete fuori classifica: si usa SOLO per chi non ha alcuno storico LVF
+   (nuove arrivate), con un bonus piccolo e limitato. ===== */
+const LVF_2026_A1_START=[
+["Van Ryk","Scandicci",91,0,9,0],["Egonu","Milano",89,0,3,0],["Tolok","Novara",81,0,8,0],["Bolzonetti","Vallefoglia",74,0,6,0],
+["Frosini","Talmassons",72,7,0,0],["Bici","Vallefoglia",70,0,0,0],["Grozer","Busto Arsizio",69,8,0,0],["Németh","Chieri",66,0,7,0],
+["Skinner","Scandicci",64,0,0,36.67],["Kipp","Bergamo",63,0,0,0],["Mihaljević","Brescia",59,0,4,0],["Wada","Busto Arsizio",57,0,0,0],
+["Grobelna","Novara",55,0,0,0],["Adelusi","Marignano",53,0,0,0],["Cugno","Firenze",53,8,0,0],["Kochurina","Vallefoglia",53,11,4,0],
+["Haak","Conegliano",52,6,3,0],["Zhu Ting","Conegliano",51,0,0,32.88],["Bracchi","Marignano",51,0,0,0],["Lanier","Milano",49,0,0,42.03],
+["Danesi","Milano",0,18,3,0],["Koulisiani","Cuneo",0,12,5,0],["Aleksic","Scandicci",0,12,0,0],["Munarini","Busto Arsizio",0,11,0,0],
+["Lubian","Chieri",0,9,0,0],["Squarcini","Novara",0,9,0,0],["Meli","Bergamo",0,8,0,0],["Van Avermaet","Bergamo",0,8,4,0],
+["Graziani","Scandicci",0,7,0,0],["Molinaro","Talmassons",0,7,4,0],["Candi","Vallefoglia",0,7,0,0],["Stuut","Chieri",0,6,0,0],
+["Caruso","Firenze",0,6,0,0],["Milosic","Firenze",0,6,0,0],["Mazzon","Macerata",0,6,0,0],
+["Manfredini","Conegliano",0,0,5,0],["Grabić","Talmassons",0,0,5,0],["Seki","Busto Arsizio",0,0,5,0],["Bakodimou","Talmassons",0,0,4,0],
+["Piva","Milano",0,0,4,0],["Schut","Macerata",0,0,4,0],["Pietrini","Bergamo",0,0,4,0],["Damaske","Firenze",0,0,3,34.55],
+["Gelin","Bergamo",0,0,0,51.79],["Panetoni","Marignano",0,0,0,48.53],["Parrocchiale","Brescia",0,0,0,46.87],["Caforio","Macerata",0,0,0,46.15],
+["Stigrot","Bergamo",0,0,0,43.4],["Mistretta","Talmassons",0,0,0,41.86],["De Bortoli","Vallefoglia",0,0,0,41.23],["Piomboni","Macerata",0,0,0,38.46],
+["Herbots","Novara",0,0,0,38.24],["Moro","Novara",0,0,0,37.78],["Negretti","Firenze",0,0,0,37.31],["Fersino","Milano",0,0,0,36.96],
+["Nervini","Chieri",0,0,0,36.21],["Nardelli","Brescia",0,0,0,34.48],["Bosetti","Scandicci",0,0,0,34.04],["Eggleston","Chieri",0,0,0,32.91]
+];
+const LVF_2026_LAYER={applied:0,notFound:[]};
+
+function apply2026Layer(all){
+  const clampN=(v,a,b)=>Math.max(a,Math.min(b,v));
+  for(const r of LVF_2026_A1_START){
+    const key=normalizeStatKey(r[0]);
+    const c=all.filter(p=>p.lid==="A1"&&teamShort(p)===r[1]&&(normalizeStatKey(p.name)===key||normalizeStatKey(p.name).endsWith(" "+key)));
+    if(c.length!==1){LVF_2026_LAYER.notFound.push(r[0]+" ("+r[1]+")");continue;}
+    const p=c[0];
+    if((p.history||[]).some(x=>x.apps!=null||x.recTA!=null)||p._rec)continue; /* ha gia' uno storico: il campione di 4 gare non aggiunge nulla */
+    const add={att:0,blk:0,srv:0,rec:0};
+    if(r[2]&&(p.role==="O"||p.role==="S"))add.att=clampN((r[2]-45)/10,0,4.5);
+    if(r[3])add.blk=clampN((r[3]-5)/2.5,0,3.5);
+    if(r[4])add.srv=clampN((r[4]-3)/1.5,0,3);
+    if(r[5])add.rec=clampN((r[5]-33)/5,0,3.5);
+    for(const k in add)if(add[k])p[k]+=add[k];
+    p.ovr=p[KEY_ATTR[p.role]]; LVF_2026_LAYER.applied++;
+  }
+}
+function teamShort(p){const t=WORLD[p.lid].find(x=>x.id===p.teamId);return t?t.short:"";}
+
+/* Passaggio finale: tetto morbido su tutti gli attributi (la A1 non ha piu' decine di giocatrici ferme a 98),
+   poi overall, potenziale e valore. Nessuna chiamata a rng(): le rose non cambiano. */
+function finalizeOverall(){
+  const fin=p=>{
+    for(const k of ["att","blk","srv","rec","def","set"])p[k]=Math.round(Math.max(25,Math.min(98,softCap(p[k]))));
+    p.ovr=p[KEY_ATTR[p.role]];
+    p.pot=p.age<=21?Math.max(p.ovr,Math.round(Math.min(96,softCap(p.pot||p.ovr)))):p.ovr;
+    p.val=calcETV(p);
+  };
+  for(const lid of Object.keys(WORLD))for(const t of WORLD[lid])for(const p of t.players)fin(p);
+  FREE_AGENTS.forEach(fin);
 }
 
 /* ===== Ricezione A1 2025/26 per atleta (Volleyball World / dati LVF): cognome, ricezioni perfette, errori, ricezioni totali, % perfette.

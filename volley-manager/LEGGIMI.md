@@ -30,7 +30,11 @@ Solo HTML, CSS e JavaScript: **nessuna build, nessun framework**. Si apre `index
 1. **Mondo con seme fisso.** `buildWorld()` in `engine.js` usa un generatore casuale con seme: aggiungere o togliere chiamate a `rng()` dentro `makePlayer` cambia TUTTE le rose. Le correzioni successive vanno fatte dopo, come in `applyRealStats()`.
 2. **Coordinate del campo.** `u` = distanza dalla rete lungo il campo (±9 m), `v` = lato (±4,5 m), `z` = altezza in metri. Si disegna sempre con `proj(u, v, z)`.
 3. **Loghi.** Nome del file = id del club (es. `con.png`); l'elenco è in `logos/manifest.js` e gli id sono in `logos/README.md`. Mancano ancora i 16 club di A3.
-4. **Statistiche.** I dati LVF provengono dalle pagine ufficiali (statistiche per club) e da Volleyball World (ricezione A1 2025/26). Le liberi non hanno dati nelle tabelle per club.
+4. **Overall e tetto morbido.** Gli attributi non hanno più un tetto duro a 98: `makePlayer` lascia salire i valori (fino a 115) e `finalizeOverall()` (in `stats_lvf.js`, chiamata alla fine di `applyRealStats()`) applica `softCap()` (`data.js`): invariato fino a 84, poi sale lentamente verso 98 senza pareggi. Non toccare `rng()` e non rimettere `clamp(...,98)` dentro `makePlayer`.
+5. **Aggancio nomi alle statistiche.** `playerHistory()` (`data.js`) prova nell'ordine: alias espliciti (`STAT_ALIASES`, solo casi verificati a mano), nome identico, stessi token in ordine diverso o con secondo nome, cognome unico (≥5 lettere). Se un'atleta non prende le statistiche, aggiungi un alias.
+6. **Dati di un'altra serie.** Se le statistiche più recenti vengono da una serie diversa da quella attuale (es. A2 → A1), la correzione statistica pesa la metà.
+7. **Inizio 2026/27.** `LVF_2026_A1_START` (`stats_lvf.js`) contiene le prime 20 del Centro Statistiche dopo circa 4 giornate; si usa solo per le atlete senza storico LVF, con un bonus piccolo. Dal sito si vede solo la A1 corrente (i parametri nell'indirizzo vengono ignorati da WebFetch): per A2 o altre stagioni servono dati copiati a mano.
+8. **Statistiche.** I dati LVF provengono dalle pagine ufficiali (statistiche per club) e da Volleyball World (ricezione A1 2025/26). Le liberi non hanno dati nelle tabelle per club.
 5. **Colori dei club.** Molti sono stime: si correggono dal gioco, scheda "Identità club".
 
 ## Idee ancora aperte

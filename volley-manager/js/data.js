@@ -199,10 +199,38 @@ const LVF_STATS_SOURCES={
 
 function normalizeAthleteName(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();}
 
+/* Tetto morbido: sotto 84 il valore resta com'e'; sopra, sale sempre piu' lentamente verso 98 senza mai pareggiare.
+   Sostituisce il vecchio clamp duro a 95/98, che appiattiva le stelle (decine di giocatrici tutte a 98). */
+function softCap(v){return v<=84?v:84+14*Math.tanh((v-84)/14);}
+
+/* Alias espliciti: nome in rosa -> nome/i usati nelle tabelle LVF (cognomi corti, grafie diverse).
+   Si aggiungono solo casi verificati a mano: un alias sbagliato assegna statistiche alla persona sbagliata. */
+const STAT_ALIASES={
+ "haak":["Isabelle Haak"],
+ "bici":["Erblira Bici"],
+ "kipp":["Kendall Kipp"],
+ "seki":["Nanami Seki"],
+ "ajack jhon majak malual":["Adhuoljok John Majak Malual"],
+ "bierria":["Tai Masyn Bierria","Tay Masin Bierria"]
+};
+
 function playerHistory(name){
  const key=normalizeAthleteName(name);
+ const al=STAT_ALIASES[key];
+ if(al){const ks=al.map(normalizeAthleteName);const r=LVF_HISTORICAL_STATS.filter(x=>ks.includes(normalizeAthleteName(x.name)));if(r.length)return r.slice().sort((a,b)=>b.season.localeCompare(a.season));}
  const exact=LVF_HISTORICAL_STATS.filter(x=>normalizeAthleteName(x.name)===key);
  if(exact.length)return exact.slice().sort((a,b)=>b.season.localeCompare(a.season));
+ /* Stessa atleta con nome e cognome invertiti ("Zhu Ting" / "Ting Zhu") o con secondo nome ("Chidera Eze" / "Chidera Blessing Eze"):
+    stessi token (o insieme incluso nell'altro), stesso primo e ultimo token, una sola identità nel dataset. */
+ const kt=key.split(" ");
+ if(kt.length>=2){
+  const same=(a,b)=>{const sa=a.split(" "),sb=b.split(" ");const [s,l]=sa.length<=sb.length?[sa,sb]:[sb,sa];if(s.length<2)return false;
+   if(sa.length===sb.length)return [...sa].sort().join(" ")===[...sb].sort().join(" ");
+   return s.every(t=>l.includes(t))&&s[0]===l[0]&&s[s.length-1]===l[l.length-1];};
+  const cand=LVF_HISTORICAL_STATS.filter(x=>same(key,normalizeAthleteName(x.name)));
+  const ids=[...new Set(cand.map(x=>normalizeAthleteName(x.name)))];
+  if(ids.length===1)return cand.slice().sort((a,b)=>b.season.localeCompare(a.season));
+ }
  // Le rose storiche contengono talvolta solo il cognome: fallback soltanto se quel cognome
  // identifica una sola atleta nel dataset, per evitare di assegnare statistiche alla persona sbagliata.
  const surname=key.split(" ").pop();
