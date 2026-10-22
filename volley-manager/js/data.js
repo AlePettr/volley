@@ -33,7 +33,10 @@ const LEAGUES = { A1: { name: "Serie A1", rounds: 26, teams: [ { id: "con", shor
     ] },
     { id: "mod_a3", short: "Volley Modena", full: "Volley Modena", city: "Modena", tier: 2.6, color: "#ca8a04", p: ["P|Theresa Barner|GER|2004", "P|Beatrice Balconati|ITA|2004", "O|Sonia Ratti|ITA|2001", "O|Amelia Pasini|ITA|2008", "S|Valentina Adani|ITA|2002", "S|Linda Cabassa|ITA|2004", "S|Chiara Martinato|ITA|2005", "S|Anja Nella|ITA|2006", "C|Monica Tirisegu Oke|ITA|2006", "C|Marta Semprini Cesari|ITA|2004", "C|Sofia Migliorini|ITA|2001", "C|Anna Pettiti|ITA|2007", "L|Lia Righi|ITA|2006", "L|Victoria Cavallieri|ITA|2005"] },
     { id: "val_a3", short: "Valdarno", full: "Passione Valdarno Volley", city: "Figline Incisa Valdarno", tier: 2.3, color: "#0284c7", p: [
-      "P|Ester Grucka|ITA|2004", "P|Elena Bortolot|ITA|1995"
+      "P|Ester Grucka|ITA|2004", "P|Elena Bortolot|ITA|1995", "O|Carola Colombino|ITA|2005",
+      "S|Agata Zuccarelli|ITA|1995", "S|Sara Turini|ITA|2007", "S|Sara Fontemaggi|ITA|2002", "S|Kalina Pylińska|POL|2003",
+      "C|Chiara Marinucci|ITA|2004", "C|Zoe Moiran|ITA|2006", "C|Francesca Fava|ITA|1998",
+      "L|Silvia Fiori|ITA|1994", "L|Irene Caruana|ITA|2001"
     ] }
   ] },
   A3B: { name: "Serie A3 - Girone B", rounds: 14, teams: [
@@ -62,13 +65,15 @@ const LEAGUES = { A1: { name: "Serie A1", rounds: 26, teams: [ { id: "con", shor
     { id: "oly_a3", short: "Olympia di Navigazione", full: "Olympia di Navigazione", city: "Ravenna", tier: 2.3, color: "#0ea5e9", p: [] },
     { id: "ves_a3", short: "Vesuvio Oplonti", full: "CO.GE. Vesuvio Oplonti", city: "Torre Annunziata", tier: 2.4, color: "#d946ef", p: [
       "P|Emma Sturniolo|ITA|2003", "P|Giulia Picchi|ITA|2002", "O|Sofia Felappi|ITA|2003", "O|Ginevra Bazzani|ITA|2002",
-      "S|Giorgia Coveccia|ITA|2004", "S|Gioia Riccato|ITA|2002", "S|Sara Bassi|ITA|2007", "S|Vittoria Zuliani|ITA|0",
-      "L|Jessica Lanari|ITA|1993", "L|Annapaola Truono|ITA|1990"
+      "S|Giorgia Coveccia|ITA|2004", "S|Gioia Riccato|ITA|2002", "S|Sara Bassi|ITA|2007", "S|Vittoria Zuliani|ITA|2004",
+      "C|Jasmin Nicol Danaila|ITA|2005", "C|Bibiana Guzin|ITA|2004", "C|Chiara Alice Cecchini|ITA|2003",
+      "L|Jessica Lanari|ITA|1993", "L|Melissa Criscuolo|ITA|2007"
     ] },
     { id: "cas_a3", short: "Castellana Grotte", full: "Zero5 Castellana Grotte", city: "Castellana Grotte", tier: 2.3, color: "#0284c7", p: [
       "P|Francesca Saveriano|ITA|1993", "P|Martina Merati|ITA|2002", "O|Federica Stroppa|ITA|1997",
-      "S|Alessia Corradetti|ITA|2001", "S|Ginevra Camerini|ITA|2006", "S|Giorgia Rizza|ITA|2006", "S|Vera Bondarenko|UKR|2002",
-      "C|Asya Zingoni|ITA|1999", "C|Camilla Grazia|ITA|2000", "C|Marjolijn Oskam|NED|1996", "C|Sara Marchesano|ITA|0"
+      "S|Alessia Corradetti|ITA|2001", "S|Ginevra Camerini|ITA|2006", "S|Giorgia Rizza|ITA|2006", "S|Vera Bondarenko|ITA|2002",
+      "C|Asya Zingoni|ITA|1999", "C|Camilla Grazia|ITA|2000", "C|Marjolijn Oskam|NED|1996", "C|Sara Marchesano|ITA|2002",
+      "L|Cecilia Oggioni|ITA|1999", "L|Alessandra Locorotondo|ITA|2008"
     ] },
     { id: "ton_a3", short: "Tonno Callipo", full: "Tonno Callipo Calabria", city: "Vibo Valentia", tier: 2.6, color: "#b91c1c", p: [
       "P|Chiara Scacchetti|ITA|1995", "P|Romina Courroux|ARG|1998", "O|Giulia Colombo|ITA|2007", "O|Irene Botarelli|ITA|1996",
