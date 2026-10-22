@@ -12,14 +12,20 @@ const LEAGUES = { A1: { name: "Serie A1", rounds: 26, teams: [ { id: "con", shor
     ] },
     { id: "gar_a3", short: "Garlasco", full: "Volley 2001 Garlasco", city: "Garlasco", tier: 2.4, color: "#15803d", p: [
       "P|Mariaelena Aluigi|ITA|2001", "P|Camilla Trevisan|ITA|2007",
-      "O|Chiara Rognoni|ITA|2007", "O|Marta Prinetti|ITA|0"
+      "O|Chiara Rognoni|ITA|2007", "O|Marta Prinetti|ITA|2003",
+      "S|Asia Aliotta|ITA|2006", "S|Eleonora Vecchi|ITA|2007", "S|Matilde Gallina|ITA|2002", "S|Matilde Bosi|ITA|2007",
+      "C|Alexandra Nagy|ITA|2006", "C|Beatrice Badini|ITA|1999", "C|Fabiana Antignano|ITA|1995", "L|Alena De Martino|ITA|2005", "L|Elisa Tenca|ITA|2008"
     ] },
     { id: "vig_a3", short: "Florens Vigevano", full: "INT – Florens Vigevano", city: "Vigevano", tier: 2.5, color: "#2563eb", p: [
       "O|Glenda Messaggi|ITA|1999", "S|Lucrezia Rossi|ITA|1999", "S|Alessandra Gerbaudo|ITA|2005", "L|Matilde Bonitempo|ITA|2006",
       "C|Aurora Bellinzona|ITA|1997", "C|Giulia Deambrogio|ITA|2003", "P|Anna Lualdi|ITA|2000", "C|Giorgia De Bortoli|ITA|2003",
       "L|Giorgia Colombo|ITA|1999", "S|Greta Valli|ITA|1992", "C|Matilde Calvelli|ITA|2005", "P|Marta Gulli|ITA|1999"
     ] },
-    { id: "rip_a3", short: "Ripalta", full: "C.R. Transport Ripalta", city: "Ripalta Cremasca", tier: 2.4, color: "#ea580c", p: [] },
+    { id: "rip_a3", short: "Ripalta", full: "C.R. Transport Ripalta", city: "Ripalta Cremasca", tier: 2.4, color: "#ea580c", p: [
+      "P|Federica Saccani|ITA|1998", "P|Letizia Riso|ITA|1997", "O|Martina Martinelli|ITA|1994", "O|Nadia Pezzaglia|ITA|2004",
+      "S|Eugenia Ottino|ITA|2001", "S|Anna Bassi|ITA|1994", "S|Matilde Boffelli|ITA|2006", "S|Arianna Vittorini|ITA|2002",
+      "C|Camilla Neriotti|ITA|1994", "C|Eva Ravazzolo|ITA|1999", "C|Ludovica Tullio|ITA|2004", "L|Alice Labadini|ITA|2003", "L|Lavinia Rossetti|ITA|2007"
+    ] },
     { id: "vil_a3", short: "Villa Cortese", full: "Villa Cortese Volley", city: "Villa Cortese", tier: 2.5, color: "#06b6d4", p: [
       "P|Sofia Alberti|ITA|2003", "P|Katia Mapelli|ITA|2008", "O|Valentina Viola|ITA|2004", "O|Lavinia Borroni|ITA|2004",
       "S|Giulia Baldizzone|ITA|2004", "S|Claudia Talerico|ITA|2006", "S|Clarissa Elli|ITA|1995", "S|Erika Ghezzi|ITA|1995",
