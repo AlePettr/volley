@@ -211,7 +211,12 @@ const STAT_ALIASES={
  "kipp":["Kendall Kipp"],
  "seki":["Nanami Seki"],
  "ajack jhon majak malual":["Adhuoljok John Majak Malual"],
- "bierria":["Tai Masyn Bierria","Tay Masin Bierria"]
+ "bierria":["Tai Masyn Bierria","Tay Masin Bierria"],
+ "mariia solovei":["Solovei Maria"],
+ "gabi":["Braga Guimaraes Gabriela"],
+ "tik homirova":["Tikhomirova Anna"],
+ "ven eva":["Veneva Kalina"],
+ "anja asonja":["Asonja Anya"]
 };
 
 function playerHistory(name){

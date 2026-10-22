@@ -810,6 +810,86 @@ const LVF_DETAIL_ROWS = [
 const LVF_DETAIL_FIELDS=["apps","points","attacks","attackPts","serves","aces","blocks","serveErrors","recPerfect"];
 const LVF_CALIBRATION={matched:0,total:0,bySeries:{}};
 
+/* ===== Statistiche per ruolo (js/stats_ruoli.js): metriche piu' complete per chi ha una riga di ruolo.
+   Aggancio per nome SOLO tra atlete dello stesso ruolo; se piu' persone diverse della stessa serie combaciano, si salta e si registra.
+   Per ogni serie e ruolo, ogni metrica e' confrontata con le colleghe (z-score) e pesata per la dimensione del campione. ===== */
+const LVF_ROLE_CALIB={matched:0,byRole:{},unmatched:[],ambiguous:[],z:{}};
+function applyRoleStats(all,prof){
+  if(typeof LVF_ROLE_ROWS==="undefined")return;
+  const clampN=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const F={};LVF_ROLE_FIELDS.forEach((f,i)=>F[f]=3+i);
+  const toks=s=>normalizeStatKey(String(s).replace(/ß/g,"ss")).split(" ").filter(Boolean);
+  const sameSet=(a,b)=>a.length===b.length&&[...a].sort().join(" ")===[...b].sort().join(" ");
+  const subset=(a,b)=>{const [s,l]=a.length<=b.length?[a,b]:[b,a];return s.length>=2&&s.every(t=>l.includes(t));};
+  const byRole={};for(const r of LVF_ROLE_ROWS)(byRole[r[1]]=byRole[r[1]]||[]).push({r,t:toks(r[2])});
+  const lowN=(r,k)=>r[F[k]]||0;
+  const mm=[];
+  for(const p of all){
+    const g=toks(p.name),al=STAT_ALIASES[normalizeStatKey(p.name)],alt=al?al.map(toks):null;
+    const cand=(byRole[p.role]||[]).filter(x=>{
+      if(alt)return alt.some(t=>sameSet(t,x.t));
+      if(g.length===1)return x.t[0]===g[0];                        /* in rosa solo il cognome: nei PDF il cognome e' per primo */
+      if(sameSet(g,x.t)||subset(g,x.t))return true;
+      return g.length>=2&&x.t.length>=g.length&&g.every((t,i)=>x.t[i]===t);   /* cognome composto senza nome: "De Gennaro" */
+    });
+    if(!cand.length)continue;
+    const bySer={};for(const x of cand)(bySer[x.r[0]]=bySer[x.r[0]]||[]).push(x);
+    if(Object.values(bySer).some(a=>new Set(a.map(x=>x.r[2])).size>1)){LVF_ROLE_CALIB.ambiguous.push(p.name+" ("+p.role+") -> "+cand.map(x=>x.r[2]).join(" / "));continue;}
+    const best=Object.values(bySer).map(a=>a[0].r).sort((a,b)=>(b[F.sets]||0)-(a[F.sets]||0)||(a[0]===p.lid?-1:1))[0];
+    if((best[F.apps]||0)<4||(best[F.sets]||0)<10)continue;
+    mm.push({p,r:best});
+  }
+  /* metriche grezze + campione per ogni metrica */
+  const M={att:[["eff",.6],["pps",.4]],blk:[["bps",1]],srv:[["srv",1]],rec:[["rec",1]]};
+  const N={att:250,blk:80,srv:250,rec:250};
+  const USE={P:["blk","srv"],O:["att","blk","srv"],S:["att","blk","srv","rec"],C:["att","blk","srv"],L:["rec"]};
+  const raw=x=>{const r=x.r,v={},n={};
+    const at=lowN(r,"attTot"),sv=lowN(r,"serves"),rc=lowN(r,"recTot"),st=Math.max(1,lowN(r,"sets"));
+    if(at>=60){v.eff=(lowN(r,"attPerf")-lowN(r,"attErr")-lowN(r,"attBlocked"))/at;v.pps=lowN(r,"pts")/st;n.att=at;}
+    v.bps=lowN(r,"blkPerf")/st;n.blk=st;
+    if(sv>=80){v.srv=(lowN(r,"aces")-.35*lowN(r,"serveErr"))/sv;n.srv=sv;}
+    if(rc>=(x.p.role==="L"?150:100)){v.rec=(lowN(r,"recPerf")-lowN(r,"recErr"))/rc;n.rec=rc;}
+    x.v=v;x.n=n;};
+  mm.forEach(raw);
+  const groups={};for(const x of mm)(groups[x.r[0]+"|"+x.p.role]=groups[x.r[0]+"|"+x.p.role]||[]).push(x);
+  for(const g of Object.values(groups)){
+    const role=g[0].p.role,ser=g[0].r[0];
+    for(const k of USE[role]||[]){
+      const st={};
+      for(const [c] of M[k]){const vals=g.map(x=>x.v[c]).filter(v=>v!==undefined);if(vals.length<8){st[c]=null;continue;}const mu=vals.reduce((a,b)=>a+b,0)/vals.length;const sd=Math.sqrt(vals.reduce((a,b)=>a+(b-mu)*(b-mu),0)/vals.length)||1;st[c]={mu,sd};}
+      for(const x of g){
+        if(x.n[k]===undefined)continue;
+        let z=0,wsum=0;for(const [c,w] of M[k]){if(!st[c]||x.v[c]===undefined)continue;z+=w*clampN((x.v[c]-st[c].mu)/st[c].sd,-2.5,2.5);wsum+=w;}
+        if(!wsum)continue; z/=wsum;
+        const wt=x.n[k]/(x.n[k]+N[k]);
+        (x.res=x.res||{})[k]={z,wt};
+        (LVF_ROLE_CALIB.z[x.p.id]=LVF_ROLE_CALIB.z[x.p.id]||{})[k]={z,w:wt}; /* diagnostica */
+      }
+    }
+  }
+  /* Dal disturbo casuale alla prestazione reale: per chi gioca nella serie dei propri dati, l'attributo si avvicina a
+     (media del gruppo + z * dispersione), con forza BETA * peso del campione. Chi cambia serie conserva la correzione additiva
+     (poi dimezzata nel passaggio finale). */
+  const BETA=.6,CAP=10,sub={};
+  for(const x of mm)for(const k in (x.res||{})){const base=x.p[k]-((x.p._old&&x.p._old[k])||0);x.res[k].base=base;if(x.r[0]===x.p.lid)(sub[x.p.lid+"|"+x.p.role+"|"+k]=sub[x.p.lid+"|"+x.p.role+"|"+k]||[]).push(base);}
+  const st2={};
+  for(const key in sub){const v=sub[key];if(v.length<8)continue;const mu=v.reduce((a,b)=>a+b,0)/v.length;st2[key]={mu,sd:Math.max(3,Math.sqrt(v.reduce((a,b)=>a+(b-mu)*(b-mu),0)/v.length))};}
+  for(const x of mm){
+    x.p._d=x.p._d||{};
+    for(const k in (x.res||{})){
+      const {z,wt,base}=x.res[k],sg=st2[x.p.lid+"|"+x.p.role+"|"+k];
+      x.p._d[k]=(x.r[0]===x.p.lid&&sg)?Math.round(clampN(BETA*wt*(sg.mu+z*sg.sd-base),-CAP,CAP)*10)/10:Math.round(clampN(z*4.2*wt,-8,8)*10)/10;
+    }
+  }
+  for(const x of mm){
+    const p=x.p; p._rich=true; p._m={series:x.r[0],apps:x.r[F.apps]};
+    if(!prof.includes(p))prof.push(p);
+    LVF_ROLE_CALIB.matched++;const key=x.r[0]+"|"+p.role;LVF_ROLE_CALIB.byRole[key]=(LVF_ROLE_CALIB.byRole[key]||0)+1;
+  }
+  const got=new Set(mm.map(x=>x.p));
+  for(const p of all)if((p.lid==="A1"||p.lid==="A2")&&!got.has(p))LVF_ROLE_CALIB.unmatched.push(p.lid+" "+p.role+" "+p.name);
+}
+
 function applyRealStats(){
   const clampN=(v,a,b)=>Math.max(a,Math.min(b,v));
   const all=[]; for(const lid of Object.keys(WORLD))for(const t of WORLD[lid])for(const p of t.players)if(!p.gen)all.push(p);
@@ -854,8 +934,9 @@ function applyRealStats(){
   LVF_HISTORICAL_STATS.splice(0,LVF_HISTORICAL_STATS.length,...LVF_STATS_MERGED.values());
   for(const p of recPl){p.history=playerHistory(p.name); if(!prof.includes(p)){p._m={series:"A1"};prof.push(p);}}
   LVF_CALIBRATION.total=all.length;LVF_CALIBRATION.matched=prof.length;LVF_CALIBRATION.reception=recPl.length;
+  applyRoleStats(all,prof);
   const stat=(arr)=>{const n=arr.length,mu=arr.reduce((a,b)=>a+b,0)/Math.max(1,n),sd=Math.sqrt(arr.reduce((a,b)=>a+(b-mu)*(b-mu),0)/Math.max(1,n))||1;return {mu,sd};};
-  const groups={}; for(const p of prof){ if(!p._m.apps&&!p._rec)continue;(groups[p._m.series+"|"+p.role]=groups[p._m.series+"|"+p.role]||[]).push(p);}
+  const groups={}; for(const p of prof){ if(p._rich||!p._m.apps&&!p._rec)continue;(groups[p._m.series+"|"+p.role]=groups[p._m.series+"|"+p.role]||[]).push(p);}
   const dist={};
   for(const g of Object.values(groups)){
     const mets={
@@ -880,7 +961,7 @@ function applyRealStats(){
     p.pot=p.age<=21?Math.max(p.pot||0,p.ovr):p.ovr; p.val=calcETV(p); LVF_CALIBRATION.bySeries[p._m.series]=(LVF_CALIBRATION.bySeries[p._m.series]||0)+1;
   }
   apply2026Layer(all);
-  for(const p of all){delete p._old;delete p._m;delete p._d;}
+  for(const p of all){delete p._old;delete p._m;delete p._d;delete p._rich;}
   finalizeOverall();
   return LVF_CALIBRATION;
 }
@@ -915,7 +996,7 @@ function apply2026Layer(all){
     const c=all.filter(p=>p.lid==="A1"&&teamShort(p)===r[1]&&(normalizeStatKey(p.name)===key||normalizeStatKey(p.name).endsWith(" "+key)));
     if(c.length!==1){LVF_2026_LAYER.notFound.push(r[0]+" ("+r[1]+")");continue;}
     const p=c[0];
-    if((p.history||[]).some(x=>x.apps!=null||x.recTA!=null)||p._rec)continue; /* ha gia' uno storico: il campione di 4 gare non aggiunge nulla */
+    if((p.history||[]).some(x=>x.apps!=null||x.recTA!=null)||p._rec||p._m)continue; /* ha gia' uno storico: il campione di 4 gare non aggiunge nulla */
     const add={att:0,blk:0,srv:0,rec:0};
     if(r[2]&&(p.role==="O"||p.role==="S"))add.att=clampN((r[2]-45)/10,0,4.5);
     if(r[3])add.blk=clampN((r[3]-5)/2.5,0,3.5);
