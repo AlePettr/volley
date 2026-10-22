@@ -8,7 +8,11 @@ const LEAGUES = { A1: { name: "Serie A1", rounds: 26, teams: [ { id: "con", shor
       "L|Michelle Gueli|ITA|0", "L|Anna Imarisio|ITA|0"
     ] },
     { id: "con_a3", short: "Concorezzo", full: "Pallavolo Concorezzo", city: "Concorezzo", tier: 2.5, color: "#dc2626", p: [
-      "P|Giulia Pasini|ITA|2004"
+      "P|Giulia Pasini|ITA|2004", "P|Martina Parentella|ITA|2008", "P|Allegra Scalvini|ITA|2008",
+      "O|Giulia Ritratti|ITA|2008", "O|Kerstin Wolf-Watz|SWE|2004",
+      "S|Valentina Cantaluppi|ITA|2004", "S|Linda Mangani|ITA|2000", "S|Giulia Oggioni|ITA|2009", "S|Carola Losito|ITA|2009", "S|Marta Frigerio|ITA|2009",
+      "C|Sara Mapelli|ITA|2009", "C|Celeste Torre|ITA|2008", "C|Michela Negri|ITA|2003", "C|Martina Tofani|ITA|2008",
+      "L|Martina Panciroli|ITA|2002", "L|Silvia Sormani|ITA|2003", "L|Rosa Signori|ITA|0"
     ] },
     { id: "gar_a3", short: "Garlasco", full: "Volley 2001 Garlasco", city: "Garlasco", tier: 2.4, color: "#15803d", p: [
       "P|Mariaelena Aluigi|ITA|2001", "P|Camilla Trevisan|ITA|2007",
@@ -62,7 +66,12 @@ const LEAGUES = { A1: { name: "Serie A1", rounds: 26, teams: [ { id: "con", shor
       "S|Linda Cabassa|ITA|2004", "S|Chiara Martinato|ITA|2005", "S|Anja Nella|ITA|2006", "S|Valentina Adani|ITA|2002",
       "C|Sofia Migliorini|ITA|0", "C|Vittoria Fornari|ITA|2002", "L|Giulia Rastelli|ITA|1990", "L|Emma Falcone|ITA|2001", "L|Elena Lutti|ITA|2007", "L|Elena Brancato|ITA|2009"
     ] },
-    { id: "oly_a3", short: "Olympia di Navigazione", full: "Olympia di Navigazione", city: "Ravenna", tier: 2.3, color: "#0ea5e9", p: [] },
+    { id: "oly_a3", short: "Olympia di Navigazione", full: "Olympia di Navigazione", city: "Ravenna", tier: 2.3, color: "#0ea5e9", p: [
+      "P|Chiara Poggi|ITA|2001", "P|Nika Deizi|ITA|2005", "O|Agnese Benzoni|ITA|2006",
+      "S|Lucia Busso|ITA|2003", "S|Linda Kovalčíková|SVK|2008", "S|Camilla Ferrari|ITA|2002", "S|Giorgia Micelli|ITA|2005",
+      "C|Beatrice Bacchilega|ITA|2003", "C|Giuditta Romano|ITA|2003", "C|Erika Bendoni|ITA|2001",
+      "L|Aurora Franchi|ITA|2003", "L|Lucrezia De Dominicis|ITA|2004"
+    ] },
     { id: "ves_a3", short: "Vesuvio Oplonti", full: "CO.GE. Vesuvio Oplonti", city: "Torre Annunziata", tier: 2.4, color: "#d946ef", p: [
       "P|Emma Sturniolo|ITA|2003", "P|Giulia Picchi|ITA|2002", "O|Sofia Felappi|ITA|2003", "O|Ginevra Bazzani|ITA|2002",
       "S|Giorgia Coveccia|ITA|2004", "S|Gioia Riccato|ITA|2002", "S|Sara Bassi|ITA|2007", "S|Vittoria Zuliani|ITA|2004",
