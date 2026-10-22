@@ -31,11 +31,23 @@ def parse(path):
         for pg in pdf.pages:
             for t in pg.extract_tables():
                 for row in t:
-                    if len(row) != 26 or not row[0] or row[0] in ("Atleta",) or row[0].startswith(("Lega ","Ruolo")): continue
-                    if row[1] is None and row[2] is None and all(c in (None,"") for c in row[3:]): pass
-                    d = {c: (re.sub(r"\s*\n\s*"," ",row[i]).strip() if c=="name" else num(row[i])) for i,c in enumerate(COLS)}
-                    d["name"] = re.sub(r"\s+\d+$", "", d["name"] or "").strip()   # a volte le presenze finiscono nella cella del nome
-                    if not d["name"] or "http" in d["name"] or "Pagina" in d["name"] or d["apps"] is None: continue
+                    if len(row) < 26: continue                       # legenda e altre tabelle piccole
+                    # il layout cambia da pagina a pagina (nome in colonna 0 o 1, colonne vuote ai lati):
+                    # il nome e' la prima cella con lettere, i 25 valori sono le celle successive
+                    k = next((i for i, c in enumerate(row) if c and re.search(r"[A-Za-zÀ-ÿ]", c)), None)
+                    if k is None: continue
+                    rest = row[k+1:]
+                    name = re.sub(r"\s*\n\s*", " ", row[k]).strip()
+                    m = re.search(r"\s+(\d+)$", name)
+                    if m:                                              # presenze finite nella cella del nome: i valori seguenti partono dai set
+                        name = name[:m.start()].strip(); rest = [m.group(1)] + rest
+                    else:                                              # celle vuote tra nome e presenze (le presenze ci sono sempre)
+                        while rest and (rest[0] is None or rest[0] == ""): rest = rest[1:]
+                    vals = (rest + [None]*25)[:25]
+                    if not name or name in ("Atleta",) or name.startswith(("Lega ", "Ruolo", "Prf.", "Err.", "Tipo ")) or "http" in name or "Pagina" in name: continue
+                    d = {"name": name}
+                    d.update({c: num(vals[i]) for i, c in enumerate(COLS[1:])})
+                    if d["apps"] is None: continue
                     d.update(series=series, role=role, from_=span[0], to=span[1])
                     out.append(d)
     return out
