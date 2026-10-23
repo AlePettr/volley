@@ -78,9 +78,12 @@ function rotate(a){return [a[5],a[0],a[1],a[2],a[3],a[4]];}
 
 function courtView(rot,lib){return rot.map((p,i)=>(i===1||i===2)&&p.role==="C"?{p:lib,lib:true}:{p,lib:false});}
 
+/* Check VAR (video check): in alcuni scambi la chiamata arbitrale e' dubbia; se errata, la squadra che la contesta ribalta il punto */
+const VAR_KINDS={kill:["Pallone dentro o fuori","Tocco a muro"],att:["Pallone dentro o fuori","Tocco a muro"],block:["Tocco a muro","Tocco di rete"],ace:["Servizio dentro o fuori","Tocco di rete"],serr:["Servizio fuori","Piede sulla linea"],rerr:["Pallone dentro o fuori","Tocco a muro"]};
+function varCandidate(ry){ if(Math.random()>.06)return null; const ks=VAR_KINDS[ry.type]||VAR_KINDS.kill; const wrong=Math.random()<.4; return {kind:ks[Math.floor(Math.random()*ks.length)],wrong,strong:wrong?Math.random()<.65:Math.random()<.3,done:false}; }
 function playRally(sideS,rots,libs,R,rng,homeSide,detail){ const sideR=sideS==="h"?"a":"h"; const rs=R[sideS],rr=R[sideR]; let pR=.64+.0033*((.35*rr.rec+.40*rr.att+.25*rr.set)-(.38*rs.srv+.37*rs.blk+.25*rs.def)); pR+=sideR===homeSide?.012:-.012; pR=clamp(pR,.42,.84); const recvWins=rng()<pR; const server=rots[sideS][0]; const rview=courtView(rots[sideR],libs[sideR]); const sview=courtView(rots[sideS],libs[sideS]); const receiver=pickW(rview.map(x=>x.p),p=>p.role==="L"?3:p.role==="S"?1.6:p.role==="O"?.2:p.role==="P"?.15:.1,rng); const front=(rot)=>[rot[3],rot[4],rot[5]]; const atkR=pickW(front(rots[sideR]),p=>Math.pow(p.att/70,3)*(p.role==="C"?.8:p.role==="P"?.12:1 ),rng); const atkS=pickW(front(rots[sideS]),p=>Math.pow(p.att/70,3)*(p.role==="C"?.8:p.role==="P"?.12:1) ,rng); const blkS=pickW(front(rots[sideS]),p=>Math.pow(p.blk/70,3)*(p.role==="C"?1.6:1),rng); const setterR=rots[sideR].find(p=>p.role==="P"); let winner,type,actor=null,cred=null; if(recvWins){ winner=sideR; if(rng()<.2){type="serr";} else{type="kill";actor=atkR;cred=atkR;} }else{ winner=sideS; const x=rng(); const aceP=.2+(R[sideS].srv-R[sideR].rec)*.004; if(x<aceP){type="ace";actor=server;cred=server;} else if(x<aceP+.3){type="block";actor=blkS;cred=blkS;} else if(x<aceP+.56){type="att";actor=atkS;cred=atkS;} else{type="rerr";} } return {sideS,sideR,winner,type,actor,cred,server,receiver,atkR,atkS,atk:recvWins?atkR:atkS,atkSide:recvWins?sideR:sideS,setter:setterR,blocker:blkS, sview:detail?sview:null,rview:detail?rview:null}; }
 
-function simMatch(home,away,lineups,tactics,rng,detail){ const R={h:ratingsOf(home,lineups.h,tactics.h,rng,true),a:ratingsOf(away,lineups.a,tactics.a,rng,true)}; const libs={h:PLAYER_INDEX[lineups.h.L],a:PLAYER_INDEX[lineups.a.L]}; const sets=[],pts={},rallies=[]; let hs=0,as=0,set=0,firstServer=rng()<.5?"h":"a"; while(hs<3&&as<3){ set++; const target=set===5?15:25; let h=0,a=0; const rots={h:rotOf(lineups.h),a:rotOf(lineups.a)}; let srv=set===5?(rng()<.5?"h":"a"):(set%2===1?firstServer:(firstServer==="h"?"a":"h")); let guard=0; while(!((h>=target||a>=target)&&Math.abs(h-a)>=2)&&guard++<150){ const ry=playRally(srv,rots,libs,R,rng,"h",detail); if(ry.winner==="h")h++;else a++; if(ry.cred)pts[ry.cred.id]=(pts[ry.cred.id]||0)+1; if(detail){ry.set=set;ry.h=h;ry.a=a;ry.sets=[hs,as];rallies.push(ry);} if(ry.winner!==srv){rots[ry.winner]=rotate(rots[ry.winner]);srv=ry.winner;} } sets.push([h,a]); if(h>a)hs++;else as++; } return {sets,hs,as,pts,rallies}; }
+function simMatch(home,away,lineups,tactics,rng,detail){ const R={h:ratingsOf(home,lineups.h,tactics.h,rng,true),a:ratingsOf(away,lineups.a,tactics.a,rng,true)}; const libs={h:PLAYER_INDEX[lineups.h.L],a:PLAYER_INDEX[lineups.a.L]}; const sets=[],pts={},rallies=[]; let hs=0,as=0,set=0,firstServer=rng()<.5?"h":"a"; while(hs<3&&as<3){ set++; const target=set===5?15:25; let h=0,a=0; const rots={h:rotOf(lineups.h),a:rotOf(lineups.a)}; let srv=set===5?(rng()<.5?"h":"a"):(set%2===1?firstServer:(firstServer==="h"?"a":"h")); let guard=0; while(!((h>=target||a>=target)&&Math.abs(h-a)>=2)&&guard++<150){ const ry=playRally(srv,rots,libs,R,rng,"h",detail); if(detail)ry.vc=varCandidate(ry); if(ry.winner==="h")h++;else a++; if(ry.cred)pts[ry.cred.id]=(pts[ry.cred.id]||0)+1; if(detail){ry.set=set;ry.h=h;ry.a=a;ry.sets=[hs,as];rallies.push(ry);} if(ry.winner!==srv){rots[ry.winner]=rotate(rots[ry.winner]);srv=ry.winner;} } sets.push([h,a]); if(h>a)hs++;else as++; } return {sets,hs,as,pts,rallies}; }
 
 function makeSchedule(n){ const ids=[];for(let i=0;i<n;i++)ids.push(i); if(n%2)ids.push(-1); const m=ids.length,rounds=[]; let arr=ids.slice(); for(let r=0;r<m-1;r++){ const pairs=[]; for(let i=0;i<m/2;i++){ let a=arr[i],b=arr[m-1-i]; if(a===-1||b===-1)continue; if(i===0&&r%2===1){const t=a;a=b;b=t;} else if(i>0&&(r+i)%2===1){const t=a;a=b;b=t;} pairs.push([a,b]); } rounds.push(pairs); arr=[arr[0]].concat([arr[m-1]],arr.slice(1,m-1)); } const second=rounds.map(rd=>rd.map(([a,b])=>[b,a])); return rounds.concat(second); }
 
@@ -242,7 +245,7 @@ function simRemainingRallies(M) {
 
   // Completa il set attualmente in corso
   while (!((h >= target || a >= target) && Math.abs(h - a) >= 2) && guard++ < 120) {
-    const ry = playRally(srv, rots, libs, R, Math.random, "h", true);
+    const ry = playRally(srv, rots, libs, R, Math.random, "h", true); ry.vc = varCandidate(ry);
     if (ry.winner === "h") h++; else a++;
     if (ry.cred) M.res.pts[ry.cred.id] = (M.res.pts[ry.cred.id] || 0) + 1;
     ry.set = targetSet; ry.h = h; ry.a = a; ry.sets = [M.sh, M.sa];
@@ -265,7 +268,7 @@ function simRemainingRallies(M) {
     let srvNext = nextSet % 2 === 1 ? "h" : "a";
     let g2 = 0;
     while (!((sh >= nextTarget || sa >= nextTarget) && Math.abs(sh - sa) >= 2) && g2++ < 120) {
-      const ry = playRally(srvNext, rots, libs, R, Math.random, "h", true);
+      const ry = playRally(srvNext, rots, libs, R, Math.random, "h", true); ry.vc = varCandidate(ry);
       if (ry.winner === "h") sh++; else sa++;
       if (ry.cred) M.res.pts[ry.cred.id] = (M.res.pts[ry.cred.id] || 0) + 1;
       ry.set = nextSet; ry.h = sh; ry.a = sa; ry.sets = [hs, as];

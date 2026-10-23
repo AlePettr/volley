@@ -35,7 +35,7 @@ function renderMatch() {
   <div id="ctl" class="matchctl">
     <div class="seg" role="group" aria-label="Telecamera"><button data-act="camview" data-v="side" aria-pressed="${UI.camView === 'side'}">Laterale</button><button data-act="camview" data-v="reg" aria-pressed="${UI.camView === 'reg'}">Da fondo</button><button data-act="camview" data-v="tv" aria-pressed="${UI.camView === 'tv'}">Da fondo alta</button></div>
     <div class="seg" role="group" aria-label="Velocità"><button data-act="speed" data-v="1" aria-pressed="true">1×</button><button data-act="speed" data-v="2" aria-pressed="false">2×</button><button data-act="speed" data-v="4" aria-pressed="false">4×</button><button data-act="speed" data-v="8" aria-pressed="false">8×</button></div>
-    <button class="btn" data-act="pause" id="pausebtn">Pausa</button><button class="btn primary" data-act="submodal">Cambi</button><button class="btn" data-act="replay" id="replaybtn">Replay</button><button class="btn" data-act="skip">Salta alla fine</button>
+    <button class="btn" data-act="pause" id="pausebtn">Pausa</button><button class="btn primary" data-act="submodal">Cambi</button><button class="btn" data-act="replay" id="replaybtn">Replay</button><span class="pill" id="vcpill" title="Check VAR rimasti: tuoi · avversari">VAR 2 · 2</span><button class="btn" data-act="skip">Salta alla fine</button>
   </div>
   <div id="sum"></div>`;
   sizeCanvas();
@@ -102,6 +102,7 @@ function updateBoard(ry, setEnd) {
   $("#sv-a").style.visibility = ry.winner === 'a' ? 'visible' : 'hidden';
   if (setEnd) {
     M.subsUsed = 0; // RESETTA I 6 CAMBI A FINE SET
+    M.vcLeft = { h: 2, a: 2 }; varPill();
     if (ry.h > ry.a) M.sh++; else M.sa++;
     M.setScores.push([ry.h, ry.a]);
     $("#setline").innerHTML = M.setScores.map((s, i) => `<span class="pill">Set ${i + 1}: ${s[0]}-${s[1]}</span>`).join('');
@@ -135,7 +136,8 @@ function tick(ts) {
         else if (f.type === 'dust') { M.fxList.push({ ...f, born: M.t }); }
         else if (f.type === 'text' && f.text) M.fxList.push({ ...f, born: M.t, win: M.anim.ry.winner === M.userSide });
       }
-      if (!a.scored && a.t >= a.script.point) { a.scored = true; applyPoint(a); }
+      if (!a.scored && a.t >= a.script.point && !a.replay && !M.replay && a.ry.vc && !a.ry.vc.done && varMaybe(M, a)) { /* attende l'esito del check VAR */ }
+      else if (!a.scored && a.t >= a.script.point) { a.scored = true; applyPoint(a); }
       if (a.replay) { if (a.t >= a.script.end + .6) { const rb = $('#rbadge'); if (rb) rb.hidden = true; M.anim = null; M.replay = false; M.speed = M.replaySpeed || 1; $("#feed").textContent = M.feedKeep || ''; } }
       else if (a.t >= a.script.end + (a.setEnd ? 1.1 : 0) + (a.hold || 0)) endRallyAnim(a);
     }

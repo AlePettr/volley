@@ -27,7 +27,7 @@ function startMatch(){
 }
 
 function posOf(view,side,pid){let i=view[side].findIndex(x=>x.p.id===pid);if(i<0)i=1;return slotXY(side,i);}
-function feedText(ry){ const n=p=>p?p.name:""; switch(ry.type){ case"ace":return `Ace di ${n(ry.server)}!`; case"block":return `Muro di ${n(ry.blocker)}.`; case"att":return `${n(ry.atkS)} a segno in contrattacco.`; case"kill":return `Punto in attacco di ${n(ry.atkR)}.`; case"serr":return `Errore in battuta per ${n(ry.server)}.`; default:return `Errore offensivo di ${n(ry.atkR)}.`; } }
+function feedText(ry){ const n=p=>p?p.name:""; switch(ry.type){ case"ace":return `Ace di ${n(ry.server)}!`; case"block":return `Muro di ${n(ry.blocker)}.`; case"att":return `${n(ry.atkS)} a segno in contrattacco.`; case"kill":return `Punto in attacco di ${n(ry.atkR)}.`; case"var":return "Punto assegnato dopo il check VAR.";case"serr":return `Errore in battuta per ${n(ry.server)}.`; default:return `Errore offensivo di ${n(ry.atkR)}.`; } }
 
 function skipMatch(){ const M=UI.match;if(!M||M.done)return; const rs=M.res.rallies; M.setScores=[];M.sh=0;M.sa=0; rs.forEach((ry,j)=>{const nx=rs[j+1];if(!nx||nx.set!==ry.set){M.setScores.push([ry.h,ry.a]);if(ry.h>ry.a)M.sh++;else M.sa++;}}); const last=rs[rs.length-1]; $("#sc-h").textContent=last.h;$("#sc-a").textContent=last.a; $("#sets").textContent=`FINALE · ${M.sh}-${M.sa}`; $("#setline").innerHTML=M.setScores.map((s,i)=>`<span class="pill">Set ${i+1}: ${s[0]}-${s[1]}</span>`).join(""); M.anim=null;M.i=rs.length;finishMatch(); }
 
@@ -100,3 +100,53 @@ function applyLiveSub(slotKey, newPid) {
   toast(`Cambio effettuato: entra ${inP.name} per ${outP.name}`);
   closeSubModal();
 }
+
+
+/* ===== Check VAR: 2 richieste per squadra a set ===== */
+function varName(M,side){return side==="h"?M.home.short:M.away.short;}
+function varPill(){const M=UI.match,el=$("#vcpill");if(!M||!el)return;const l=M.vcLeft||{h:2,a:2};el.textContent=`VAR ${l[M.userSide]} · ${l[M.userSide==="h"?"a":"h"]}`;}
+function varBanner(html,ms){const b=$("#banner");if(!b)return;b.innerHTML=html;b.hidden=false;b.className="banner show";if(ms)setTimeout(()=>{const bb=$("#banner");if(bb&&bb.dataset.v===String(b.dataset.v)){bb.hidden=true;bb.className="banner";}},ms);}
+function varMaybe(M,a){
+  const ry=a.ry,vc=ry.vc;if(!vc||vc.done)return false;vc.done=true;
+  const loser=ry.winner==="h"?"a":"h";M.vcLeft=M.vcLeft||{h:2,a:2};
+  if(M.vcLeft[loser]<=0)return false;
+  if(loser===M.userSide){M.varPending={a};M.paused=true;varBox(M,vc);return true;}
+  if(!(vc.wrong?Math.random()<.9:Math.random()<.12))return false;
+  runVar(M,a,loser);return true;
+}
+function varBox(M,vc){
+  const old=$("#varbox");if(old)old.remove();
+  const ar=$("#arena");if(!ar)return;
+  ar.insertAdjacentHTML("beforeend",`<div id="varbox" style="position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:20;background:rgba(8,12,22,.94);border:1px solid var(--line);border-radius:12px;padding:12px 14px;text-align:center;max-width:92%;color:#fff"><div class="small" style="opacity:.75">Punto agli avversari · ${esc(vc.kind)}</div><div style="margin:4px 0 8px"><b>${vc.strong?"Il dubbio e' forte":"Il dubbio e' lieve"}</b> · ti restano ${M.vcLeft[M.userSide]} check</div><div class="row" style="justify-content:center;gap:8px"><button class="btn primary" data-act="varreq">Chiedi VAR</button><button class="btn" data-act="varskip">Accetta</button></div></div>`);
+}
+function varClose(M){const bx=$("#varbox");if(bx)bx.remove();M.varPending=null;}
+function runVar(M,a,side){
+  M.paused=true;const vc=a.ry.vc;M.vcLeft=M.vcLeft||{h:2,a:2};
+  M.vcStats=M.vcStats||{h:{ok:0,ko:0},a:{ok:0,ko:0}};
+  const id=String(Date.now());const b=$("#banner");if(b)b.dataset.v=id;
+  varBanner(`<span>CHECK VAR · ${esc(varName(M,side))}</span><b>${esc(vc.kind)}</b><em>Controllo in corso…</em>`,0);
+  const wait=Math.max(900,2200/Math.max(1,M.speed));
+  setTimeout(()=>{
+    if(UI.match!==M)return;
+    let msg;
+    if(vc.wrong){varOverturn(M,a);M.vcStats[side].ok++;msg=`Chiamata ribaltata · punto a ${esc(varName(M,side))}`;}
+    else{M.vcLeft[side]--;M.vcStats[side].ko++;msg=`Chiamata confermata · check perso`;}
+    varPill();
+    varBanner(`<span>ESITO VAR</span><b>${msg}</b><em>${a.ry.h}-${a.ry.a}</em>`,0);
+    setTimeout(()=>{if(UI.match!==M)return;const bb=$("#banner");if(bb){bb.hidden=true;bb.className="banner";}M.paused=false;},Math.max(700,1500/Math.max(1,M.speed)));
+  },wait);
+}
+function varOverturn(M,a){
+  const ry=a.ry,i=M.i,nw=ry.winner==="h"?"a":"h";
+  if(ry.cred)M.res.pts[ry.cred.id]=Math.max(0,(M.res.pts[ry.cred.id]||0)-1);
+  const prev=(i>0&&M.res.rallies[i-1].set===ry.set)?M.res.rallies[i-1]:{h:0,a:0};
+  ry.winner=nw;ry.h=prev.h+(nw==="h"?1:0);ry.a=prev.a+(nw==="a"?1:0);ry.type="var";ry.cred=null;ry.actor=null;
+  simRemainingRallies(M);
+  const next=M.res.rallies[M.i+1];a.setEnd=!next||next.set!==ry.set;
+}
+document.addEventListener("click",e=>{
+  const el=e.target.closest('[data-act="varreq"],[data-act="varskip"]'),M=UI.match;if(!el||!M)return;
+  const pend=M.varPending;if(!pend||M.anim!==pend.a||pend.a.scored){varClose(M);return;}
+  varClose(M);
+  if(el.dataset.act==="varreq")runVar(M,pend.a,M.userSide);else M.paused=false;
+});
