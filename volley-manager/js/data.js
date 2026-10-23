@@ -21,9 +21,10 @@ const LEAGUES = { A1: { name: "Serie A1", rounds: 26, teams: [ { id: "con", shor
       "C|Alexandra Nagy|ITA|2006", "C|Beatrice Badini|ITA|1999", "C|Fabiana Antignano|ITA|1995", "L|Alena De Martino|ITA|2005", "L|Elisa Tenca|ITA|2008"
     ] },
     { id: "vig_a3", short: "Florens Vigevano", full: "INT – Florens Vigevano", city: "Vigevano", tier: 2.5, color: "#2563eb", p: [
-      "O|Glenda Messaggi|ITA|1999", "S|Lucrezia Rossi|ITA|1999", "S|Alessandra Gerbaudo|ITA|2005", "L|Matilde Bonitempo|ITA|2006",
-      "C|Aurora Bellinzona|ITA|1997", "C|Giulia Deambrogio|ITA|2003", "P|Anna Lualdi|ITA|2000", "C|Giorgia De Bortoli|ITA|2003",
-      "L|Giorgia Colombo|ITA|1999", "S|Greta Valli|ITA|1992", "C|Matilde Calvelli|ITA|2005", "P|Marta Gulli|ITA|1999"
+      "P|Anna Lualdi|ITA|2000", "P|Marta Gullì|ITA|1999", "O|Glenda Messaggi|ITA|1999",
+      "S|Lucrezia Rossi|ITA|1999", "S|Alessandra Gerbaudo|ITA|2005", "S|Giorgia De Bortoli|ITA|1996", "S|Greta Valli|ITA|1992", "S|Martina Ferravante|ITA|2004",
+      "C|Aurora Bellinzona|ITA|1997", "C|Giulia Deambrogio|ITA|2003", "C|Matilde Calvelli|ITA|2005", "C|Elisa Armondi|ITA|1999",
+      "L|Matilde Bonitempo|ITA|2006", "L|Giorgia Colombo|ITA|1999"
     ] },
     { id: "rip_a3", short: "Ripalta", full: "C.R. Transport Ripalta", city: "Ripalta Cremasca", tier: 2.4, color: "#ea580c", p: [
       "P|Federica Saccani|ITA|1998", "P|Letizia Riso|ITA|1997", "O|Martina Martinelli|ITA|1994", "O|Nadia Pezzaglia|ITA|2004",
@@ -35,7 +36,12 @@ const LEAGUES = { A1: { name: "Serie A1", rounds: 26, teams: [ { id: "con", shor
       "S|Giulia Baldizzone|ITA|2004", "S|Claudia Talerico|ITA|2006", "S|Clarissa Elli|ITA|1995", "S|Erika Ghezzi|ITA|1995",
       "C|Greta Pegoraro|ITA|2002", "C|Greta Donato Biasi|ITA|2006", "C|Oriola Shpuza|ITA|1996", "L|Alice Brunelli|ITA|2001", "L|Giulia Osana|ITA|2005"
     ] },
-    { id: "mod_a3", short: "Volley Modena", full: "Volley Modena", city: "Modena", tier: 2.6, color: "#ca8a04", p: ["P|Theresa Barner|GER|2004", "P|Beatrice Balconati|ITA|2004", "O|Sonia Ratti|ITA|2001", "O|Amelia Pasini|ITA|2008", "S|Valentina Adani|ITA|2002", "S|Linda Cabassa|ITA|2004", "S|Chiara Martinato|ITA|2005", "S|Anja Nella|ITA|2006", "C|Monica Tirisegu Oke|ITA|2006", "C|Marta Semprini Cesari|ITA|2004", "C|Sofia Migliorini|ITA|2001", "C|Anna Pettiti|ITA|2007", "L|Lia Righi|ITA|2006", "L|Victoria Cavallieri|ITA|2005"] },
+    { id: "mod_a3", short: "Volley Modena", full: "Volley Modena", city: "Modena", tier: 2.6, color: "#ca8a04", p: [
+      "P|Sonia Galazzo|ITA|1997", "P|Ambra Trevisiol|ITA|1992", "P|Erica Saddi|ITA|2008", "O|Clarissa Covino|ITA|2001",
+      "S|Matilde Giardi|ITA|1997", "S|Sveva Tonello|ITA|2002", "S|Clara Rigatti|ITA|0", "S|Francesca Bacci|ITA|2002",
+      "C|Siria Clemente|ITA|2005", "C|Laura Bedin|ITA|2004", "C|Carolina Bisio|ITA|2008", "C|Aurora Poli|ITA|1999",
+      "L|Federica Ferrario|ITA|2001", "L|Ludovica Zironi|ITA|2006"
+    ] },
     { id: "val_a3", short: "Valdarno", full: "Passione Valdarno Volley", city: "Figline Incisa Valdarno", tier: 2.3, color: "#0284c7", p: [
       "P|Ester Grucka|ITA|2004", "P|Elena Bortolot|ITA|1995", "O|Carola Colombino|ITA|2005",
       "S|Agata Zuccarelli|ITA|1995", "S|Sara Turini|ITA|2007", "S|Sara Fontemaggi|ITA|2002", "S|Kalina Pylińska|POL|2003",
