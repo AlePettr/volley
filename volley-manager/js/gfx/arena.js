@@ -64,7 +64,7 @@ function arenaBuild(M, k) {
   cv.width = Math.round(W * k); cv.height = Math.round(H * k);
   const c = cv.getContext('2d'); c.setTransform(k, 0, 0, k, 0, 0);
   const R = Gx.rng(Gx.hash(M.home.id + 'arena'));
-  const hc = M.home.color || '#2563eb', homeKit = Gx.kit(M.home), TH = arenaTheme(M.home);
+  const hc = M.home.color || '#2563eb', homeKit = Gx.kit(M.home), TH = arenaTheme(M.home), SEAT = [Gx.dark(homeKit.main, .8), Gx.dark(homeKit.main, .72)];
 
   /* parete e luci */
   const wall = c.createLinearGradient(0, 0, 0, H * .55);
@@ -75,6 +75,7 @@ function arenaBuild(M, k) {
     g.addColorStop(0, `rgba(210,225,255,${TH.light})`); g.addColorStop(1, 'rgba(210,225,255,0)');
     c.fillStyle = g; c.fillRect(0, 0, W, H * .6);
   }
+  drawRoof(c, W, H, TH);
 
   /* tribune di fondo e laterali: file di spettatori con tinta del club di casa */
   const crowd = [];
@@ -97,7 +98,7 @@ function arenaBuild(M, k) {
   }
   for (let r = gradFar.length - 1; r >= 0; r--) {
     const [a, b] = gradFar[r], a2 = { x: a.x, y: a.y + 60 }, b2 = { x: b.x, y: b.y + 60 };
-    c.fillStyle = r % 2 ? '#0d1626' : '#101b2f'; polyPath(c, [a, b, b2, a2]); c.fill();
+    c.fillStyle = r % 2 ? SEAT[0] : SEAT[1]; polyPath(c, [a, b, b2, a2]); c.fill();
   }
   for (let r = gradFar.length - 1; r >= 0; r--) { const [a, b] = gradFar[r]; const rr = Math.max(2.2, proj(-12.2 - r * 1.15, 0).s * .22); addRow([a, b], Math.round(Math.abs(b.x - a.x) / (rr * 2.1)), rr); }
   /* tribune laterali (vista di scorcio) */
@@ -105,7 +106,7 @@ function arenaBuild(M, k) {
     for (let r = 0; r < TH.rowsSide - 1; r++) {
       const v = side * (9.6 + r * 1.25), zh = 0.9 + r * 1.0;
       const a = proj(-12, v, zh), b = proj(11, v, zh);
-      c.fillStyle = r % 2 ? '#0d1626' : '#101b2f'; polyPath(c, [a, b, { x: b.x, y: b.y + 80 }, { x: a.x, y: a.y + 80 }]); c.fill();
+      c.fillStyle = r % 2 ? SEAT[0] : SEAT[1]; polyPath(c, [a, b, { x: b.x, y: b.y + 80 }, { x: a.x, y: a.y + 80 }]); c.fill();
       const rr = Math.max(3, proj(0, v).s * .2);
       addRow([a, b], Math.round(Math.hypot(b.x - a.x, b.y - a.y) / (rr * 2.4)), rr);
     }
@@ -182,6 +183,20 @@ function arenaBuild(M, k) {
   return { cv, crowd, led: { x: la.x, y: la.y, w: lb.x - la.x, h: lb.y - la.y } };
 }
 
+/* soffitto: palazzetti grandi con travi e fari, sale piccole con copertura piatta */
+function drawRoof(c, W, H, TH) {
+  const beams = TH.beams;
+  if (!beams) return;
+  c.save();
+  for (let i = 0; i < beams; i++) {
+    const y = H * (.025 + i * .045);
+    c.fillStyle = 'rgba(4,7,14,.55)'; c.fillRect(0, y, W, H * .012);
+    c.fillStyle = 'rgba(255,255,255,.05)'; c.fillRect(0, y + H * .012, W, 1);
+    const n = 8 + i * 2;
+    for (let j = 0; j < n; j++) { const x = W * (j + .5) / n; c.fillStyle = 'rgba(235,242,255,.85)'; c.fillRect(x - 2, y + H * .004, 4, 2); }
+  }
+  c.restore();
+}
 function drawCrowd(c, crowd, t, excite) {
   const groups = new Map();
   for (const d of crowd) { if (!groups.has(d.col)) groups.set(d.col, []); groups.get(d.col).push(d); }
@@ -237,22 +252,23 @@ function arenaBuildSide(M, k) {
   const W = Cam.W, H = Cam.H, cv = document.createElement('canvas');
   cv.width = Math.round(W * k); cv.height = Math.round(H * k);
   const c = cv.getContext('2d'); c.setTransform(k, 0, 0, k, 0, 0);
-  const R = Gx.rng(Gx.hash(M.home.id + 'arena')), homeKit = Gx.kit(M.home), TH = arenaTheme(M.home);
+  const R = Gx.rng(Gx.hash(M.home.id + 'arena')), homeKit = Gx.kit(M.home), TH = arenaTheme(M.home), SEAT = [Gx.dark(homeKit.main, .8), Gx.dark(homeKit.main, .72)];
   const isA1 = ((M.home && M.home.lid) || (typeof G !== 'undefined' && G && G.lid) || 'A1') !== 'A2';
   const wall = c.createLinearGradient(0, 0, 0, H * .6); wall.addColorStop(0, TH.wall[0]); wall.addColorStop(1, TH.wall[1]);
   c.fillStyle = wall; c.fillRect(0, 0, W, H);
   for (let i = 0; i < 9; i++) { const lx = W * (.06 + i * .11), g = c.createRadialGradient(lx, 6, 2, lx, 6, H * .38); g.addColorStop(0, `rgba(210,225,255,${TH.light})`); g.addColorStop(1, 'rgba(210,225,255,0)'); c.fillStyle = g; c.fillRect(0, 0, W, H * .6); }
+  drawRoof(c, W, H, TH);
   const crowd = [], tint = [homeKit.main, Gx.light(homeKit.main, .4), '#f5f7fb', '#1d2a44'];
   const addRow = (a, b, n, rr) => { n = Math.max(2, Math.round(n * TH.density)); for (let i = 0; i < n; i++) { const f = (i + R() * .6) / n, x = a.x + (b.x - a.x) * f, y = a.y + (b.y - a.y) * f; const col = R() < .55 ? tint[Math.floor(R() * tint.length)] : CROWD_PAL[Math.floor(R() * CROWD_PAL.length)]; crowd.push({ x, y, r: rr * (.85 + R() * .3), col, ph: R() * 6.28 }); } };
   /* tribuna sul lato lungo opposto */
   const rows = [];
   for (let r = 0; r < TH.rowsFar; r++) { const v = -7.4 - r * 1.1, zh = 1.1 + r * .95; rows.push([proj(15, v, zh), proj(-15, v, zh), v]); }
-  for (let r = rows.length - 1; r >= 0; r--) { const [a, b] = rows[r]; c.fillStyle = r % 2 ? '#0d1626' : '#101b2f'; polyPath(c, [a, b, { x: b.x, y: b.y + 60 }, { x: a.x, y: a.y + 60 }]); c.fill(); }
+  for (let r = rows.length - 1; r >= 0; r--) { const [a, b] = rows[r]; c.fillStyle = r % 2 ? SEAT[0] : SEAT[1]; polyPath(c, [a, b, { x: b.x, y: b.y + 60 }, { x: a.x, y: a.y + 60 }]); c.fill(); }
   for (let r = rows.length - 1; r >= 0; r--) { const [a, b, v] = rows[r]; const rr = Math.max(2.2, proj(0, v).s * .2); addRow(a, b, Math.round(Math.abs(b.x - a.x) / (rr * 2.1)), rr); }
   /* tribune di testata */
   for (const sd of [-1, 1]) for (let r = 0; r < TH.rowsSide; r++) {
     const u = sd * (12.6 + r * 1.2), zh = .9 + r * 1.0, a = proj(u, -7.2, zh), b = proj(u, 6.5, zh);
-    c.fillStyle = r % 2 ? '#0d1626' : '#101b2f'; polyPath(c, [a, b, { x: b.x, y: b.y + 80 }, { x: a.x, y: a.y + 80 }]); c.fill();
+    c.fillStyle = r % 2 ? SEAT[0] : SEAT[1]; polyPath(c, [a, b, { x: b.x, y: b.y + 80 }, { x: a.x, y: a.y + 80 }]); c.fill();
     const rr = Math.max(2.6, proj(u, 0).s * .2); addRow(a, b, Math.round(Math.hypot(b.x - a.x, b.y - a.y) / (rr * 2.4)), rr);
   }
   /* pavimento: zona libera viola + campo parquet */

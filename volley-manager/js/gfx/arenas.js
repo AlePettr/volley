@@ -45,6 +45,7 @@ function arenaTheme(team) {
     rowsFar: big ? 8 : mid ? 6 : 4,
     rowsSide: big ? 5 : mid ? 4 : 3,
     wall: big ? ['#070c18', '#17284a'] : mid ? ['#05080f', '#122036'] : ['#06070d', '#161d2c'],
+    beams: big ? 3 : mid ? 2 : 0,
     light: big ? .26 : mid ? .20 : .15
   };
 }
