@@ -21,7 +21,7 @@ Solo HTML, CSS e JavaScript: **nessuna build, nessun framework**. Si apre `index
 | `js/stats_lvf.js` | Statistiche reali LVF 2024/25 e 2025/26 (A1/A2) e `applyRealStats()`, che corregge attacco/muro/battuta/ricezione dopo la creazione del mondo; ricezione A1 2025/26 per le liberi |
 | `js/ui.js` | Schermate (home, rosa, mercato, scouting, viaggi, campionato), salvataggio/esportazione |
 | `js/club.js`, `js/manager.js`, `js/match_logic.js` | Gestione club, allenamento/morale/conferenza stampa, logica della partita |
-| `js/gfx/arenas.js` | Palazzetti ufficiali (`ARENAS`: nome, citta', capienza per squadra) e `arenaTheme()`: densita' del pubblico, file di gradoni e luci in base alla capienza. Il nome della sala compare nel tabellone. Da completare per A2/A3 |
+| `js/gfx/arenas.js` | Palazzetti ufficiali (`ARENAS`: nome, citta', capienza per squadra) e `arenaTheme()`: densita' del pubblico, file di gradoni e luci in base alla capienza. Il nome della sala compare nel tabellone. A2 con sedi 2025/26 e capienze in parte stimate (`est`); da completare A3 |
 | `js/gfx/arena.js` | Telecamera (`camSetup`, `proj(u,v,z)`), palazzetto, campo (parquet + zona libera viola), tre viste: laterale, da fondo, da fondo alta |
 | `js/gfx/match.js` | Disegno della scena, regia (zoom, replay, nomi), controlli sotto la partita |
 | `js/gfx/rally.js`, `figure.js` | Coreografia dello scambio e disegno delle giocatrici con pose |
