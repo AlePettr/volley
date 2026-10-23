@@ -18,11 +18,12 @@ function renderMatch() {
   const kh = M.kits.h, ka = M.kits.a;
   const row = (side, team, kit) => `<div class="sb-row" style="--kit:${kit.main}"><i id="sv-${side}" class="srv" style="visibility:hidden"></i>${crest(team, 30)}<b class="sb-name">${esc(team.short)}</b><span class="pips" id="pips-${side}"></span><span class="sb-pts num" id="sc-${side}">0</span></div>`;
   const ctxLabel = M.event ? esc(M.event.stage || 'Fase finale') : `${esc(LEAGUES[G.lid] ? LEAGUES[G.lid].name : '')} · Giornata ${(G.round || 0) + 1}`;
+  const venue = (typeof arenaTheme === 'function' && arenaTheme(M.home).info) ? ' · ' + esc(arenaTheme(M.home).info.name) : '';
   $("#app").innerHTML = `
   <div class="arena" id="arena">
     <canvas id="cv" class="cv" role="img" aria-label="Partita di pallavolo in corso"></canvas>
     <div class="scorebug" role="status" aria-live="polite">
-      <div class="sb-ctx">${ctxLabel}</div>
+      <div class="sb-ctx">${ctxLabel}${venue}</div>
       ${row('h', M.home, kh)}${row('a', M.away, ka)}
       <div class="sb-set" id="sets">SET 1 · 0-0</div>
     </div>
