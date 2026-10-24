@@ -137,17 +137,20 @@ function s3Build(M) {
     items.forEach((t, i) => { c.fillText(t, (i + .5) * w / items.length, h / 2 + 2, w / items.length - 20); });
   });
   const dark = new THREE.MeshLambertMaterial({ color: 0x05080f });
-  const panel = (len, x, z, ry, slot) => {
+  S.boards = { 'e+': [], 'e-': [], 's+': [], 's-': [] };
+  const panel = (len, x, z, ry, slot, grp) => {
     const mat = new THREE.MeshBasicMaterial({ map: fallback });
     const m = new THREE.Mesh(new THREE.PlaneGeometry(len, 1.1), mat); m.position.set(x, .55, z); m.rotation.y = ry; scene.add(m);
-    const back = new THREE.Mesh(new THREE.BoxGeometry(len + .1, 1.14, .06), dark); back.position.set(x, .55, z); back.rotation.y = ry;
-    back.translateZ(-.04); scene.add(back);
+    const back = new THREE.Mesh(new THREE.BoxGeometry(len, 1.1, .05), dark); back.position.set(x, .55, z); back.rotation.y = ry;
+    back.translateZ(-.03); scene.add(back);
+    S.boards[grp].push(m, back);
     S.panels.push({ mat, slot, len, tex: null });
   };
-  panel(9, -4.5, -11.2, 0, 0); panel(9, 4.5, -11.2, 0, 1);
-  panel(9, -4.5, 11.2, Math.PI, 1); panel(9, 4.5, 11.2, Math.PI, 2);
-  panel(11.5, -5.9, -8.8, Math.PI / 2, 0); panel(11.5, 5.9, -8.8, Math.PI / 2, 1);
-  panel(11.5, -5.9, 8.8, -Math.PI / 2, 2); panel(11.5, 5.9, 8.8, -Math.PI / 2, 0);
+  /* rettangolo chiuso: i fondi coprono v da -8.8 a 8.8, i lati u da -11.2 a 11.2, senza sovrapposizioni */
+  panel(8.8, -4.4, -11.2, 0, 0, 'e-'); panel(8.8, 4.4, -11.2, 0, 1, 'e-');
+  panel(8.8, -4.4, 11.2, Math.PI, 1, 'e+'); panel(8.8, 4.4, 11.2, Math.PI, 2, 'e+');
+  panel(11.2, -5.6, -8.8, Math.PI / 2, 0, 's-'); panel(11.2, 5.6, -8.8, Math.PI / 2, 1, 's-');
+  panel(11.2, -5.6, 8.8, -Math.PI / 2, 2, 's+'); panel(11.2, 5.6, 8.8, -Math.PI / 2, 0, 's+');
   S.fallbackTex = fallback;
 
   /* rete, montanti, antenne */
@@ -287,6 +290,7 @@ function s3Frame(M, ents, dt) {
     }
   }
 
+  { const vw = UI.camView || 'side'; for (const k in S.boards) { const hide = (vw === 'side' && k === 's+') || (vw !== 'side' && k === 'e+'); for (const m of S.boards[k]) m.visible = !hide; } }
   s3Camera(M, ents, dt);
   S.ref.position.set(Cam.side || UI.camView === 'side' ? -6.1 : 6.1, 0, 0);
   S.ref.rotation.y = (UI.camView === 'side') ? Math.PI / 2 : -Math.PI / 2;
