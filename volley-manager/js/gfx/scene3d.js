@@ -85,7 +85,7 @@ function s3Build(M) {
   const stepD = .95, rowsEnd = TH.rowsFar, rowsSide = TH.rowsSide, spots = [];
   const addStand = (axis, sign, rows, start, span, centre) => {
     for (let r = 0; r < rows; r++) {
-      const h = .6 + r * .5, d = start + r * stepD + stepD / 2;
+      const h = .5 + r * .4, d = start + r * stepD + stepD / 2;
       const geo = axis === 'z' ? new THREE.BoxGeometry(span, h, stepD) : new THREE.BoxGeometry(stepD, h, span);
       const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: seat[r % 2] }));
       if (axis === 'z') m.position.set(centre, h / 2, sign * d); else m.position.set(sign * d, h / 2, centre);
@@ -98,12 +98,12 @@ function s3Build(M) {
       }
     }
   };
-  const endSpan = 2 * (9.6 + rowsSide * stepD);
-  for (const s of [-1, 1]) { addStand('z', s, rowsEnd, 12.8, endSpan, 0); addStand('x', s, rowsSide, 9.6, 25.2, 0); }
+  const END0 = 14.4, SIDE0 = 11.2, endSpan = 2 * (SIDE0 + rowsSide * stepD);
+  for (const s of [-1, 1]) { addStand('z', s, rowsEnd, END0, endSpan, 0); addStand('x', s, rowsSide, SIDE0, 2 * END0 - 1, 0); }
   /* pareti scure dietro le gradinate e soffitto con fari */
   /* pareti visibili solo dall'interno: le camere larghe stanno oltre i gradoni e non devono vedere il retro */
   const wallMat = new THREE.MeshLambertMaterial({ color: new THREE.Color(TH.wall[1]).multiplyScalar(.8) });
-  const zW = 12.8 + rowsEnd * stepD + 1, xW = 9.6 + rowsSide * stepD + 1;
+  const zW = END0 + rowsEnd * stepD + 1, xW = SIDE0 + rowsSide * stepD + 1;
   for (const s of [-1, 1]) {
     const a = new THREE.Mesh(new THREE.PlaneGeometry(2 * xW + 4, 26), wallMat); a.position.set(0, 13, s * zW); a.rotation.y = s > 0 ? Math.PI : 0; scene.add(a);
     const b = new THREE.Mesh(new THREE.PlaneGeometry(2 * zW, 26), wallMat); b.rotation.y = s > 0 ? -Math.PI / 2 : Math.PI / 2; b.position.set(s * xW, 13, 0); scene.add(b);
@@ -296,19 +296,19 @@ function s3Frame(M, ents, dt) {
 
 function s3Camera(M, ents, dt) {
   const S = M.s3, cam = S.camera, a = M.anim, t = a ? a.t : 0, view = UI.camView || 'side', V = THREE.Vector3;
-  cam.fov = view === 'side' ? 32 : 34;
+  cam.fov = view === 'side' ? 34 : 36;
   const tf = Math.tan(cam.fov * Math.PI / 360);
   let look, pos;
-  if (view === 'side') { const D = Math.max(21, 10.5 / (tf * S.aspect)); look = new V(0, 1, 0); pos = new V(D, 6.5 + (D - 21) * .22, 0); }
-  else if (view === 'reg') { look = new V(0, 1.2, -1); pos = new V(0, 11, 26); }
-  else { look = new V(0, 0, 0); pos = new V(0, 20, 30); }
+  if (view === 'side') { const D = Math.max(25, 12.5 / (tf * S.aspect)); look = new V(0, 1, 0); pos = new V(D, 8 + (D - 25) * .22, 0); }
+  else if (view === 'reg') { look = new V(0, 1, -1); pos = new V(0, 12.5, 30); }
+  else { look = new V(0, 0, 0); pos = new V(0, 21, 33); }
   const dir = pos.clone().sub(look);
   const ball = a ? sampleBall(a.script.ball, t) : null, shot = camShot(M);
   let tg = look.clone(), zf = 1;
   if (ball) { if (view === 'side') tg.z += ball.u * .35; else { tg.x += ball.v * .22; tg.z += ball.u * .2; } }
-  if (shot.cam === 'serve' && a && a.script.srvU !== undefined) { tg.set(a.script.srvV, 1.2, a.script.srvU); tg.lerp(look, .25); zf = .62; }
-  else if (shot.cam === 'zoom' && a) { tg.set(shot.v, 1.6, shot.u); if (ball) tg.lerp(new V(ball.v, ball.z, ball.u), .45); zf = .42; }
-  else if (shot.cam === 'react') { let sx = 0, sz = 0, n = 0; for (const e of ents) if (e.kind === 'p' && e.side === shot.side) { sx += e.v; sz += e.u; n++; } if (n) { tg.set(sx / n, 1.2, sz / n); zf = .58; } }
+  if (shot.cam === 'serve' && a && a.script.srvU !== undefined) { tg.set(a.script.srvV, 1.2, a.script.srvU); tg.lerp(look, .25); zf = .8; }
+  else if (shot.cam === 'zoom' && a) { tg.set(shot.v, 1.6, shot.u); if (ball) tg.lerp(new V(ball.v, ball.z, ball.u), .45); zf = .6; }
+  else if (shot.cam === 'react') { let sx = 0, sz = 0, n = 0; for (const e of ents) if (e.kind === 'p' && e.side === shot.side) { sx += e.v; sz += e.u; n++; } if (n) { tg.set(sx / n, 1.2, sz / n); zf = .76; } }
   zf *= 1 - .06 * Math.min(1, M.zoom || 0);
   if (!S.cur) S.cur = { look: tg.clone(), zf, id: null, fast: 0 };
   const c = S.cur, id = shot.cam + (shot.t || 0);
