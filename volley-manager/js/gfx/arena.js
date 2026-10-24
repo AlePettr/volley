@@ -26,6 +26,7 @@ function camSetup(W, H) {
 }
 /* u: distanza dalla rete (positivo = lato vicino alla camera), v: sinistra/destra, zh: altezza in metri */
 function proj(u, v, zh) {
+  if (Cam.p3) return Cam.p3(u, v, zh);
   if (Cam.side) { const z = Cam.Dc - v, sc = Cam.F / z; return { x: Cam.cx - u * sc * Cam.xs, y: Cam.hy + Cam.K / z - (zh || 0) * sc, s: sc }; }
   const z = Cam.Dc - u, sc = Cam.F / z;
   return { x: Cam.cx + v * sc * Cam.xs, y: Cam.hy + Cam.K / z - (zh || 0) * sc, s: sc };

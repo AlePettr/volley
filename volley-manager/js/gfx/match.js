@@ -36,10 +36,11 @@ function renderMatch() {
   <div id="ctl" class="matchctl">
     <div class="seg" role="group" aria-label="Telecamera"><button data-act="camview" data-v="side" aria-pressed="${UI.camView === 'side'}">Laterale</button><button data-act="camview" data-v="reg" aria-pressed="${UI.camView === 'reg'}">Da fondo</button><button data-act="camview" data-v="tv" aria-pressed="${UI.camView === 'tv'}">Da fondo alta</button></div>
     <div class="seg" role="group" aria-label="Velocità"><button data-act="speed" data-v="1" aria-pressed="true">1×</button><button data-act="speed" data-v="2" aria-pressed="false">2×</button><button data-act="speed" data-v="4" aria-pressed="false">4×</button><button data-act="speed" data-v="8" aria-pressed="false">8×</button></div>
-    <button class="btn" data-act="pause" id="pausebtn">Pausa</button><button class="btn primary" data-act="submodal">Cambi</button><button class="btn" data-act="replay" id="replaybtn">Replay</button><span class="pill" id="vcpill" title="Check VAR rimasti: tuoi · avversari">VAR 2 · 2</span><button class="btn" data-act="skip">Salta alla fine</button>
+    <button class="btn" data-act="pause" id="pausebtn">Pausa</button><button class="btn" data-act="mode3d" id="mode3dbtn" hidden>2D</button><button class="btn primary" data-act="submodal">Cambi</button><button class="btn" data-act="replay" id="replaybtn">Replay</button><span class="pill" id="vcpill" title="Check VAR rimasti: tuoi · avversari">VAR 2 · 2</span><button class="btn" data-act="skip">Salta alla fine</button>
   </div>
   <div id="sum"></div>`;
   sizeCanvas();
+  { const b3 = $("#mode3dbtn"); if (b3 && typeof s3Available === 'function' && s3Available()) { b3.hidden = false; b3.textContent = UI.mode3d === false ? '3D' : '2D'; } }
   M.last = performance.now();
   M.raf = requestAnimationFrame(tick);
 }
@@ -54,6 +55,7 @@ function sizeCanvas() {
   cv.width = Math.round(cssW * dpr); cv.height = Math.round(cv.width * H / W);
   M.k = cv.width / W; camSetup(W, H);
   M.arena = arenaBuild(M, Math.min(M.k * 1.5, 2.6));
+  if (typeof s3Setup === 'function') s3Setup(M);
   if (!M._logos) { M._logos = true; loadLogos(M, () => { if (UI.match === M) M.arena = arenaBuild(M, Math.min(M.k * 1.5, 2.6)); }); }
 }
 
@@ -213,6 +215,7 @@ function drawScene(M, dt) {
     });
   }
   if (a) { const b = sampleBall(a.script.ball, t); if (b) ents.push({ kind: 'b', u: b.u, v: b.v, z: b.z }); }
+  if (typeof s3Active === 'function' && s3Active(M)) { try { s3Frame(M, ents, dt || .016); return; } catch (err) { console.warn('3D non riuscito, torno al 2D', err); UI.mode3d = false; M.s3.cv.style.display = 'none'; const b3 = $("#mode3dbtn"); if (b3) b3.textContent = '3D'; } }
   const cs = updateCam(M, ents, dt || .016);
   const sh = M.shake > .2 ? [(Math.random() - .5) * M.shake, (Math.random() - .5) * M.shake] : [0, 0];
   c.save(); c.translate(sh[0], sh[1]);

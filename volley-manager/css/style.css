@@ -196,7 +196,8 @@ button.prow:hover{background:var(--panel2)}
 
 /* ---------- partita ---------- */
 .arena{position:relative;border-radius:22px;overflow:hidden;background:#05080f;box-shadow:0 26px 50px -26px rgba(2,8,20,.9);border:1px solid rgba(255,255,255,.06)}
-.arena .cv{display:block;width:100%;height:auto;max-height:none;object-fit:fill;touch-action:manipulation}
+.arena .cv3{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
+.arena .cv{position:relative;display:block;width:100%;height:auto;max-height:none;object-fit:fill;touch-action:manipulation}
 .scorebug{position:absolute;left:14px;top:14px;min-width:240px;max-width:60%;background:rgba(6,10,20,.88);backdrop-filter:blur(6px);color:#fff;border-radius:14px;overflow:hidden;font-family:var(--f-disp);box-shadow:0 10px 24px -8px rgba(0,0,0,.6)}
 .sb-ctx,.sb-set{font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:5px 12px;background:rgba(255,255,255,.07);color:#b4c3dc}
 .sb-row{display:flex;align-items:center;gap:9px;padding:7px 12px 7px 9px;border-left:6px solid var(--kit)}
