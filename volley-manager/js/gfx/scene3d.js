@@ -140,10 +140,8 @@ function s3Build(M) {
   S.boards = { 'e+': [], 'e-': [], 's+': [], 's-': [] };
   const panel = (len, x, z, ry, slot, grp) => {
     const mat = new THREE.MeshBasicMaterial({ map: fallback });
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(len, 1.1), mat); m.position.set(x, .55, z); m.rotation.y = ry; scene.add(m);
-    const back = new THREE.Mesh(new THREE.BoxGeometry(len, 1.1, .05), dark); back.position.set(x, .55, z); back.rotation.y = ry;
-    back.translateZ(-.03); scene.add(back);
-    S.boards[grp].push(m, back);
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(len - .06, 1.1), mat); m.position.set(x, .55, z); m.rotation.y = ry; scene.add(m);
+    S.boards[grp].push(m);
     S.panels.push({ mat, slot, len, tex: null });
   };
   /* rettangolo chiuso: i fondi coprono v da -8.8 a 8.8, i lati u da -11.2 a 11.2, senza sovrapposizioni */
