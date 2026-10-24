@@ -145,11 +145,11 @@ function s3Build(M) {
     S.panels.push({ mat, slot, len, tex: null });
   };
   /* rettangolo chiuso oltre la zona libera: i fondi (lato corto) a 12.6 m dalla rete, i lati lunghi a 8.8 m dall'asse */
-  const EB = 12.6, SB = 10;   /* lati lunghi centrati sul campo (u da -10 a 10) e piu' indietro (10 m dall'asse) */
+  const EB = 12.6, SB = 10.4;   /* lati lunghi: centrati sul campo (u da -8 a 8), piu' indietro dei fondi (10.4 m dall'asse) cosi' non toccano i cartelloni corti */
   panel(8.8, -4.4, -EB, 0, 0, 'e-'); panel(8.8, 4.4, -EB, 0, 1, 'e-');
   panel(8.8, -4.4, EB, Math.PI, 1, 'e+'); panel(8.8, 4.4, EB, Math.PI, 2, 'e+');
-  panel(10, -5, -SB, Math.PI / 2, 0, 's-'); panel(10, 5, -SB, Math.PI / 2, 1, 's-');
-  panel(10, -5, SB, -Math.PI / 2, 2, 's+'); panel(10, 5, SB, -Math.PI / 2, 0, 's+');
+  panel(8, -4, -SB, Math.PI / 2, 0, 's-'); panel(8, 4, -SB, Math.PI / 2, 1, 's-');
+  panel(8, -4, SB, -Math.PI / 2, 2, 's+'); panel(8, 4, SB, -Math.PI / 2, 0, 's+');
   S.fallbackTex = fallback;
 
   /* rete, montanti, antenne */
@@ -289,7 +289,7 @@ function s3Frame(M, ents, dt) {
     }
   }
 
-  { const vw = UI.camView || 'side'; for (const k in S.boards) { const hide = vw === 'side' ? (k !== 's-') : (k === 'e+'); for (const m of S.boards[k]) m.visible = !hide; } }
+  { const vw = UI.camView || 'side'; for (const k in S.boards) { const hide = vw === 'side' ? (k === 's+') : (k === 'e+'); for (const m of S.boards[k]) m.visible = !hide; } }
   s3Camera(M, ents, dt);
   S.ref.position.set(Cam.side || UI.camView === 'side' ? -6.1 : 6.1, 0, 0);
   S.ref.rotation.y = (UI.camView === 'side') ? Math.PI / 2 : -Math.PI / 2;
