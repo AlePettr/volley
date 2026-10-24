@@ -131,9 +131,9 @@ function s3Build(M) {
   /* cartelloni LED: filmati della Lega se disponibili, altrimenti nomi di squadre e sponsor */
   S.panels = []; S.vtex = new Map();
   const fallback = s3Tex(1024, 64, (c, w, h) => {
-    c.fillStyle = '#0b1a33'; c.fillRect(0, 0, w, h);
+    c.fillStyle = homeKit.shade; c.fillRect(0, 0, w, h);
     const items = [(M.home.city || M.home.short).toUpperCase(), 'FINECO', M.away.short.toUpperCase(), 'FRECCIAROSSA', M.home.short.toUpperCase(), 'FIAT'];
-    c.fillStyle = '#dfe8f7'; c.font = '700 40px "Barlow Condensed",Arial Narrow,sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillStyle = Gx.onColor(homeKit.shade); c.font = '700 40px "Barlow Condensed",Arial Narrow,sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
     items.forEach((t, i) => { c.fillText(t, (i + .5) * w / items.length, h / 2 + 2, w / items.length - 20); });
   });
   const dark = new THREE.MeshLambertMaterial({ color: 0x05080f });
@@ -145,11 +145,11 @@ function s3Build(M) {
     S.panels.push({ mat, slot, len, tex: null });
   };
   /* rettangolo chiuso oltre la zona libera: i fondi (lato corto) a 12.6 m dalla rete, i lati lunghi a 8.8 m dall'asse */
-  const EB = 12.6;
+  const EB = 12.6, SB = 10;   /* lati lunghi centrati sul campo (u da -10 a 10) e piu' indietro (10 m dall'asse) */
   panel(8.8, -4.4, -EB, 0, 0, 'e-'); panel(8.8, 4.4, -EB, 0, 1, 'e-');
   panel(8.8, -4.4, EB, Math.PI, 1, 'e+'); panel(8.8, 4.4, EB, Math.PI, 2, 'e+');
-  panel(EB, -EB / 2, -8.8, Math.PI / 2, 0, 's-'); panel(EB, EB / 2, -8.8, Math.PI / 2, 1, 's-');
-  panel(EB, -EB / 2, 8.8, -Math.PI / 2, 2, 's+'); panel(EB, EB / 2, 8.8, -Math.PI / 2, 0, 's+');
+  panel(10, -5, -SB, Math.PI / 2, 0, 's-'); panel(10, 5, -SB, Math.PI / 2, 1, 's-');
+  panel(10, -5, SB, -Math.PI / 2, 2, 's+'); panel(10, 5, SB, -Math.PI / 2, 0, 's+');
   S.fallbackTex = fallback;
 
   /* rete, montanti, antenne */
@@ -289,7 +289,7 @@ function s3Frame(M, ents, dt) {
     }
   }
 
-  { const vw = UI.camView || 'side'; for (const k in S.boards) { const hide = vw === 'side' ? (k === 's+') : (k === 'e+'); for (const m of S.boards[k]) m.visible = !hide; } }
+  { const vw = UI.camView || 'side'; for (const k in S.boards) { const hide = vw === 'side' ? (k !== 's-') : (k === 'e+'); for (const m of S.boards[k]) m.visible = !hide; } }
   s3Camera(M, ents, dt);
   S.ref.position.set(Cam.side || UI.camView === 'side' ? -6.1 : 6.1, 0, 0);
   S.ref.rotation.y = (UI.camView === 'side') ? Math.PI / 2 : -Math.PI / 2;
