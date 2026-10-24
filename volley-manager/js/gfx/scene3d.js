@@ -288,7 +288,7 @@ function s3Frame(M, ents, dt) {
     }
   }
 
-  { const vw = UI.camView || 'side'; for (const k in S.boards) { const hide = (vw === 'side' && k === 's+') || (vw !== 'side' && k === 'e+'); for (const m of S.boards[k]) m.visible = !hide; } }
+  { const vw = UI.camView || 'side'; for (const k in S.boards) { const hide = vw === 'side' ? (k !== 's-') : (k === 'e+'); for (const m of S.boards[k]) m.visible = !hide; } }
   s3Camera(M, ents, dt);
   S.ref.position.set(Cam.side || UI.camView === 'side' ? -6.1 : 6.1, 0, 0);
   S.ref.rotation.y = (UI.camView === 'side') ? Math.PI / 2 : -Math.PI / 2;
