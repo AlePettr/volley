@@ -144,11 +144,12 @@ function s3Build(M) {
     S.boards[grp].push(m);
     S.panels.push({ mat, slot, len, tex: null });
   };
-  /* rettangolo chiuso: i fondi coprono v da -8.8 a 8.8, i lati u da -11.2 a 11.2, senza sovrapposizioni */
-  panel(8.8, -4.4, -11.2, 0, 0, 'e-'); panel(8.8, 4.4, -11.2, 0, 1, 'e-');
-  panel(8.8, -4.4, 11.2, Math.PI, 1, 'e+'); panel(8.8, 4.4, 11.2, Math.PI, 2, 'e+');
-  panel(11.2, -5.6, -8.8, Math.PI / 2, 0, 's-'); panel(11.2, 5.6, -8.8, Math.PI / 2, 1, 's-');
-  panel(11.2, -5.6, 8.8, -Math.PI / 2, 2, 's+'); panel(11.2, 5.6, 8.8, -Math.PI / 2, 0, 's+');
+  /* rettangolo chiuso oltre la zona libera: i fondi (lato corto) a 12.6 m dalla rete, i lati lunghi a 8.8 m dall'asse */
+  const EB = 12.6;
+  panel(8.8, -4.4, -EB, 0, 0, 'e-'); panel(8.8, 4.4, -EB, 0, 1, 'e-');
+  panel(8.8, -4.4, EB, Math.PI, 1, 'e+'); panel(8.8, 4.4, EB, Math.PI, 2, 'e+');
+  panel(EB, -EB / 2, -8.8, Math.PI / 2, 0, 's-'); panel(EB, EB / 2, -8.8, Math.PI / 2, 1, 's-');
+  panel(EB, -EB / 2, 8.8, -Math.PI / 2, 2, 's+'); panel(EB, EB / 2, 8.8, -Math.PI / 2, 0, 's+');
   S.fallbackTex = fallback;
 
   /* rete, montanti, antenne */
@@ -288,7 +289,7 @@ function s3Frame(M, ents, dt) {
     }
   }
 
-  { const vw = UI.camView || 'side'; for (const k in S.boards) { const hide = vw === 'side' ? (k !== 's-') : (k === 'e+'); for (const m of S.boards[k]) m.visible = !hide; } }
+  { const vw = UI.camView || 'side'; for (const k in S.boards) { const hide = vw === 'side' ? (k === 's+') : (k === 'e+'); for (const m of S.boards[k]) m.visible = !hide; } }
   s3Camera(M, ents, dt);
   S.ref.position.set(Cam.side || UI.camView === 'side' ? -6.1 : 6.1, 0, 0);
   S.ref.rotation.y = (UI.camView === 'side') ? Math.PI / 2 : -Math.PI / 2;
@@ -308,9 +309,11 @@ function s3Camera(M, ents, dt) {
   const ball = a ? sampleBall(a.script.ball, t) : null, shot = camShot(M);
   let tg = look.clone(), zf = 1;
   if (ball) { if (view === 'side') tg.z += ball.u * .35; else { tg.x += ball.v * .22; tg.z += ball.u * .2; } }
+  const clampZ = z => (view === 'side' ? Math.max(-4, Math.min(4, z)) : z);
   if (shot.cam === 'serve' && a && a.script.srvU !== undefined) { tg.set(a.script.srvV, 1.2, a.script.srvU); tg.lerp(look, .25); zf = .8; }
   else if (shot.cam === 'zoom' && a) { tg.set(shot.v, 1.6, shot.u); if (ball) tg.lerp(new V(ball.v, ball.z, ball.u), .45); zf = .6; }
   else if (shot.cam === 'react') { let sx = 0, sz = 0, n = 0; for (const e of ents) if (e.kind === 'p' && e.side === shot.side) { sx += e.v; sz += e.u; n++; } if (n) { tg.set(sx / n, 1.2, sz / n); zf = .76; } }
+  tg.z = clampZ(tg.z);
   zf *= 1 - .06 * Math.min(1, M.zoom || 0);
   if (!S.cur) S.cur = { look: tg.clone(), zf, id: null, fast: 0 };
   const c = S.cur, id = shot.cam + (shot.t || 0);
