@@ -101,16 +101,17 @@ function s3Build(M) {
   const endSpan = 2 * (9.6 + rowsSide * stepD);
   for (const s of [-1, 1]) { addStand('z', s, rowsEnd, 12.8, endSpan, 0); addStand('x', s, rowsSide, 9.6, 25.2, 0); }
   /* pareti scure dietro le gradinate e soffitto con fari */
-  const wallMat = new THREE.MeshLambertMaterial({ color: new THREE.Color(TH.wall[1]).multiplyScalar(.8), side: THREE.DoubleSide });
+  /* pareti visibili solo dall'interno: le camere larghe stanno oltre i gradoni e non devono vedere il retro */
+  const wallMat = new THREE.MeshLambertMaterial({ color: new THREE.Color(TH.wall[1]).multiplyScalar(.8) });
   const zW = 12.8 + rowsEnd * stepD + 1, xW = 9.6 + rowsSide * stepD + 1;
   for (const s of [-1, 1]) {
-    const a = new THREE.Mesh(new THREE.PlaneGeometry(2 * xW + 4, 18), wallMat); a.position.set(0, 9, s * zW); scene.add(a);
-    const b = new THREE.Mesh(new THREE.PlaneGeometry(2 * zW, 18), wallMat); b.rotation.y = Math.PI / 2; b.position.set(s * xW, 9, 0); scene.add(b);
+    const a = new THREE.Mesh(new THREE.PlaneGeometry(2 * xW + 4, 26), wallMat); a.position.set(0, 13, s * zW); a.rotation.y = s > 0 ? Math.PI : 0; scene.add(a);
+    const b = new THREE.Mesh(new THREE.PlaneGeometry(2 * zW, 26), wallMat); b.rotation.y = s > 0 ? -Math.PI / 2 : Math.PI / 2; b.position.set(s * xW, 13, 0); scene.add(b);
   }
-  const roof = new THREE.Mesh(new THREE.PlaneGeometry(2 * xW, 2 * zW), new THREE.MeshLambertMaterial({ color: 0x080c16 })); roof.rotation.x = Math.PI / 2; roof.position.y = 15; scene.add(roof);
+  const roof = new THREE.Mesh(new THREE.PlaneGeometry(2 * xW, 2 * zW), new THREE.MeshLambertMaterial({ color: 0x080c16 })); roof.rotation.x = Math.PI / 2; roof.position.y = 24; scene.add(roof);
   const lampMat = new THREE.MeshBasicMaterial({ color: 0xf2f6ff });
-  for (let i = -3; i <= 3; i++) for (let j = -2; j <= 2; j++) { const l = new THREE.Mesh(new THREE.BoxGeometry(1.4, .12, .6), lampMat); l.position.set(j * 4.4, 14.9, i * 4); scene.add(l); }
-  if (TH.beams) for (let i = -4; i <= 4; i++) { const b = new THREE.Mesh(new THREE.BoxGeometry(2 * xW, .5, .35), new THREE.MeshLambertMaterial({ color: 0x0d1424 })); b.position.set(0, 14.6, i * 3.3); scene.add(b); }
+  for (let i = -3; i <= 3; i++) for (let j = -2; j <= 2; j++) { const l = new THREE.Mesh(new THREE.BoxGeometry(1.4, .12, .6), lampMat); l.position.set(j * 4.4, 23.9, i * 4); scene.add(l); }
+  if (TH.beams) for (let i = -4; i <= 4; i++) { const b = new THREE.Mesh(new THREE.BoxGeometry(2 * xW, .5, .35), new THREE.MeshLambertMaterial({ color: 0x0d1424 })); b.position.set(0, 23.6, i * 3.3); scene.add(b); }
 
   /* spettatori */
   const N = spots.length, bodyG = new THREE.CylinderGeometry(.2, .22, .55, 7), headG = new THREE.SphereGeometry(.13, 8, 6);
