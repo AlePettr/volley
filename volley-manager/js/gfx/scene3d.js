@@ -2,7 +2,7 @@
    Legge le stesse entita' del motore 2D (atlete con u,v e posa, palla u,v,z) e le disegna in una scena 3D.
    Mappa mondo: X = v (destra/sinistra del campo), Y = altezza, Z = u (distanza dalla rete, positivo verso la camera da fondo).
    Il canvas 2D #cv resta sopra, trasparente, per cartellini nome ed effetti: Cam.p3 fa si' che proj() usi la camera 3D. */
-const S3_BUILD = 'i';
+const S3_BUILD = 'j';
 function s3Available() { return typeof THREE !== 'undefined'; }
 function s3Active(M) { return !!(M && M.s3 && UI.mode3d !== false); }
 
@@ -147,11 +147,11 @@ function s3Build(M) {
     S.panels.push({ mat, slot, len, tex: null });
   };
   /* rettangolo chiuso oltre la zona libera: i fondi (lato corto) a 12.6 m dalla rete, i lati lunghi a 8.8 m dall'asse */
-  const EB = 12.6, SB = 10.4;   /* lati lunghi: centrati sul campo (u da -8 a 8), piu' indietro dei fondi (10.4 m dall'asse) cosi' non toccano i cartelloni corti */
+  const EB = 11.2, SB = 9.8;   /* fondi a 11.2 m dalla rete (v da -8.8 a 8.8); lati lunghi a 9.8 m dall'asse, u da -10 a 10: non toccano i fondi */
   panel(8.8, -4.4, -EB, 0, 0, 'e-f'); panel(8.8, 4.4, -EB, 0, 1, 'e-n');
   panel(8.8, 4.4, EB, Math.PI, 1, 'e+n'); panel(8.8, -4.4, EB, Math.PI, 2, 'e+f');
-  panel(8, -4, -SB, Math.PI / 2, 0, 's-'); panel(8, 4, -SB, Math.PI / 2, 1, 's-');
-  panel(8, -4, SB, -Math.PI / 2, 2, 's+'); panel(8, 4, SB, -Math.PI / 2, 0, 's+');
+  panel(10, -SB, -5, Math.PI / 2, 0, 's-'); panel(10, -SB, 5, Math.PI / 2, 1, 's-');   /* panel(lunghezza, x = v, z = u, rotazione, filmato) */
+  panel(10, SB, -5, -Math.PI / 2, 2, 's+'); panel(10, SB, 5, -Math.PI / 2, 0, 's+');
   S.fallbackTex = fallback;
 
   /* rete, montanti, antenne */
@@ -291,7 +291,7 @@ function s3Frame(M, ents, dt) {
     }
   }
 
-  { const vw = UI.camView || 'side'; for (const k in S.boards) { const hide = vw === 'side' ? (k === 's+' || k === 'e+n' || k === 'e-n') : (k[0] === 'e' && k[1] === '+');; for (const m of S.boards[k]) m.visible = !hide; } }
+  { const vw = UI.camView || 'side'; for (const k in S.boards) { const hide = vw === 'side' ? (k === 's+') : (k[0] === 'e' && k[1] === '+'); for (const m of S.boards[k]) m.visible = !hide; } }
   s3Camera(M, ents, dt);
   S.ref.position.set(Cam.side || UI.camView === 'side' ? -6.1 : 6.1, 0, 0);
   S.ref.rotation.y = (UI.camView === 'side') ? Math.PI / 2 : -Math.PI / 2;
