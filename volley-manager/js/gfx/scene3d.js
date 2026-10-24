@@ -2,7 +2,7 @@
    Legge le stesse entita' del motore 2D (atlete con u,v e posa, palla u,v,z) e le disegna in una scena 3D.
    Mappa mondo: X = v (destra/sinistra del campo), Y = altezza, Z = u (distanza dalla rete, positivo verso la camera da fondo).
    Il canvas 2D #cv resta sopra, trasparente, per cartellini nome ed effetti: Cam.p3 fa si' che proj() usi la camera 3D. */
-const S3_BUILD = 'k';
+const S3_BUILD = 'l';
 function s3Available() { return typeof THREE !== 'undefined'; }
 function s3Active(M) { return !!(M && M.s3 && UI.mode3d !== false); }
 
@@ -111,6 +111,12 @@ function s3Build(M) {
     const b = new THREE.Mesh(new THREE.PlaneGeometry(2 * zW, 26), wallMat); b.rotation.y = s > 0 ? -Math.PI / 2 : Math.PI / 2; b.position.set(s * xW, 13, 0); scene.add(b);
   }
   const roof = new THREE.Mesh(new THREE.PlaneGeometry(2 * xW, 2 * zW), new THREE.MeshLambertMaterial({ color: 0x080c16 })); roof.rotation.x = Math.PI / 2; roof.position.y = 24; scene.add(roof);
+  /* luce: pozza calda sul campo e fasci conici dai fari (additivi, molto tenui) */
+  const poolTex = s3Tex(256, 256, (c, w, h) => { const g = c.createRadialGradient(w / 2, h / 2, 4, w / 2, h / 2, w / 2); g.addColorStop(0, 'rgba(255,246,226,.30)'); g.addColorStop(.6, 'rgba(255,246,226,.10)'); g.addColorStop(1, 'rgba(255,246,226,0)'); c.fillStyle = g; c.fillRect(0, 0, w, h); });
+  const pool = new THREE.Mesh(new THREE.PlaneGeometry(26, 34), new THREE.MeshBasicMaterial({ map: poolTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+  pool.rotation.x = -Math.PI / 2; pool.position.y = .006; scene.add(pool);
+  const beamMat = new THREE.MeshBasicMaterial({ color: 0xcfdcff, transparent: true, opacity: .035, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+  for (const bx of [-5, 0, 5]) for (const bz of [-7, 0, 7]) { const cn = new THREE.Mesh(new THREE.ConeGeometry(3.6, 23, 20, 1, true), beamMat); cn.position.set(bx, 12.4, bz); scene.add(cn); }
   const lampMat = new THREE.MeshBasicMaterial({ color: 0xf2f6ff });
   for (let i = -3; i <= 3; i++) for (let j = -2; j <= 2; j++) { const l = new THREE.Mesh(new THREE.BoxGeometry(1.4, .12, .6), lampMat); l.position.set(j * 4.4, 23.9, i * 4); scene.add(l); }
   if (TH.beams) for (let i = -4; i <= 4; i++) { const b = new THREE.Mesh(new THREE.BoxGeometry(2 * xW, .5, .35), new THREE.MeshLambertMaterial({ color: 0x0d1424 })); b.position.set(0, 23.6, i * 3.3); scene.add(b); }
@@ -119,16 +125,30 @@ function s3Build(M) {
   const N = spots.length, bodyG = new THREE.CylinderGeometry(.2, .22, .55, 7), headG = new THREE.SphereGeometry(.13, 8, 6);
   const bodies = new THREE.InstancedMesh(bodyG, new THREE.MeshLambertMaterial({ color: 0xffffff }), N), heads = new THREE.InstancedMesh(headG, new THREE.MeshLambertMaterial({ color: 0xffffff }), N);
   const mtx = new THREE.Matrix4(), col = new THREE.Color(), skins = ['#f1c9a5', '#e0ac82', '#b9835b', '#8a5a3b', '#f5d6bd'], base = new Float32Array(N), ph = new Float32Array(N);
+  const hs = M.userSide === 'a' ? -1 : 1, kh = M.kits.h, ka = M.kits.a, team = new Uint8Array(N), flagSpots = [];
+  const homePal = [kh.main, kh.main, kh.trim, Gx.light(kh.main, .3)], awayPal = [ka.main, ka.main, ka.trim, Gx.light(ka.main, .3)];
   spots.forEach((p, i) => {
     base[i] = p.y + .32; ph[i] = R() * 6.28;
     mtx.makeTranslation(p.x, base[i], p.z); bodies.setMatrixAt(i, mtx);
     mtx.makeTranslation(p.x, base[i] + .43, p.z); heads.setMatrixAt(i, mtx);
-    bodies.setColorAt(i, col.set(R() < .55 ? tint[Math.floor(R() * tint.length)] : S3_CROWD[Math.floor(R() * S3_CROWD.length)]));
+    /* tifosi: dal lato della squadra di casa colori di casa, dal lato opposto colori ospiti, il resto neutro */
+    const own = p.z * hs > 0 ? 1 : 2, r = R(), pal = own === 1 ? homePal : awayPal, opp = own === 1 ? awayPal : homePal;
+    let tm = 0, cc;
+    if (r < .62) { cc = pal[Math.floor(R() * pal.length)]; tm = own; }
+    else if (r < .72) { cc = opp[Math.floor(R() * opp.length)]; tm = own === 1 ? 2 : 1; }
+    else cc = S3_CROWD[Math.floor(R() * S3_CROWD.length)];
+    team[i] = tm;
+    if (tm && R() < .12) flagSpots.push({ x: p.x, y: base[i] + .55, z: p.z, ph: R() * 6.28, tm, i });
+    bodies.setColorAt(i, col.set(cc));
     heads.setColorAt(i, col.set(skins[Math.floor(R() * skins.length)]));
   });
   bodies.frustumCulled = false; heads.frustumCulled = false;
   scene.add(bodies); scene.add(heads);
-  S.crowd = { bodies, heads, base, ph, N, spots };
+  /* bandiere sventolate dai tifosi */
+  const NF = flagSpots.length, flags = new THREE.InstancedMesh(new THREE.PlaneGeometry(.55, .34), new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide }), Math.max(1, NF)), poles = new THREE.InstancedMesh(new THREE.CylinderGeometry(.012, .012, .9, 5), new THREE.MeshLambertMaterial({ color: 0xdfe3ea }), Math.max(1, NF));
+  flagSpots.forEach((f, k) => { flags.setColorAt(k, col.set(f.tm === 1 ? kh.main : ka.main)); mtx.makeTranslation(f.x, f.y + .1, f.z); poles.setMatrixAt(k, mtx); });
+  flags.count = NF; poles.count = NF; flags.frustumCulled = false; poles.frustumCulled = false; scene.add(flags); scene.add(poles);
+  S.crowd = { bodies, heads, base, ph, N, spots, team, flags, flagSpots, NF };
 
   /* cartelloni LED: filmati della Lega se disponibili, altrimenti nomi di squadre e sponsor */
   S.panels = []; S.vtex = new Map();
@@ -180,8 +200,9 @@ function s3Build(M) {
     c.fillStyle = '#f7c62d'; for (let i = 0; i < 4; i++) { c.fillRect(i * 64 + 26, h * .1, 22, h * .8); }
   });
   S.ball = new THREE.Mesh(new THREE.SphereGeometry(.15, 16, 12), new THREE.MeshLambertMaterial({ map: ballTex })); scene.add(S.ball);
-  const shadowMat = new THREE.MeshBasicMaterial({ color: 0x050810, transparent: true, opacity: .4, depthWrite: false });
-  S.ballShadow = new THREE.Mesh(new THREE.CircleGeometry(1, 16), shadowMat); S.ballShadow.rotation.x = -Math.PI / 2; S.ballShadow.position.y = .012; scene.add(S.ballShadow);
+  const shTex = s3Tex(64, 64, (c, w, h) => { const g = c.createRadialGradient(w / 2, h / 2, 2, w / 2, h / 2, w / 2); g.addColorStop(0, 'rgba(4,6,14,.62)'); g.addColorStop(.55, 'rgba(4,6,14,.32)'); g.addColorStop(1, 'rgba(4,6,14,0)'); c.fillStyle = g; c.fillRect(0, 0, w, h); });
+  const shadowMat = new THREE.MeshBasicMaterial({ map: shTex, transparent: true, depthWrite: false });
+  S.ballShadow = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), shadowMat); S.ballShadow.rotation.x = -Math.PI / 2; S.ballShadow.position.y = .012; scene.add(S.ballShadow);
   S.shadowMat = shadowMat;
 }
 
@@ -226,7 +247,7 @@ function s3Rig(M, e) {
   const numM = new THREE.Mesh(new THREE.PlaneGeometry(.31, .31), new THREE.MeshBasicMaterial({ map: backTex, transparent: true })); g.add(numM); parts.num = numM;
   const frontTex = s3Tex(64, 64, (c, w, h) => { c.fillStyle = K.num || '#fff'; c.font = '700 46px "Barlow Condensed",Arial'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(String(no || ''), w / 2, h / 2 + 2); });
   const numF = new THREE.Mesh(new THREE.PlaneGeometry(.12, .12), new THREE.MeshBasicMaterial({ map: frontTex, transparent: true })); g.add(numF); parts.numF = numF;
-  const shadow = new THREE.Mesh(new THREE.CircleGeometry(1, 16), S.shadowMat); shadow.rotation.x = -Math.PI / 2; shadow.position.y = .012;
+  const shadow = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), S.shadowMat); shadow.rotation.x = -Math.PI / 2; shadow.position.y = .012;
   S.scene.add(g); S.scene.add(shadow);
   rig = { key, g, parts, shadow, hair: S3_HAIR[(look.style || 0) % S3_HAIR.length], ph: (Gx.hash(String(e.p.id)) % 628) / 100 };
   S.rigs.set(e.p.id, rig); return rig;
@@ -293,7 +314,7 @@ function s3Frame(M, ents, dt) {
   for (const e of ents) {
     if (e.kind === 'b') {
       S.ball.visible = true; S.ball.position.set(e.v, Math.max(.16, e.z), e.u); S.ball.rotation.x = (time * 6) % 6.283;
-      const sh = Math.max(.35, 1 - e.z * .1); S.ballShadow.position.x = e.v; S.ballShadow.position.z = e.u; S.ballShadow.scale.set(.2 * sh, .2 * sh, .2 * sh); continue;
+      const sh = Math.max(.35, 1 - e.z * .1); S.ballShadow.position.x = e.v + .12 * (1 + e.z * .3); S.ballShadow.position.z = e.u - .07 * (1 + e.z * .3); S.ballShadow.scale.set(.32 * sh, .32 * sh, .32 * sh); continue;
     }
     seen.add(e.p.id);
     const rig = s3Rig(M, e), face = e.side === M.userSide ? Math.PI : 0;
@@ -301,14 +322,27 @@ function s3Frame(M, ents, dt) {
     const P = breath ? { ...e.pose, cr: e.pose.cr + breath } : e.pose;
     rig.g.position.set(e.v, 0, e.u);
     s3Pose(rig, P, e.name, face, time);
-    const sh = Math.max(.35, 1 - P.lf * .45); rig.shadow.position.set(e.v, .012, e.u); rig.shadow.scale.set(.33 * sh, .33 * sh, .33 * sh);
+    const sh = Math.max(.35, 1 - P.lf * .45); rig.shadow.position.set(e.v + .14 * (1 + P.lf), .012, e.u - .08 * (1 + P.lf)); rig.shadow.scale.set(.5 * sh, .5 * sh, .5 * sh);
   }
   if (!ents.some(e => e.kind === 'b')) { S.ball.visible = false; S.ballShadow.scale.set(.001, .001, .001); }
   for (const [id, rig] of S.rigs) if (!seen.has(id)) { scene.remove(rig.g); scene.remove(rig.shadow); S.rigs.delete(id); }
 
   /* pubblico */
-  const cr = S.crowd, ex = M.excite || 0, ia = cr.bodies.instanceMatrix.array, ha = cr.heads.instanceMatrix.array;
-  for (let i = 0; i < cr.N; i++) { const y = cr.base[i] + Math.max(0, Math.sin(time * 2.4 + cr.ph[i])) * (.012 + ex * .09); ia[i * 16 + 13] = y; ha[i * 16 + 13] = y + .43; }
+  const cr = S.crowd, ex = M.excite || 0, ia = cr.bodies.instanceMatrix.array, ha = cr.heads.instanceMatrix.array, lw = M.lastWin;
+  for (let i = 0; i < cr.N; i++) {
+    const tm = cr.team[i], win = (tm === 1 && lw === 'h') || (tm === 2 && lw === 'a');
+    const y = cr.base[i] + ex * (win ? .22 : .02) + Math.max(0, Math.sin(time * (win ? 4 : 2.4) + cr.ph[i])) * (.012 + ex * (win ? .12 : .03));
+    ia[i * 16 + 13] = y; ha[i * 16 + 13] = y + .43;
+  }
+  if (cr.NF) {
+    const q = S.q || (S.q = new THREE.Quaternion()), eu = S.eu || (S.eu = new THREE.Euler()), ps = S.ps || (S.ps = new THREE.Vector3()), sc = S.sc || (S.sc = new THREE.Vector3(1, 1, 1)), mx = S.mx || (S.mx = new THREE.Matrix4());
+    for (let k = 0; k < cr.NF; k++) {
+      const f = cr.flagSpots[k], win = (f.tm === 1 && lw === 'h') || (f.tm === 2 && lw === 'a'), w = Math.sin(time * (win ? 6 : 2.6) + f.ph), lift = ex * (win ? .26 : .03);
+      eu.set(0, w * (win ? .9 : .35), w * .12); q.setFromEuler(eu); ps.set(f.x + .22, f.y + .6 + lift + Math.max(0, w) * .05 * ex, f.z);
+      mx.compose(ps, q, sc); cr.flags.setMatrixAt(k, mx);
+    }
+    cr.flags.instanceMatrix.needsUpdate = true;
+  }
   cr.bodies.instanceMatrix.needsUpdate = true; cr.heads.instanceMatrix.needsUpdate = true;
 
   /* cartelloni LED con i video della Lega */
