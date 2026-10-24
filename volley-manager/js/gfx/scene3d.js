@@ -137,7 +137,7 @@ function s3Build(M) {
     items.forEach((t, i) => { c.fillText(t, (i + .5) * w / items.length, h / 2 + 2, w / items.length - 20); });
   });
   const dark = new THREE.MeshLambertMaterial({ color: 0x05080f });
-  S.boards = { 'e+': [], 'e-': [], 's+': [], 's-': [] };
+  S.boards = { 'e+f': [], 'e+n': [], 'e-f': [], 'e-n': [], 's+': [], 's-': [] };   /* f = meta' lontana dalla camera laterale (v<0), n = meta' vicina */
   const panel = (len, x, z, ry, slot, grp) => {
     const mat = new THREE.MeshBasicMaterial({ map: fallback });
     const m = new THREE.Mesh(new THREE.PlaneGeometry(len - .06, 1.1), mat); m.position.set(x, .55, z); m.rotation.y = ry; scene.add(m);
@@ -146,8 +146,8 @@ function s3Build(M) {
   };
   /* rettangolo chiuso oltre la zona libera: i fondi (lato corto) a 12.6 m dalla rete, i lati lunghi a 8.8 m dall'asse */
   const EB = 12.6, SB = 10.4;   /* lati lunghi: centrati sul campo (u da -8 a 8), piu' indietro dei fondi (10.4 m dall'asse) cosi' non toccano i cartelloni corti */
-  panel(8.8, -4.4, -EB, 0, 0, 'e-'); panel(8.8, 4.4, -EB, 0, 1, 'e-');
-  panel(8.8, -4.4, EB, Math.PI, 1, 'e+'); panel(8.8, 4.4, EB, Math.PI, 2, 'e+');
+  panel(8.8, -4.4, -EB, 0, 0, 'e-f'); panel(8.8, 4.4, -EB, 0, 1, 'e-n');
+  panel(8.8, 4.4, EB, Math.PI, 1, 'e+n'); panel(8.8, -4.4, EB, Math.PI, 2, 'e+f');
   panel(8, -4, -SB, Math.PI / 2, 0, 's-'); panel(8, 4, -SB, Math.PI / 2, 1, 's-');
   panel(8, -4, SB, -Math.PI / 2, 2, 's+'); panel(8, 4, SB, -Math.PI / 2, 0, 's+');
   S.fallbackTex = fallback;
@@ -289,7 +289,7 @@ function s3Frame(M, ents, dt) {
     }
   }
 
-  { const vw = UI.camView || 'side'; for (const k in S.boards) { const hide = vw === 'side' ? (k === 's+') : (k === 'e+'); for (const m of S.boards[k]) m.visible = !hide; } }
+  { const vw = UI.camView || 'side'; for (const k in S.boards) { const hide = vw === 'side' ? (k === 's+' || k === 'e+n' || k === 'e-n') : (k[0] === 'e' && k[1] === '+');; for (const m of S.boards[k]) m.visible = !hide; } }
   s3Camera(M, ents, dt);
   S.ref.position.set(Cam.side || UI.camView === 'side' ? -6.1 : 6.1, 0, 0);
   S.ref.rotation.y = (UI.camView === 'side') ? Math.PI / 2 : -Math.PI / 2;
