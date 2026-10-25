@@ -15,6 +15,24 @@ const LED = { vids: [], slots: [0, 1, 2], H: 1.1, L: 10.5 };
   const n = LED.vids.length, st = Math.floor(Math.random() * n);
   LED.slots = [st % n, (st + 1) % n, (st + 2) % n];
 })();
+/* filmati di una singola squadra (es. Melendugno): attivi solo quando gioca in casa, poi esclusi dal ciclo e non scaricati */
+LED.team = {};
+(function ledTeamInit() {
+  const t = ((window.LOGO_MANIFEST || {}).ledTeam || {}); if (typeof document === 'undefined') return;
+  for (const id in t) {
+    const v = document.createElement('video'); v.muted = true; v.defaultMuted = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.preload = 'none'; v.loop = false; v.src = 'logos/led/' + t[id]; v._bad = true; v._team = id;
+    v.addEventListener('ended', () => ledAdvance(v)); v.addEventListener('error', () => { v._bad = true; ledAdvance(v); });
+    LED.vids.push(v); LED.team[id] = v;
+  }
+})();
+function ledForHome(id) {
+  const n = LED.vids.length; if (!n) return;
+  for (const k in LED.team) {
+    const v = LED.team[k], i = LED.vids.indexOf(v);
+    if (k === id) { v._bad = false; v.preload = 'auto'; try { v.load(); } catch (e) { } if (LED.slots.indexOf(i) < 0) LED.slots[1] = i; ledPlay(v); }
+    else { v._bad = true; const si = LED.slots.indexOf(i); if (si >= 0) { let c = 0; while ((LED.vids[c]._team || LED.slots.indexOf(c) >= 0) && c < n - 1) c++; LED.slots[si] = c; } }
+  }
+}
 function ledPlay(v) { try { v.currentTime = 0; const p = v.play(); if (p && p.catch) p.catch(() => {}); } catch (e) { } }
 function ledAdvance(v) {
   const n = LED.vids.length; if (!n) return;

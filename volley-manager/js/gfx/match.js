@@ -52,6 +52,8 @@ function renderMatch() {
   </div>
   <div id="sum"></div>`;
   sizeCanvas();
+  if (typeof Snd !== 'undefined') Snd.mount(M);
+  if (typeof ledForHome === 'function') ledForHome(M.home.id);
   { const b3 = $("#mode3dbtn"); if (b3 && typeof s3Available === 'function' && s3Available()) { b3.hidden = false; b3.textContent = UI.mode3d === false ? '3D' : '2D'; } }
   M.last = performance.now();
   M.raf = requestAnimationFrame(tick);
@@ -109,6 +111,7 @@ function applyPoint(a) {
     b.innerHTML = `<span>SET ${ry.set}</span><b>${esc(w.short)}</b><em>${ry.h}-${ry.a}</em>`; b.hidden = false; b.className = 'banner show';
     setTimeout(() => { const bb = $("#banner"); if (bb) { bb.hidden = true; bb.className = 'banner'; } }, 1700);
   }
+  if (typeof Snd !== 'undefined' && !a.replay && !M.replay) Snd.point(M, a);
 }
 function updateBoard(ry, setEnd) {
   const M = UI.match;
@@ -151,6 +154,7 @@ function tick(ts) {
         else if (f.type === 'dust') { M.fxList.push({ ...f, born: M.t }); }
         else if (f.type === 'text' && f.text) M.fxList.push({ ...f, born: M.t, win: M.anim.ry.winner === M.userSide });
       }
+      if (typeof Snd !== 'undefined') Snd.tick(M, a);
       if (!a.scored && a.t >= a.script.point && !a.replay && !M.replay && a.ry.vc && !a.ry.vc.done && varMaybe(M, a)) { /* attende l'esito del check VAR */ }
       else if (!a.scored && a.t >= a.script.point) { a.scored = true; applyPoint(a); }
       if (a.replay) { if (a.t >= a.script.end + .6) { const rb = $('#rbadge'); if (rb) rb.hidden = true; M.anim = null; M.replay = false; M.speed = M.replaySpeed || 1; $("#feed").textContent = M.feedKeep || ''; } }
