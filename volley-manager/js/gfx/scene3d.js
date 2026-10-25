@@ -2,7 +2,7 @@
    Legge le stesse entita' del motore 2D (atlete con u,v e posa, palla u,v,z) e le disegna in una scena 3D.
    Mappa mondo: X = v (destra/sinistra del campo), Y = altezza, Z = u (distanza dalla rete, positivo verso la camera da fondo).
    Il canvas 2D #cv resta sopra, trasparente, per cartellini nome ed effetti: Cam.p3 fa si' che proj() usi la camera 3D. */
-const S3_BUILD = 'n';
+const S3_BUILD = 'o';
 function s3Available() { return typeof THREE !== 'undefined'; }
 function s3Active(M) { return !!(M && M.s3 && UI.mode3d !== false); }
 
@@ -65,14 +65,14 @@ function s3Build(M) {
     const g = c.createLinearGradient(0, 0, 0, h);
     if (isA1) { g.addColorStop(0, '#cdae80'); g.addColorStop(1, '#dcc093'); } else { g.addColorStop(0, '#4a2f86'); g.addColorStop(1, '#6f52b8'); }
     c.fillStyle = g; c.fillRect(0, 0, w, h);
+    /* taraflex A1: il viola e' esterno al campo, una cornice attorno alle linee */
+    if (isA1) { c.fillStyle = '#8f2c93'; c.fillRect(X(-7.3), Y(-11.8), X(7.3) - X(-7.3), Y(11.8) - Y(-11.8)); }
     const cg = c.createLinearGradient(0, Y(-9), 0, Y(9)); cg.addColorStop(0, '#d8a867'); cg.addColorStop(.5, '#e6bb80'); cg.addColorStop(1, '#efca94');
     c.fillStyle = cg; c.fillRect(X(-4.5), Y(-9), X(4.5) - X(-4.5), Y(9) - Y(-9));
     c.fillStyle = 'rgba(120,70,20,.10)'; c.fillRect(X(-4.5), Y(-3), X(4.5) - X(-4.5), Y(3) - Y(-3));
     for (let v = -4.5, k = 0; v < 4.5; v += .36, k++) { if (k % 2) continue; c.fillStyle = 'rgba(255,240,205,.11)'; c.fillRect(X(v), Y(-9), X(v + .36) - X(v), Y(9) - Y(-9)); }
     c.strokeStyle = 'rgba(90,50,10,.13)'; c.lineWidth = 1;
     for (let v = -4.3; v <= 4.4; v += .45) { c.beginPath(); c.moveTo(X(v), Y(-9)); c.lineTo(X(v), Y(9)); c.stroke(); }
-    /* taraflex A1: cornice viola nel campo (fasce di fondo 2,5 m, laterali 1,5 m) con centro in parquet */
-    if (isA1) { c.fillStyle = 'rgba(143,44,147,.94)'; c.beginPath(); c.rect(X(-4.5), Y(-9), X(4.5) - X(-4.5), Y(9) - Y(-9)); c.rect(X(-3), Y(-6.5), X(3) - X(-3), Y(6.5) - Y(-6.5)); c.fill('evenodd'); }
     c.strokeStyle = '#fff'; c.lineWidth = .05 * w / FW; c.lineCap = 'butt';
     const L = (u1, v1, u2, v2) => { c.beginPath(); c.moveTo(X(v1), Y(u1)); c.lineTo(X(v2), Y(u2)); c.stroke(); };
     L(-9, -4.5, -9, 4.5); L(9, -4.5, 9, 4.5); L(-9, -4.5, 9, -4.5); L(-9, 4.5, 9, 4.5); L(0, -4.5, 0, 4.5); L(-3, -4.5, -3, 4.5); L(3, -4.5, 3, 4.5);
