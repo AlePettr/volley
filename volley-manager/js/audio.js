@@ -66,6 +66,7 @@ const Snd = (() => {
   function music(name, o) {
     o = o || {}; if (mode !== 'all') return; init(); stopMus(.6);
     const a = new Audio(FILES[name]); a.volume = 0; a.loop = !!o.loop; cur = a;
+    if (o.start) { const sk = () => { try { a.currentTime = o.start; } catch (e) { } }; a.addEventListener('loadedmetadata', sk, { once: true }); sk(); }
     const p = a.play(); if (p && p.catch) p.catch(() => { if (cur === a) cur = null; });
     fadeTo(a, o.vol == null ? .5 : o.vol, o.fadeIn == null ? 1.2 : o.fadeIn);
     if (o.max) setTimeout(() => { if (cur === a) stopMus(o.fadeOut == null ? 2.5 : o.fadeOut); }, o.max * 1000);
@@ -83,7 +84,7 @@ const Snd = (() => {
       M._snd = { pre: true }; init(); if (ctx && ctx.state === 'suspended') ctx.resume();
     },
     /* entrata in campo: inno della Lega + boato, poi fischio all'inizio del gioco */
-    introStart(M) { init(); if (ctx && ctx.state === 'suspended') ctx.resume(); if (!ctx) return; cheer(.8, 3.2); ambience(true, .05); music('inno', { vol: .55, fadeIn: .8, max: 11.8, fadeOut: 1.4 }); },
+    introStart(M) { init(); if (ctx && ctx.state === 'suspended') ctx.resume(); if (!ctx) return; cheer(.8, 3.2); ambience(true, .05); music('inno', { vol: .6, fadeIn: .5, max: 12, fadeOut: 1.4, start: 10 }); },
     introEnd(M) { stopMus(.8); if (ctx && mode !== 'off') whistle(.35); },
     stop() { stopMus(.5); ambience(false); },
     /* ogni frame di gioco: colpi di palla, fischi, brusio */
