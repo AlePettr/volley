@@ -2,7 +2,7 @@
    Legge le stesse entita' del motore 2D (atlete con u,v e posa, palla u,v,z) e le disegna in una scena 3D.
    Mappa mondo: X = v (destra/sinistra del campo), Y = altezza, Z = u (distanza dalla rete, positivo verso la camera da fondo).
    Il canvas 2D #cv resta sopra, trasparente, per cartellini nome ed effetti: Cam.p3 fa si' che proj() usi la camera 3D. */
-const S3_BUILD = 'o';
+const S3_BUILD = 'p';
 function s3Available() { return typeof THREE !== 'undefined'; }
 function s3Active(M) { return !!(M && M.s3 && UI.mode3d !== false); }
 
@@ -194,6 +194,42 @@ function s3Build(M) {
   const head = new THREE.Mesh(new THREE.SphereGeometry(.12, 10, 8), new THREE.MeshLambertMaterial({ color: 0xe0b08a })); head.position.y = 2.65; ref.add(head);
   scene.add(ref);
 
+  /* panchine, tavolo del segnapunti, raccattapalle, segnalinee e tabellone sospeso */
+  S.extras = [];
+  const mats = {}, lam = c => mats[c] || (mats[c] = new THREE.MeshLambertMaterial({ color: c }));
+  const skinC = ['#e0b08a', '#c68a62', '#8d5a3a', '#f0c9a6'];
+  const person = (x, z, ry, shirt, shorts, sit, tm, ph) => {
+    const g = new THREE.Group(), k = skinC[Math.floor(R() * skinC.length)], H = sit ? 0 : .45;
+    const torso = new THREE.Mesh(new THREE.CylinderGeometry(.17, .15, .52, 8), lam(shirt)); torso.position.y = .72 + H + (sit ? 0 : .25); g.add(torso);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(.105, 8, 6), lam(k)); head.position.y = 1.15 + H + (sit ? 0 : .25); g.add(head);
+    const hair = new THREE.Mesh(new THREE.SphereGeometry(.108, 8, 6, 0, 6.3, 0, 1.6), lam(['#1c1410', '#3a2a1c', '#6b4a2a', '#caa05a'][Math.floor(R() * 4)])); hair.position.y = 1.17 + H + (sit ? 0 : .25); g.add(hair);
+    if (sit) { for (const dx of [-.08, .08]) { const th = new THREE.Mesh(new THREE.BoxGeometry(.1, .1, .42), lam(shorts)); th.position.set(dx, .48, .2); g.add(th); const sh = new THREE.Mesh(new THREE.CylinderGeometry(.05, .045, .45, 6), lam(k)); sh.position.set(dx, .24, .4); g.add(sh); } }
+    else { for (const dx of [-.07, .07]) { const lg = new THREE.Mesh(new THREE.CylinderGeometry(.06, .05, .95, 6), lam(shorts)); lg.position.set(dx, .48, 0); g.add(lg); } }
+    g.position.set(x, 0, z); g.rotation.y = ry; scene.add(g); S.extras.push({ g, tm, ph, y0: 0 }); return g;
+  };
+  const BX = -7.7, benchMat = lam(0x2a3347);
+  for (const [tm, sgn] of [[1, hs], [2, -hs]]) {
+    const kit = tm === 1 ? kh : ka, zc = sgn * 5.6;
+    const bench = new THREE.Mesh(new THREE.BoxGeometry(.5, .45, 4.2), benchMat); bench.position.set(BX, .22, zc); scene.add(bench);
+    const back = new THREE.Mesh(new THREE.BoxGeometry(.06, .5, 4.2), lam(kit.main)); back.position.set(BX - .3, .7, zc); scene.add(back);
+    for (let i = 0; i < 6; i++) person(BX, zc - 1.7 + i * .68, Math.PI / 2, i < 5 ? kit.main : '#16213a', i < 5 ? kit.shorts : '#16213a', true, tm, i * 1.3);
+    person(BX + .9, zc + (sgn > 0 ? -2.6 : 2.6), sgn > 0 ? Math.PI * .85 : Math.PI * .15, '#1c2538', '#1c2538', false, tm, 0);   /* allenatore in piedi */
+  }
+  { /* tavolo del segnapunti dietro l'arbitro */
+    const tb = new THREE.Mesh(new THREE.BoxGeometry(.8, .75, 4.2), lam(0x39425a)); tb.position.set(BX - .9, .38, 0); scene.add(tb);
+    const top = new THREE.Mesh(new THREE.BoxGeometry(.9, .05, 4.3), lam(0xe9edf5)); top.position.set(BX - .9, .77, 0); scene.add(top);
+    for (let i = 0; i < 3; i++) person(BX - 1.55, -1.2 + i * 1.2, Math.PI / 2, '#233a63', '#1c2538', true, 0, 0);
+  }
+  /* raccattapalle ai quattro angoli e segnalinee con bandierina */
+  for (const [x, z] of [[-8, -10.4], [8, -10.4], [-8, 10.4], [8, 10.4]]) person(x, z, Math.atan2(-x, -z), '#f2f4f8', '#243153', true, 0, 0).scale.setScalar(.8);
+  for (const [x, z] of [[-6.4, -10.3], [6.4, 10.3]]) { const g = person(x, z, Math.atan2(-x, -z), '#f2f4f8', '#141b2d', false, 0, 0); const fl = new THREE.Mesh(new THREE.PlaneGeometry(.28, .22), new THREE.MeshBasicMaterial({ color: 0xf2c230, side: THREE.DoubleSide })); fl.position.set(.3, 1.45, .1); g.add(fl); }
+  /* tabellone sospeso sopra il campo (4 facce) */
+  { const bt = S.sbTex = s3Tex(512, 192, () => { }), bm = new THREE.MeshBasicMaterial({ map: bt });
+    const body = new THREE.Mesh(new THREE.BoxGeometry(5.4, 2.1, 5.4), lam(0x0a0f1c)); body.position.set(0, 16.2, 0); scene.add(body);
+    for (const [px, pz, ry] of [[2.71, 0, Math.PI / 2], [-2.71, 0, -Math.PI / 2], [0, 2.71, 0], [0, -2.71, Math.PI]]) { const f = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 1.95), bm); f.position.set(px, 16.2, pz); f.rotation.y = ry; scene.add(f); }
+    for (const [cx, cz] of [[-2.4, -2.4], [2.4, -2.4], [-2.4, 2.4], [2.4, 2.4]]) { const cb = new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, 7, 4), lam(0x303a52)); cb.position.set(cx, 20.4, cz); scene.add(cb); }
+    S.sbKey = ''; }
+
   /* palla */
   /* pallone ufficiale Molten V5M5000: tre spicchi a spirale bianco / verde / rosso */
   const ballTex = s3Tex(512, 256, (c, w, h) => {
@@ -267,7 +303,8 @@ function s3Pose(rig, P, name, face, time) {
   const hipC = v(ox * .5, hipY, 0), shC = v(ox, hipY + tl * Math.cos(lean), tl * Math.sin(lean));
   /* gambe: coscia, stinco, calzettone, ginocchiera, scarpa */
   for (const [s, sx] of [['L', -1], ['R', 1]]) {
-    const hp = v(sx * .09 + ox * .5, hipY, 0), ft = v(sx * (.11 + cr * .07), lf + .06, sx < 0 ? cr * .10 : -cr * .05);
+    const run = (!name && rig.run) || 0, ph = (rig.sph || 0) + (sx < 0 ? 0 : Math.PI);
+    const hp = v(sx * .09 + ox * .5, hipY, 0), ft = v(sx * (.11 + cr * .07), lf + .06 + Math.max(0, Math.cos(ph)) * .09 * run, (sx < 0 ? cr * .10 : -cr * .05) + Math.sin(ph) * .2 * run);
     const mid = hp.clone().add(ft).multiplyScalar(.5), dist = hp.distanceTo(ft), d = Math.sqrt(Math.max(0, .46 * .46 - (dist / 2) * (dist / 2)));
     const kn = mid.clone().add(v(sx * .02, 0, d * .9));
     s3Seg(p['thigh' + s], hp, kn, .068); s3Seg(p['shin' + s], kn, ft, .052);
@@ -317,21 +354,46 @@ function s3Pose(rig, P, name, face, time) {
 function s3Frame(M, ents, dt) {
   const S = M.s3, scene = S.scene, cam = S.camera, a = M.anim, t = a ? a.t : 0, time = M.t;
   const seen = new Set();
+  const bE = ents.find(e => e.kind === 'b');
   for (const e of ents) {
     if (e.kind === 'b') {
       S.ball.visible = true; S.ball.position.set(e.v, Math.max(.16, e.z), e.u); S.ball.rotation.x = (time * 6) % 6.283;
       const sh = Math.max(.35, 1 - e.z * .1); S.ballShadow.position.x = e.v + .12 * (1 + e.z * .3); S.ballShadow.position.z = e.u - .07 * (1 + e.z * .3); S.ballShadow.scale.set(.32 * sh, .32 * sh, .32 * sh); continue;
     }
     seen.add(e.p.id);
-    const rig = s3Rig(M, e), face = e.side === M.userSide ? Math.PI : 0;
+    const rig = s3Rig(M, e), base = e.side === M.userSide ? Math.PI : 0;
+    /* sguardo e corpo seguono la palla (con inerzia) */
+    let tgt = base;
+    if (bE && !e.name) { const d = Math.atan2(bE.v - e.v, bE.u - e.u); let df = d - base; df = Math.atan2(Math.sin(df), Math.cos(df)); tgt = base + Math.max(-.8, Math.min(.8, df)) * .55; }
+    if (rig.yaw === undefined) rig.yaw = tgt; rig.yaw += (tgt - rig.yaw) * Math.min(1, dt * 7);
+    const face = rig.yaw;
+    /* velocita' -> corsa */
+    if (rig.lu === undefined) { rig.lu = e.u; rig.lv = e.v; rig.sp = 0; rig.sph = 0; }
+    const spd = dt > 0 ? Math.hypot(e.u - rig.lu, e.v - rig.lv) / dt : 0; rig.lu = e.u; rig.lv = e.v;
+    rig.sp += (Math.min(7, spd) - rig.sp) * Math.min(1, dt * 9); rig.sph += rig.sp * dt * 3.4; rig.run = Math.min(1, rig.sp / 3);
     const breath = e.pose === POSE.ready ? Math.sin(time * 3 + e.u * 2 + e.v) * .012 : 0;
-    const P = breath ? { ...e.pose, cr: e.pose.cr + breath } : e.pose;
+    let P = breath ? { ...e.pose, cr: e.pose.cr + breath } : e.pose;
+    if (e.pose === POSE.cheer || e.pose === POSE.cheerUp) P = { ...P, lf: P.lf + Math.abs(Math.sin(time * 7 + e.u * 1.3)) * .14 };
     rig.g.position.set(e.v, 0, e.u);
     s3Pose(rig, P, e.name, face, time);
     const sh = Math.max(.35, 1 - P.lf * .45); rig.shadow.position.set(e.v + .14 * (1 + P.lf), .012, e.u - .08 * (1 + P.lf)); rig.shadow.scale.set(.5 * sh, .5 * sh, .5 * sh);
   }
   if (!ents.some(e => e.kind === 'b')) { S.ball.visible = false; S.ballShadow.scale.set(.001, .001, .001); }
   for (const [id, rig] of S.rigs) if (!seen.has(id)) { scene.remove(rig.g); scene.remove(rig.shadow); S.rigs.delete(id); }
+
+  /* tabellone sospeso: ridisegna solo se cambia il punteggio */
+  { const sh = document.getElementById('sc-h'), sa = document.getElementById('sc-a'), h = sh ? sh.textContent : '0', aw = sa ? sa.textContent : '0', key = h + '-' + aw;
+    if (key !== S.sbKey) {
+      S.sbKey = key; const c = S.sbTex.image.getContext('2d'), w = 512, hh = 192, kh = M.kits.h, ka = M.kits.a;
+      c.fillStyle = '#070b16'; c.fillRect(0, 0, w, hh);
+      c.fillStyle = kh.main; c.fillRect(0, 0, w / 2, 34); c.fillStyle = ka.main; c.fillRect(w / 2, 0, w / 2, 34);
+      c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = '700 28px "Barlow Condensed",Arial Narrow,sans-serif';
+      c.fillStyle = Gx.onColor(kh.main); c.fillText(M.home.short.toUpperCase(), w / 4, 18, 230); c.fillStyle = Gx.onColor(ka.main); c.fillText(M.away.short.toUpperCase(), w * .75, 18, 230);
+      c.fillStyle = '#ffd24a'; c.font = '700 120px "Barlow Condensed",Arial Narrow,sans-serif'; c.fillText(h, w / 4, 112); c.fillText(aw, w * .75, 112);
+      c.fillStyle = '#6b7690'; c.fillText(':', w / 2, 108); S.sbTex.needsUpdate = true;
+    } }
+  /* panchine in festa quando segna la propria squadra */
+  { const ex0 = M.excite || 0, lw0 = M.lastWin; for (const x of S.extras) { const win = x.tm && ((x.tm === 1 && lw0 === 'h') || (x.tm === 2 && lw0 === 'a')); x.g.position.y = win ? Math.abs(Math.sin(time * 7 + x.ph)) * .2 * ex0 : 0; } }
 
   /* pubblico */
   const cr = S.crowd, ex = M.excite || 0, ia = cr.bodies.instanceMatrix.array, ha = cr.heads.instanceMatrix.array, lw = M.lastWin;
