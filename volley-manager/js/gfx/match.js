@@ -56,9 +56,9 @@ function renderMatch() {
   if (typeof ledForHome === 'function') ledForHome(M.home.id);
   { const b3 = $("#mode3dbtn"); if (b3 && typeof s3Available === 'function' && s3Available()) { b3.hidden = false; b3.textContent = UI.mode3d === false ? '3D' : '2D'; } }
   /* entrata in campo: parte con un tocco (serve anche a sbloccare l'audio) */
-  M.intro = { t: 0, dur: 12.5, started: false };
+  M.intro = { t: 0, dur: 20, started: false };
   { const ar = $("#arena"); if (ar) {
-    ar.insertAdjacentHTML('beforeend', '<div class="introov" id="introov"><button class="btn primary big" id="introgo">Entrata in campo ▶</button><button class="btn" id="introskip">Salta</button></div>');
+    ar.insertAdjacentHTML('beforeend', '<div class="introov" id="introov"><button class="btn primary big" id="introgo">Entrata in campo ▶</button><button class="btn" id="introskip">Salta ⏭</button></div>');
     $("#introgo").onclick = () => { if (!M.intro) return; M.intro.started = true; M.intro.t = 0; const g = $("#introgo"); if (g) g.remove(); if (typeof Snd !== 'undefined') Snd.introStart(M); };
     $("#introskip").onclick = () => endIntro(M);
   } }
@@ -67,9 +67,9 @@ function renderMatch() {
 }
 /* posizione di una giocatrice durante l'entrata: dalla panchina alla riga davanti alla rete, poi saluto */
 function introPos(M, side, i, N) {
-  const I = M.intro, sg = side === M.userSide ? 1 : -1, d = i * .4 + (side === 'a' ? .35 : 0), k = Math.max(0, Math.min(1, (I.t - d) / 4.6)), e = k * k * (3 - 2 * k);
+  const I = M.intro, sg = side === M.userSide ? 1 : -1, d = i * .6 + (side === 'a' ? .5 : 0), k = Math.max(0, Math.min(1, (I.t - d) / 7)), e = k * k * (3 - 2 * k);
   const u0 = sg * (5.4 + (i - (N - 1) / 2) * .55), v0 = -8.3, u1 = sg * 3.1, v1 = (i - (N - 1) / 2) * 1.15;
-  let pose = POSE.ready; if (I.t > I.dur - 3.4 && I.t < I.dur - .3) pose = Math.sin(M.t * 8 + i * 1.7) > 0 ? POSE.cheerUp : POSE.cheer;
+  let pose = POSE.ready; if (I.t > I.dur - 6 && I.t < I.dur - .5) pose = Math.sin(M.t * 8 + i * 1.7) > 0 ? POSE.cheerUp : POSE.cheer;
   return { u: u0 + (u1 - u0) * e, v: v0 + (v1 - v0) * e, pose, u1, v1 };
 }
 function endIntro(M) {
