@@ -2,7 +2,7 @@
    Legge le stesse entita' del motore 2D (atlete con u,v e posa, palla u,v,z) e le disegna in una scena 3D.
    Mappa mondo: X = v (destra/sinistra del campo), Y = altezza, Z = u (distanza dalla rete, positivo verso la camera da fondo).
    Il canvas 2D #cv resta sopra, trasparente, per cartellini nome ed effetti: Cam.p3 fa si' che proj() usi la camera 3D. */
-const S3_BUILD = 'q';
+const S3_BUILD = 'r';
 function s3Available() { return typeof THREE !== 'undefined'; }
 function s3Active(M) { return !!(M && M.s3 && UI.mode3d !== false); }
 
@@ -78,9 +78,9 @@ function s3Build(M) {
   const scene = S.scene = new THREE.Scene();
   scene.background = new THREE.Color(TH.wall[0]);
   S.camera = new THREE.PerspectiveCamera(32, 16 / 9, .5, 200);
-  scene.add(new THREE.AmbientLight(0xffffff, .78));
-  scene.add(new THREE.HemisphereLight(0xdfeaff, 0x2a2540, .55));
-  const sun = new THREE.DirectionalLight(0xffffff, .55); sun.position.set(-6, 22, 10); scene.add(sun);
+  scene.add(new THREE.AmbientLight(0xffffff, .6));
+  scene.add(new THREE.HemisphereLight(0xdfeaff, 0x2a2540, .42));
+  const sun = new THREE.DirectionalLight(0xffffff, .42); sun.position.set(-6, 22, 10); scene.add(sun);
   const isA1 = ((M.home && M.home.lid) || (typeof G !== 'undefined' && G && G.lid) || 'A1') !== 'A2';
 
   /* pavimento: zona libera viola + campo in parquet (texture disegnata una volta) */
@@ -103,7 +103,7 @@ function s3Build(M) {
     L(-9, -4.5, -9, 4.5); L(9, -4.5, 9, 4.5); L(-9, -4.5, 9, -4.5); L(-9, 4.5, 9, 4.5); L(0, -4.5, 0, 4.5); L(-3, -4.5, -3, 4.5); L(3, -4.5, 3, 4.5);
   });
   floorTex.anisotropy = Math.min(8, S.renderer.capabilities.getMaxAnisotropy());
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(FW, FL), new THREE.MeshBasicMaterial({ map: floorTex }));
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(FW, FL), new THREE.MeshBasicMaterial({ map: floorTex, color: 0xd4d4d4 }));
   floor.rotation.x = -Math.PI / 2; floor.position.y = .0; scene.add(floor);
   const outer = new THREE.Mesh(new THREE.PlaneGeometry(90, 90), new THREE.MeshLambertMaterial({ color: 0x0e1422 }));
   outer.rotation.x = -Math.PI / 2; outer.position.y = -.02; scene.add(outer);
@@ -138,10 +138,10 @@ function s3Build(M) {
   }
   const roof = new THREE.Mesh(new THREE.PlaneGeometry(2 * xW, 2 * zW), new THREE.MeshLambertMaterial({ color: 0x080c16 })); roof.rotation.x = Math.PI / 2; roof.position.y = 24; scene.add(roof);
   /* luce: pozza calda sul campo e fasci conici dai fari (additivi, molto tenui) */
-  const poolTex = s3Tex(256, 256, (c, w, h) => { const g = c.createRadialGradient(w / 2, h / 2, 4, w / 2, h / 2, w / 2); g.addColorStop(0, 'rgba(255,246,226,.30)'); g.addColorStop(.6, 'rgba(255,246,226,.10)'); g.addColorStop(1, 'rgba(255,246,226,0)'); c.fillStyle = g; c.fillRect(0, 0, w, h); });
+  const poolTex = s3Tex(256, 256, (c, w, h) => { const g = c.createRadialGradient(w / 2, h / 2, 4, w / 2, h / 2, w / 2); g.addColorStop(0, 'rgba(255,246,226,.20)'); g.addColorStop(.6, 'rgba(255,246,226,.07)'); g.addColorStop(1, 'rgba(255,246,226,0)'); c.fillStyle = g; c.fillRect(0, 0, w, h); });
   const pool = new THREE.Mesh(new THREE.PlaneGeometry(26, 34), new THREE.MeshBasicMaterial({ map: poolTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
   pool.rotation.x = -Math.PI / 2; pool.position.y = .006; scene.add(pool);
-  const beamMat = new THREE.MeshBasicMaterial({ color: 0xcfdcff, transparent: true, opacity: .035, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+  const beamMat = new THREE.MeshBasicMaterial({ color: 0xcfdcff, transparent: true, opacity: .025, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
   for (const bx of [-5, 0, 5]) for (const bz of [-7, 0, 7]) { const cn = new THREE.Mesh(new THREE.ConeGeometry(3.6, 23, 20, 1, true), beamMat); cn.position.set(bx, 12.4, bz); scene.add(cn); }
   const lampMat = new THREE.MeshBasicMaterial({ color: 0xf2f6ff });
   for (let i = -3; i <= 3; i++) for (let j = -2; j <= 2; j++) { const l = new THREE.Mesh(new THREE.BoxGeometry(1.4, .12, .6), lampMat); l.position.set(j * 4.4, 23.9, i * 4); scene.add(l); }
