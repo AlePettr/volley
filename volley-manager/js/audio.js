@@ -85,6 +85,7 @@ const Snd = (() => {
     },
     /* entrata in campo: inno della Lega + boato, poi fischio all'inizio del gioco */
     introStart(M) { init(); if (ctx && ctx.state === 'suspended') ctx.resume(); if (!ctx) return; cheer(.8, 3.2); ambience(true, .05); music('inno', { vol: .6, fadeIn: .5, max: 23, fadeOut: 2, start: 17 }); },
+    timeout(M) { whistle(.6); setTimeout(() => { if (UI.match === M && !M.done) music(pickBreak(), { vol: .4, max: 8, fadeOut: 2 }); }, 700); },
     introEnd(M) { stopMus(.8); if (ctx && mode !== 'off') whistle(.35); },
     stop() { stopMus(.5); ambience(false); },
     /* ogni frame di gioco: colpi di palla, fischi, brusio */

@@ -242,10 +242,13 @@ function simRemainingRallies(M) {
   };
   let srv = currentRy.winner || "h";
   let guard = 0;
+  /* time-out: per le prime n azioni dopo la chiamata, la squadra che l'ha chiesto rende un po' di piu' (recupero + parole dell'allenatore) e la serie avversaria si spezza */
+  const scl = (r, f) => { const o = { ...r }; for (const k of ['att', 'blk', 'srv', 'rec', 'def', 'set']) if (typeof o[k] === 'number') o[k] *= f; return o; };
+  const bR = n => (M.boost && n < M.boost.n) ? { h: scl(R.h, M.boost.h), a: scl(R.a, M.boost.a) } : R;
 
   // Completa il set attualmente in corso
   while (!((h >= target || a >= target) && Math.abs(h - a) >= 2) && guard++ < 120) {
-    const ry = playRally(srv, rots, libs, R, Math.random, "h", true); ry.vc = varCandidate(ry);
+    const ry = playRally(srv, rots, libs, bR(newRallies.length), Math.random, "h", true); ry.vc = varCandidate(ry);
     if (ry.winner === "h") h++; else a++;
     if (ry.cred) M.res.pts[ry.cred.id] = (M.res.pts[ry.cred.id] || 0) + 1;
     ry.set = targetSet; ry.h = h; ry.a = a; ry.sets = [M.sh, M.sa];
@@ -268,7 +271,7 @@ function simRemainingRallies(M) {
     let srvNext = nextSet % 2 === 1 ? "h" : "a";
     let g2 = 0;
     while (!((sh >= nextTarget || sa >= nextTarget) && Math.abs(sh - sa) >= 2) && g2++ < 120) {
-      const ry = playRally(srvNext, rots, libs, R, Math.random, "h", true); ry.vc = varCandidate(ry);
+      const ry = playRally(srvNext, rots, libs, bR(newRallies.length), Math.random, "h", true); ry.vc = varCandidate(ry);
       if (ry.winner === "h") sh++; else sa++;
       if (ry.cred) M.res.pts[ry.cred.id] = (M.res.pts[ry.cred.id] || 0) + 1;
       ry.set = nextSet; ry.h = sh; ry.a = sa; ry.sets = [hs, as];

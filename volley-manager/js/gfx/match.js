@@ -55,6 +55,8 @@ function renderMatch() {
   if (typeof Snd !== 'undefined') Snd.mount(M);
   if (typeof ledForHome === 'function') ledForHome(M.home.id);
   { const b3 = $("#mode3dbtn"); if (b3 && typeof s3Available === 'function' && s3Available()) { b3.hidden = false; b3.textContent = UI.mode3d === false ? '3D' : '2D'; } }
+  M.toLeft = { h: 2, a: 2 };
+  { const ctl = $("#ctl"); if (ctl) { ctl.insertAdjacentHTML('beforeend', `<button class="btn" id="tobtn" title="Time-out: ferma il gioco, la tua squadra recupera e la serie avversaria si spezza">Time-out ${M.toLeft[M.userSide]}</button>`); $("#tobtn").onclick = () => callTimeout(M, M.userSide); } }
   /* entrata in campo: parte con un tocco (serve anche a sbloccare l'audio) */
   M.intro = { t: 0, dur: 23, started: false };
   { const ar = $("#arena"); if (ar) {
@@ -71,6 +73,34 @@ function introPos(M, side, i, N) {
   const u0 = sg * (5.4 + (i - (N - 1) / 2) * .55), v0 = -8.3, u1 = sg * 3.1, v1 = (i - (N - 1) / 2) * 1.15;
   let pose = POSE.ready; if (I.t > I.dur - 6 && I.t < I.dur - .5) pose = Math.sin(M.t * 8 + i * 1.7) > 0 ? POSE.cheerUp : POSE.cheer;
   return { u: u0 + (u1 - u0) * e, v: v0 + (v1 - v0) * e, pose, u1, v1 };
+}
+/* ---- time-out ---- */
+function toLabel(M) { const b = $("#tobtn"); if (b) b.textContent = `Time-out ${M.toLeft[M.userSide]}`; }
+function callTimeout(M, side) {
+  if (!M || M.done || M.intro || M.tout || M.toCall || M.replay) return;
+  if (M.toLeft[side] <= 0) { if (typeof toast === 'function') toast('Time-out finiti in questo set'); return; }
+  const i = M.i, rs = M.res.rallies; if (!(i > 0 && rs[i] && rs[i - 1].set === rs[i].set)) { if (typeof toast === 'function') toast('Il time-out si puo\' chiedere solo a set in corso'); return; }
+  M.toCall = side; if (typeof toast === 'function') toast('Time-out richiesto: parte alla fine dell\'azione');
+}
+function startTimeout(M) {
+  const side = M.toCall; M.toCall = null; if (!side || M.toLeft[side] <= 0) return;
+  { const rs = M.res.rallies; if (!(M.i > 0 && rs[M.i] && rs[M.i - 1].set === rs[M.i].set)) return; }
+  M.toLeft[side]--; toLabel(M);
+  const opp = side === 'h' ? 'a' : 'h', run = (M.lastWin === opp) ? (M.streak || 0) : 0;
+  const self = run >= 3 ? 1.05 : run >= 2 ? 1.04 : 1.025, them = run >= 3 ? .96 : run >= 2 ? .98 : 1;
+  M.boost = { n: 6, h: side === 'h' ? self : them, a: side === 'a' ? self : them };
+  if (M.i > 0 && typeof simRemainingRallies === 'function') { M.i--; try { simRemainingRallies(M); } finally { M.i++; } }
+  M.boost = null;
+  M.tout = { t: 0, dur: 8, side };
+  const b = $("#banner");
+  if (b) { b.innerHTML = `<span>TIME-OUT</span><b>${esc((side === 'h' ? M.home : M.away).short)}</b><em>${run >= 2 ? 'serie interrotta' : 'recupero'}</em>`; b.hidden = false; b.className = 'banner show'; setTimeout(() => { const bb = $("#banner"); if (bb) { bb.hidden = true; bb.className = 'banner'; } }, 2200); }
+  if (typeof Snd !== 'undefined') Snd.timeout(M);
+}
+/* la squadra avversaria (CPU) chiede time-out quando subisce una serie lunga */
+function aiTimeout(M) {
+  const ai = M.userSide === 'h' ? 'a' : 'h', rs = M.res.rallies;
+  if (M.toCall || M.tout || M.i < 1 || !rs[M.i] || rs[M.i - 1].set !== rs[M.i].set || M.toLeft[ai] <= 0) return;
+  if (M.lastWin === M.userSide && (M.streak || 0) >= 4 && Math.random() < .6) M.toCall = ai;
 }
 function endIntro(M) {
   if (!M || !M.intro) return;
@@ -139,7 +169,7 @@ function updateBoard(ry, setEnd) {
   $("#sv-a").style.visibility = ry.winner === 'a' ? 'visible' : 'hidden';
   if (setEnd) {
     M.subsUsed = 0; // RESETTA I 6 CAMBI A FINE SET
-    M.vcLeft = { h: 2, a: 2 }; varPill();
+    M.vcLeft = { h: 2, a: 2 }; varPill(); M.toLeft = { h: 2, a: 2 }; toLabel(M);
     if (ry.h > ry.a) M.sh++; else M.sa++;
     M.setScores.push([ry.h, ry.a]);
     $("#setline").innerHTML = M.setScores.map((s, i) => `<span class="pill">Set ${i + 1}: ${s[0]}-${s[1]}</span>`).join('');
@@ -164,7 +194,8 @@ function tick(ts) {
   const dt = Math.min(.05, (ts - M.last) / 1000 || 0); M.last = ts;
   if (!M.done && !M.paused) {
     if (M.intro) { const I = M.intro; if (I.started) { I.t += dt; M.excite = Math.max(M.excite, .55); if (I.t >= I.dur) endIntro(M); } }
-    else if (!M.anim) startNext();
+    else if (M.tout) { M.tout.t += dt; M.excite = Math.max(M.excite, .25); if (M.tout.t >= M.tout.dur) M.tout = null; }
+    else if (!M.anim) { if (!M.toCall) aiTimeout(M); if (M.toCall) startTimeout(M); else startNext(); }
     else {
       const a = M.anim; a.t += dt * M.speed;
       /* effetti nel momento giusto */
@@ -239,6 +270,11 @@ function drawScene(M, dt) {
       if (sm) { u = sm.u; v = sm.v; pose = sm.pose; name = sm.name; }
       else { const b = M.pos[p.id] || rallyUV(M, side, i); u = b[0]; v = b[1]; }
       if (ip) { u = ip.u; v = ip.v; pose = ip.pose; name = ''; }
+      if (M.tout) {
+        const T = M.tout, bs = M.pos[p.id] || rallyUV(M, side, i), sgn = side === M.userSide ? 1 : -1, an = i * 1.05 + .5, sm = x => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); };
+        const e = sm(T.t / 1.4) * sm((T.dur - T.t) / 1.4), bu = sgn * 5.6 + Math.cos(an) * .75, bv = -5.7 + Math.sin(an) * .75;
+        u = bs[0] + (bu - bs[0]) * e; v = bs[1] + (bv - bs[1]) * e; name = ''; pose = POSE.ready;
+      }
       if (a && a.setEnd && !a.replay && a.t > a.script.end - .2 && a.ry.winner === side) {
         const h = Math.min(1, (a.t - a.script.end + .2) / .7), e = h * h * (3 - 2 * h), sg = side === M.userSide ? 1 : -1;
         u += (sg * 5.2 - u) * e; v += ((i - 2.5) * .55 - v) * e;
