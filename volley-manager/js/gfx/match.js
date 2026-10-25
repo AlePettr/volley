@@ -3,10 +3,22 @@ const ACTIVE_POSES = new Set(['serveHit', 'bump', 'set', 'spike', 'spikeTop', 'b
 
 function assignNumbers(team) {
   if (team._nums) return;
-  const R = Gx.rng(Gx.hash(team.id + 'num')), pool = []; for (let i = 1; i <= 20; i++) pool.push(i);
+  const nz = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const real = (typeof JERSEY !== 'undefined' && JERSEY[team.id]) || {}, ent = Object.keys(real).map(k => ({ n: real[k], t: nz(k).split(' '), s: nz(k).replace(/ /g, '') }));
+  team._nums = {}; const used = new Set(), left = [];
+  /* 1) numero ufficiale: nome identico, oppure i token del nome nel gioco contenuti nel nome completo LVF (cognome), oppure cognome quasi uguale */
+  team.players.forEach(p => {
+    const g = nz(p.name), gt = g.split(' '), gs = g.replace(/ /g, '');
+    let c = ent.filter(e => !used.has(e.n) && e.s === gs);
+    if (!c.length) c = ent.filter(e => !used.has(e.n) && gt.every(t => e.t.includes(t)));
+    if (!c.length) c = ent.filter(e => !used.has(e.n) && e.s.endsWith(gs) && gs.length > 3);
+    if (!c.length && gt.length > 1) c = ent.filter(e => !used.has(e.n) && e.t.includes(gt[gt.length - 1]));
+    if (c.length === 1) { team._nums[p.id] = c[0].n; used.add(c[0].n); } else left.push(p);
+  });
+  /* 2) chi non ha corrispondenza: numero libero casuale ma stabile */
+  const R = Gx.rng(Gx.hash(team.id + 'num')), pool = []; for (let i = 1; i <= 29; i++) if (!used.has(i)) pool.push(i);
   for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
-  team._nums = {}; let n = 0;
-  team.players.forEach(p => { team._nums[p.id] = pool[n++ % pool.length]; });
+  left.forEach((p, i) => { team._nums[p.id] = pool[i % pool.length]; });
 }
 function playerNo(M, p) { const t = M.home.id === p.teamId ? M.home : M.away; return (t._nums && t._nums[p.id]) || ''; }
 

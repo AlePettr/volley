@@ -2,7 +2,7 @@
    Legge le stesse entita' del motore 2D (atlete con u,v e posa, palla u,v,z) e le disegna in una scena 3D.
    Mappa mondo: X = v (destra/sinistra del campo), Y = altezza, Z = u (distanza dalla rete, positivo verso la camera da fondo).
    Il canvas 2D #cv resta sopra, trasparente, per cartellini nome ed effetti: Cam.p3 fa si' che proj() usi la camera 3D. */
-const S3_BUILD = 'l';
+const S3_BUILD = 'm';
 function s3Available() { return typeof THREE !== 'undefined'; }
 function s3Active(M) { return !!(M && M.s3 && UI.mode3d !== false); }
 
