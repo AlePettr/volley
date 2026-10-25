@@ -2,7 +2,7 @@
    Legge le stesse entita' del motore 2D (atlete con u,v e posa, palla u,v,z) e le disegna in una scena 3D.
    Mappa mondo: X = v (destra/sinistra del campo), Y = altezza, Z = u (distanza dalla rete, positivo verso la camera da fondo).
    Il canvas 2D #cv resta sopra, trasparente, per cartellini nome ed effetti: Cam.p3 fa si' che proj() usi la camera 3D. */
-const S3_BUILD = 'p';
+const S3_BUILD = 'q';
 function s3Available() { return typeof THREE !== 'undefined'; }
 function s3Active(M) { return !!(M && M.s3 && UI.mode3d !== false); }
 
@@ -19,6 +19,31 @@ function s3Seg(mesh, a, b, rad) {
   mesh.position.copy(a).addScaledVector(d, .5);
   mesh.quaternion.setFromUnitVectors(S3_UP, d.multiplyScalar(1 / L));
   mesh.scale.set(rad, L, rad);
+}
+
+/* solido di rotazione da profilo [[t(0..1 lungo l'asse), raggio]]: t=0 e' il primo punto del segmento, y da -.5 a +.5 */
+function s3Lathe(prof, seg) {
+  const pts = [new THREE.Vector2(.0005, -.5)]; for (const [t, r] of prof) pts.push(new THREE.Vector2(r, t - .5)); pts.push(new THREE.Vector2(.0005, .5));
+  return new THREE.LatheGeometry(pts, seg || 14);
+}
+let S3_G = null;
+function s3Geos() {
+  if (S3_G) return S3_G;
+  return S3_G = {
+    thigh: s3Lathe([[.02, .55], [.08, .9], [.3, 1.0], [.6, .86], [.92, .68], [.99, .52]]),
+    shin: s3Lathe([[.02, .5], [.06, .72], [.3, 1.0], [.55, .82], [.9, .56], [.99, .46]]),
+    uarm: s3Lathe([[.02, .6], [.08, .92], [.35, 1.0], [.8, .84], [.99, .62]]),
+    farm: s3Lathe([[.02, .66], [.1, .95], [.4, 1.0], [.85, .66], [.99, .54]]),
+    sock: s3Lathe([[0, .9], [.5, .86], [1, 1.0]]),
+    cuff: s3Lathe([[0, 1.0], [.9, .92], [1, .9]], 12),
+    hand: s3Lathe([[.02, .7], [.15, 1.0], [.5, 1.0], [.85, .7], [.99, .35]], 10),
+    neck: s3Lathe([[0, 1], [1, .9]], 10),
+    /* busto: spalle larghe, petto pieno, vita stretta */
+    torso: s3Lathe([[.02, .62], [.1, .72], [.3, .8], [.55, .93], [.78, 1.0], [.93, .96], [.99, .72]], 18),
+    hips: s3Lathe([[.02, .8], [.2, 1.0], [.6, .98], [.98, .84]], 16),
+    head: s3Lathe([[.0, .07], [.08, .46], [.25, .8], [.5, .98], [.75, 1.0], [.92, .8], [.99, .3]], 16),
+    shoe: new THREE.SphereGeometry(1, 12, 8)
+  };
 }
 
 /* ---------- inizializzazione (una volta per partita) ---------- */
@@ -168,7 +193,7 @@ function s3Build(M) {
     S.panels.push({ mat, slot, len, tex: null });
   };
   /* rettangolo chiuso oltre la zona libera: i fondi (lato corto) a 12.6 m dalla rete, i lati lunghi a 8.8 m dall'asse */
-  const EB = 11.2, SB = 9.8;   /* fondi a 11.2 m dalla rete (v da -8.8 a 8.8); lati lunghi a 9.8 m dall'asse, u da -10 a 10: non toccano i fondi */
+  const EB = 12.0, SB = 9.8;   /* fondi a 11.2 m dalla rete (v da -8.8 a 8.8); lati lunghi a 9.8 m dall'asse, u da -10 a 10: non toccano i fondi */
   panel(8.8, -4.4, -EB, 0, 0, 'e-f'); panel(8.8, 4.4, -EB, 0, 1, 'e-n');
   panel(8.8, 4.4, EB, Math.PI, 1, 'e+n'); panel(8.8, -4.4, EB, Math.PI, 2, 'e+f');
   panel(10, -SB, -5, Math.PI / 2, 0, 's-'); panel(10, -SB, 5, Math.PI / 2, 1, 's-');   /* panel(lunghezza, x = v, z = u, rotazione, filmato) */
@@ -267,17 +292,18 @@ function s3Rig(M, e) {
   const look = e.p._look || (e.p._look = avatarLook(e.p));
   const mat = c => new THREE.MeshLambertMaterial({ color: c });
   const cyl = new THREE.CylinderGeometry(1, 1, 1, 8), sph = new THREE.SphereGeometry(1, 10, 8), box = new THREE.BoxGeometry(1, 1, 1);
-  const tor = new THREE.CylinderGeometry(1, .78, 1, 12);   /* busto: spalle piu' larghe della vita */
+  const G = s3Geos();
   const g = new THREE.Group(), parts = {};
   const mk = (name, geo, m) => { const o = new THREE.Mesh(geo, m); g.add(o); parts[name] = o; return o; };
   const skin = mat(look.skin), jersey = mat(K.main), shorts = mat(K.shorts), hair = mat(look.hair), shoe = mat('#f4f6fa'), sock = mat(K.trim), trim = mat(K.trim), pad = mat('#1e2433'), eye = mat('#16161c');
   for (const s of ['L', 'R']) {
-    mk('thigh' + s, cyl, skin); mk('shin' + s, cyl, skin); mk('sock' + s, cyl, sock); mk('knee' + s, sph, pad); mk('shoe' + s, box, shoe);
-    mk('uarm' + s, cyl, skin); mk('farm' + s, cyl, skin); mk('elb' + s, sph, skin); mk('hand' + s, sph, skin); mk('sho' + s, sph, jersey);
+    mk('thigh' + s, G.thigh, skin); mk('shin' + s, G.shin, skin); mk('sock' + s, G.sock, sock); mk('knee' + s, sph, pad); mk('shoe' + s, G.shoe, shoe); mk('sole' + s, box, mat('#c9cfdb'));
+    mk('uarm' + s, G.uarm, skin); mk('farm' + s, G.farm, skin); mk('elb' + s, sph, skin); mk('hand' + s, G.hand, skin); mk('sho' + s, sph, jersey);
+    mk('slv' + s, G.cuff, jersey); mk('shl' + s, G.cuff, shorts); mk('ear' + s, sph, skin); mk('brow' + s, box, hair);
     mk('str' + s, cyl, trim); mk('eye' + s, sph, eye);
   }
-  mk('shorts', cyl, shorts); mk('torso', tor, jersey); mk('hem', cyl, trim); mk('collar', sph, trim);
-  mk('head', sph, skin); mk('hair', sph, hair); mk('tail', sph, hair); mk('bun', sph, hair); mk('nose', sph, mat(Gx.dark(look.skin, .12)));
+  mk('shorts', G.hips, shorts); mk('torso', G.torso, jersey); mk('hem', cyl, trim); mk('collar', sph, trim); mk('neck', G.neck, skin); mk('mouth', sph, mat('#a8484f'));
+  mk('head', G.head, skin); mk('hair', sph, hair); mk('tail', sph, hair); mk('bun', sph, hair); mk('nose', sph, mat(Gx.dark(look.skin, .12)));
   /* schiena: cognome sopra il numero; petto: numero piccolo */
   const sur = String(e.p.name || '').trim().split(/\s+/).slice(-1)[0].toUpperCase();
   const backTex = s3Tex(128, 128, (c, w, h) => {
@@ -307,21 +333,26 @@ function s3Pose(rig, P, name, face, time) {
     const hp = v(sx * .09 + ox * .5, hipY, 0), ft = v(sx * (.11 + cr * .07), lf + .06 + Math.max(0, Math.cos(ph)) * .09 * run, (sx < 0 ? cr * .10 : -cr * .05) + Math.sin(ph) * .2 * run);
     const mid = hp.clone().add(ft).multiplyScalar(.5), dist = hp.distanceTo(ft), d = Math.sqrt(Math.max(0, .46 * .46 - (dist / 2) * (dist / 2)));
     const kn = mid.clone().add(v(sx * .02, 0, d * .9));
-    s3Seg(p['thigh' + s], hp, kn, .068); s3Seg(p['shin' + s], kn, ft, .052);
-    s3Seg(p['sock' + s], ft.clone().add(v(0, .015, 0)), ft.clone().lerp(kn, .38), .058);
+    s3Seg(p['thigh' + s], hp, kn, .074); s3Seg(p['shin' + s], kn, ft, .056);
+    s3Seg(p['sock' + s], ft.clone().add(v(0, .015, 0)), ft.clone().lerp(kn, .42), .058);
+    s3Seg(p['shl' + s], hp.clone().add(v(0, .03, 0)), hp.clone().lerp(kn, .3), .083);
     p['knee' + s].position.copy(kn); p['knee' + s].scale.set(.066, .066, .06);
-    p['shoe' + s].position.set(ft.x, lf + .035, ft.z + .05); p['shoe' + s].scale.set(.105, .07, .27);
+    p['shoe' + s].position.set(ft.x, lf + .042, ft.z + .05); p['shoe' + s].scale.set(.1, .062, .25);
+    p['sole' + s].position.set(ft.x, lf + .011, ft.z + .055); p['sole' + s].scale.set(.098, .02, .25);
   }
-  p.shorts.position.set(hipC.x, hipY, 0); p.shorts.scale.set(.195, .22, .15);
+  p.shorts.position.set(hipC.x, hipY + .01, 0); p.shorts.scale.set(.2, .25, .145);
   /* busto rastremato + bordo maglia, collo e strisce laterali */
   const tb = hipC.clone().add(v(0, .09, 0));
-  s3Seg(p.torso, tb, shC, .185); p.torso.scale.x = .185; p.torso.scale.z = .125; p.torso.scale.y = tb.distanceTo(shC);
+  s3Seg(p.torso, tb, shC, .185); p.torso.scale.x = .185; p.torso.scale.z = .128; p.torso.scale.y = tb.distanceTo(shC) + .03;
   p.hem.position.copy(tb).add(v(0, .012, 0)); p.hem.scale.set(.15, .02, .102);
   p.collar.position.copy(shC).add(v(0, .015, 0)); p.collar.scale.set(.085, .03, .07);
   for (const [s, sx] of [['L', -1], ['R', 1]]) s3Seg(p['str' + s], tb.clone().add(v(sx * .147, .03, 0)), shC.clone().add(v(sx * .185, -.045, 0)), .011);
   /* testa con occhi, naso e capelli (stile in base all'atleta) */
   const hd = shC.clone().add(v(0, .25, Math.sin(lean * .7) * .05)), H = rig.hair;
-  p.head.position.copy(hd); p.head.scale.set(.105, .125, .11);
+  p.head.position.copy(hd).add(v(0, -.005, 0)); p.head.scale.set(.1, .135, .108);
+  s3Seg(p.neck, shC.clone().add(v(0, -.02, 0)), hd.clone().add(v(0, -.09, 0)), .046);
+  for (const [s, sx] of [['L', -1], ['R', 1]]) { p['ear' + s].position.copy(hd).add(v(sx * .099, -.005, .0)); p['ear' + s].scale.set(.016, .026, .02); p['brow' + s].position.copy(hd).add(v(sx * .042, .05, .099)); p['brow' + s].scale.set(.03, .0055, .008); }
+  p.mouth.position.copy(hd).add(v(0, -.058, .1)); p.mouth.scale.set(.022, .006, .01);
   p.hair.position.copy(hd).add(v(0, .028, -.022)); p.hair.scale.set(H.cap[0], H.cap[1], H.cap[2]);
   if (H.tail) { p.tail.position.copy(hd).add(v(H.tail[0], H.tail[1], H.tail[2])); p.tail.scale.set(H.tail[3], H.tail[4], H.tail[5]); } else p.tail.scale.setScalar(.0001);
   if (H.bun) { p.bun.position.copy(hd).add(v(H.bun[0], H.bun[1], H.bun[2])); p.bun.scale.set(H.bun[3], H.bun[4], H.bun[5]); } else p.bun.scale.setScalar(.0001);
@@ -342,10 +373,11 @@ function s3Pose(rig, P, name, face, time) {
     if (b < 0) bend = v(0, 0, 1); else if (a > 1.5) bend = v(0, 0, -1); else bend = v(-sx, 0, 0);
     const fdir = dir.clone().multiplyScalar(Math.cos(b)).addScaledVector(bend, Math.sin(Math.abs(b))).normalize();
     const wr = el.clone().addScaledVector(fdir, .27);
-    s3Seg(p['uarm' + s], sh, el, .047); s3Seg(p['farm' + s], el, wr, .04);
+    s3Seg(p['uarm' + s], sh, el, .05); s3Seg(p['farm' + s], el, wr, .042);
+    s3Seg(p['slv' + s], sh.clone().add(v(0, .005, 0)), sh.clone().lerp(el, .42), .062);
     p['sho' + s].position.copy(sh); p['sho' + s].scale.set(.078, .072, .072);
     p['elb' + s].position.copy(el); p['elb' + s].scale.setScalar(.046);
-    p['hand' + s].position.copy(wr); p['hand' + s].scale.setScalar(.052);
+    s3Seg(p['hand' + s], wr.clone().addScaledVector(fdir, -.01), wr.clone().addScaledVector(fdir, .1), .043);
   }
   rig.g.rotation.y = face;
 }
