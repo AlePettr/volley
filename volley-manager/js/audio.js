@@ -2,7 +2,7 @@
    Modalita': 'all' = effetti + musica, 'fx' = solo effetti, 'off' = muto. Parte al primo tocco (regola dei browser). */
 const Snd = (() => {
   const FILES = { inno: 'audio/inno_lega.mp3', ace: 'audio/ace.mp3', bailar: 'audio/bailar.mp3', wake: 'audio/wake_me_up.mp3' };
-  const BREAKS = ['ace', 'bailar', 'wake'];
+  const BREAKS = ['bailar', 'wake'];   /* l'ace e' riservato ai punti diretti dalla battuta */
   let ctx = null, master = null, fxBus = null, noise = null, amb = null, mode = 'all', cur = null, lastBreak = '', lastMus = 0;
   try { mode = localStorage.getItem('vm_snd') || 'all'; } catch (e) { }
   const AC = typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext);
@@ -79,9 +79,9 @@ const Snd = (() => {
   return {
     /* partita: bottone audio, inno d'ingresso */
     mount(M) {
-      const ctl = document.getElementById('ctl'); if (ctl && !document.getElementById('sndbtn')) { ctl.insertAdjacentHTML('beforeend', `<button class="btn" id="sndbtn" title="Audio: tutto / solo effetti / muto">${label()}</button>`); document.getElementById('sndbtn').addEventListener('click', () => { init(); setMode(mode === 'all' ? 'fx' : mode === 'fx' ? 'off' : 'all'); if (mode === 'all' && !cur && M && !M.done) music(pickBreak(), { vol: .4, max: 25 }); }); }
+      const ctl = document.getElementById('ctl'); if (ctl && !document.getElementById('sndbtn')) { ctl.insertAdjacentHTML('beforeend', `<button class="btn" id="sndbtn" title="Audio: tutto / solo effetti / muto">${label()}</button>`); document.getElementById('sndbtn').addEventListener('click', () => { init(); setMode(mode === 'all' ? 'fx' : mode === 'fx' ? 'off' : 'all'); if (mode === 'all' && !cur && M && !M.done) music(pickBreak(), { vol: .4, max: 8, fadeOut: 2 }); }); }
       M._snd = { pre: true }; init(); if (ctx && ctx.state === 'suspended') ctx.resume();
-      music('inno', { vol: .55, fadeIn: 2 });
+      music('inno', { vol: .55, fadeIn: 1.2, max: 9, fadeOut: 2.5 });
     },
     stop() { stopMus(.5); ambience(false); },
     /* ogni frame di gioco: colpi di palla, fischi, brusio */
@@ -105,10 +105,11 @@ const Snd = (() => {
       if (!ctx || mode === 'off') return; const mine = a.ry.winner === M.userSide, big = a.ry.type === 'ace' || a.ry.type === 'block' || (a.script.ball && a.script.ball.length >= 7);
       cheer((mine ? .7 : .45) + (big ? .25 : 0), mine ? 2 : 1.4);
       if (M._snd && M._snd.pre) { M._snd.pre = false; stopMus(3); }
-      if (a.setEnd) { whistle(.9); setTimeout(() => { if (UI.match === M && !M.done) music(pickBreak(), { vol: .45, max: 16, fadeOut: 3 }); }, 900); }
+      if (a.setEnd) { whistle(.9); setTimeout(() => { if (UI.match === M && !M.done) music(pickBreak(), { vol: .45, max: 14, fadeOut: 3 }); }, 900); }
       else if (a.hold >= 1.5) music(pickBreak(), { vol: .4, max: 7, fadeOut: 2 });
+      else if (a.ry.type === 'ace') music('ace', { vol: .5, fadeIn: .3, max: 5, fadeOut: 1.2 });
     },
-    end(win) { if (win) music('wake', { vol: .5, max: 30, fadeOut: 4 }); else stopMus(1.5); ambience(false); },
+    end(win) { if (win) music('wake', { vol: .5, max: 9, fadeOut: 2.5 }); else stopMus(1.5); ambience(false); },
     setMode, get mode() { return mode }
   };
 })();
