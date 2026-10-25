@@ -6,7 +6,7 @@ const LED = { vids: [], slots: [0, 1, 2], H: 1.1, L: 10.5 };
   if (!files.length || typeof document === 'undefined') return;
   files.forEach(f => {
     const v = document.createElement('video');
-    v.muted = true; v.defaultMuted = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.preload = 'auto'; v.loop = false;
+    v.muted = true; v.defaultMuted = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.preload = f === 'led10.mp4' ? 'metadata' : 'auto'; v.loop = false;
     v.src = f.indexOf('data:') === 0 ? f : 'logos/led/' + f;
     v.addEventListener('ended', () => ledAdvance(v));
     v.addEventListener('error', () => { v._bad = true; ledAdvance(v); });
