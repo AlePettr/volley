@@ -255,3 +255,6 @@ button.prow:hover{background:var(--panel2)}
 .rbadge{position:absolute;right:16px;top:14px;background:#e0316a;color:#fff;font:700 15px var(--f-disp);letter-spacing:.16em;padding:7px 12px;border-radius:8px;animation:flagp 1s ease-in-out infinite}
 @media (max-width:640px){.lower{left:8px;bottom:60px}.lower b{font-size:16px}}
 @media (prefers-reduced-motion:reduce){.lower,.rbadge{animation:none}}
+
+.introov{position:absolute;left:0;right:0;bottom:16%;display:flex;gap:10px;justify-content:center;align-items:center;z-index:7}
+.introov .big{padding:14px 26px;font-size:18px;box-shadow:0 10px 30px rgba(0,0,0,.45)}

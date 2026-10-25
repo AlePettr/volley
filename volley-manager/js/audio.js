@@ -81,8 +81,10 @@ const Snd = (() => {
     mount(M) {
       const ctl = document.getElementById('ctl'); if (ctl && !document.getElementById('sndbtn')) { ctl.insertAdjacentHTML('beforeend', `<button class="btn" id="sndbtn" title="Audio: tutto / solo effetti / muto">${label()}</button>`); document.getElementById('sndbtn').addEventListener('click', () => { init(); setMode(mode === 'all' ? 'fx' : mode === 'fx' ? 'off' : 'all'); if (mode === 'all' && !cur && M && !M.done) music(pickBreak(), { vol: .4, max: 8, fadeOut: 2 }); }); }
       M._snd = { pre: true }; init(); if (ctx && ctx.state === 'suspended') ctx.resume();
-      music('inno', { vol: .55, fadeIn: 1.2, max: 9, fadeOut: 2.5 });
     },
+    /* entrata in campo: inno della Lega + boato, poi fischio all'inizio del gioco */
+    introStart(M) { init(); if (ctx && ctx.state === 'suspended') ctx.resume(); if (!ctx) return; cheer(.8, 3.2); ambience(true, .05); music('inno', { vol: .55, fadeIn: .8, max: 11.8, fadeOut: 1.4 }); },
+    introEnd(M) { stopMus(.8); if (ctx && mode !== 'off') whistle(.35); },
     stop() { stopMus(.5); ambience(false); },
     /* ogni frame di gioco: colpi di palla, fischi, brusio */
     tick(M, a) {

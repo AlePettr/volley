@@ -55,8 +55,27 @@ function renderMatch() {
   if (typeof Snd !== 'undefined') Snd.mount(M);
   if (typeof ledForHome === 'function') ledForHome(M.home.id);
   { const b3 = $("#mode3dbtn"); if (b3 && typeof s3Available === 'function' && s3Available()) { b3.hidden = false; b3.textContent = UI.mode3d === false ? '3D' : '2D'; } }
+  /* entrata in campo: parte con un tocco (serve anche a sbloccare l'audio) */
+  M.intro = { t: 0, dur: 12.5, started: false };
+  { const ar = $("#arena"); if (ar) {
+    ar.insertAdjacentHTML('beforeend', '<div class="introov" id="introov"><button class="btn primary big" id="introgo">Entrata in campo ▶</button><button class="btn" id="introskip">Salta</button></div>');
+    $("#introgo").onclick = () => { if (!M.intro) return; M.intro.started = true; M.intro.t = 0; const g = $("#introgo"); if (g) g.remove(); if (typeof Snd !== 'undefined') Snd.introStart(M); };
+    $("#introskip").onclick = () => endIntro(M);
+  } }
   M.last = performance.now();
   M.raf = requestAnimationFrame(tick);
+}
+/* posizione di una giocatrice durante l'entrata: dalla panchina alla riga davanti alla rete, poi saluto */
+function introPos(M, side, i, N) {
+  const I = M.intro, sg = side === M.userSide ? 1 : -1, d = i * .4 + (side === 'a' ? .35 : 0), k = Math.max(0, Math.min(1, (I.t - d) / 4.6)), e = k * k * (3 - 2 * k);
+  const u0 = sg * (5.4 + (i - (N - 1) / 2) * .55), v0 = -8.3, u1 = sg * 3.1, v1 = (i - (N - 1) / 2) * 1.15;
+  let pose = POSE.ready; if (I.t > I.dur - 3.4 && I.t < I.dur - .3) pose = Math.sin(M.t * 8 + i * 1.7) > 0 ? POSE.cheerUp : POSE.cheer;
+  return { u: u0 + (u1 - u0) * e, v: v0 + (v1 - v0) * e, pose, u1, v1 };
+}
+function endIntro(M) {
+  if (!M || !M.intro) return;
+  for (const side of ['h', 'a']) { const N = M.view[side].length; M.view[side].forEach((o, i) => { const q = introPos({ ...M, intro: { t: 99, dur: 99 } }, side, i, N); M.pos[o.p.id] = [q.u1, q.v1]; }); }
+  M.intro = null; const ov = $("#introov"); if (ov) ov.remove(); if (typeof Snd !== 'undefined') Snd.introEnd(M);
 }
 
 
@@ -144,7 +163,8 @@ function tick(ts) {
   M.raf = requestAnimationFrame(tick);
   const dt = Math.min(.05, (ts - M.last) / 1000 || 0); M.last = ts;
   if (!M.done && !M.paused) {
-    if (!M.anim) startNext();
+    if (M.intro) { const I = M.intro; if (I.started) { I.t += dt; M.excite = Math.max(M.excite, .55); if (I.t >= I.dur) endIntro(M); } }
+    else if (!M.anim) startNext();
     else {
       const a = M.anim; a.t += dt * M.speed;
       /* effetti nel momento giusto */
@@ -214,9 +234,11 @@ function drawScene(M, dt) {
     M.view[side].forEach((o, i) => {
       const p = o.p, tr = a ? a.script.tracks[p.id] : null;
       let u, v, pose = POSE.ready, name = '';
+      const ip = M.intro ? introPos(M, side, i, M.view[side].length) : null;
       const sm = tr ? sampleTrack(tr, t) : null;
       if (sm) { u = sm.u; v = sm.v; pose = sm.pose; name = sm.name; }
       else { const b = M.pos[p.id] || rallyUV(M, side, i); u = b[0]; v = b[1]; }
+      if (ip) { u = ip.u; v = ip.v; pose = ip.pose; name = ''; }
       if (a && a.setEnd && !a.replay && a.t > a.script.end - .2 && a.ry.winner === side) {
         const h = Math.min(1, (a.t - a.script.end + .2) / .7), e = h * h * (3 - 2 * h), sg = side === M.userSide ? 1 : -1;
         u += (sg * 5.2 - u) * e; v += ((i - 2.5) * .55 - v) * e;
