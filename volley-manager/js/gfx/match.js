@@ -56,7 +56,7 @@ function renderMatch() {
   if (typeof ledForHome === 'function') ledForHome(M.home.id);
   { const b3 = $("#mode3dbtn"); if (b3 && typeof s3Available === 'function' && s3Available()) { b3.hidden = false; b3.textContent = UI.mode3d === false ? '3D' : '2D'; } }
   /* entrata in campo: parte con un tocco (serve anche a sbloccare l'audio) */
-  M.intro = { t: 0, dur: 25, started: false };
+  M.intro = { t: 0, dur: 24, started: false };
   { const ar = $("#arena"); if (ar) {
     ar.insertAdjacentHTML('beforeend', '<div class="introov" id="introov"><button class="btn primary big" id="introgo">Entrata in campo ▶</button><button class="btn" id="introskip">Salta ⏭</button></div>');
     $("#introgo").onclick = () => { if (!M.intro) return; M.intro.started = true; M.intro.t = 0; const g = $("#introgo"); if (g) g.remove(); if (typeof Snd !== 'undefined') Snd.introStart(M); };

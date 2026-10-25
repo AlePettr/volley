@@ -84,7 +84,7 @@ const Snd = (() => {
       M._snd = { pre: true }; init(); if (ctx && ctx.state === 'suspended') ctx.resume();
     },
     /* entrata in campo: inno della Lega + boato, poi fischio all'inizio del gioco */
-    introStart(M) { init(); if (ctx && ctx.state === 'suspended') ctx.resume(); if (!ctx) return; cheer(.8, 3.2); ambience(true, .05); music('inno', { vol: .6, fadeIn: .5, max: 25, fadeOut: 2, start: 23 }); },
+    introStart(M) { init(); if (ctx && ctx.state === 'suspended') ctx.resume(); if (!ctx) return; cheer(.8, 3.2); ambience(true, .05); music('inno', { vol: .6, fadeIn: .5, max: 24, fadeOut: 2, start: 21 }); },
     introEnd(M) { stopMus(.8); if (ctx && mode !== 'off') whistle(.35); },
     stop() { stopMus(.5); ambience(false); },
     /* ogni frame di gioco: colpi di palla, fischi, brusio */
