@@ -1,5 +1,13 @@
 /* ===== Palazzetto: camera in prospettiva, campo, tribune e rete ===== */
 const Cam = { W: 1280, H: 720, F: 1000, K: 12000, Hc: 12, hy: -100, cx: 640, xs: 1.4, Dc: 26, portrait: false };
+/* taraflex A1 ufficiale: cornice viola dentro il campo (fondo 2,5 m, laterali 1,5 m) */
+function purpleFrame(c, F) {
+  c.fillStyle = 'rgba(143,44,147,.94)';
+  polyPath(c, [F(-9, -4.5), F(-9, 4.5), F(-6.5, 4.5), F(-6.5, -4.5)]); c.fill();
+  polyPath(c, [F(6.5, -4.5), F(6.5, 4.5), F(9, 4.5), F(9, -4.5)]); c.fill();
+  polyPath(c, [F(-6.5, -4.5), F(-6.5, -3), F(6.5, -3), F(6.5, -4.5)]); c.fill();
+  polyPath(c, [F(-6.5, 3), F(-6.5, 4.5), F(6.5, 4.5), F(6.5, 3)]); c.fill();
+}
 function camSetup(W, H) {
   Cam.W = W; Cam.H = H; Cam.portrait = H > W * 0.95;
   const view = (typeof UI !== 'undefined' && UI.camView) || 'side';
@@ -119,7 +127,7 @@ function arenaBuild(M, k) {
   const fg = c.createLinearGradient(0, F(-12, 0).y, 0, F(12, 0).y);
   /* Taraflex ufficiale LVF 2026/27: campo parquet con zona libera viola (A1: viola profondo con cornice; A2: viola piu' chiaro) */
   const isA1 = ((M.home && M.home.lid) || (typeof G !== 'undefined' && G && G.lid) || 'A1') !== 'A2';
-  if (isA1) { fg.addColorStop(0, '#3b1a6b'); fg.addColorStop(1, '#5a2f99'); } else { fg.addColorStop(0, '#4a2f86'); fg.addColorStop(1, '#6f52b8'); }
+  if (isA1) { fg.addColorStop(0, '#cdae80'); fg.addColorStop(1, '#dcc093'); } else { fg.addColorStop(0, '#4a2f86'); fg.addColorStop(1, '#6f52b8'); }
   c.fillStyle = fg; polyPath(c, freeQ); c.fill();
   /* doghe */
   c.strokeStyle = 'rgba(255,255,255,.03)';
@@ -135,7 +143,7 @@ function arenaBuild(M, k) {
   polyPath(c, [F(0, -4.5), F(0, 4.5), F(3, 4.5), F(3, -4.5)]); c.fill();
   /* listoni del parquet */
   for (let v = -4.5, k = 0; v < 4.5; v += .36, k++) { if (k % 2) continue; c.fillStyle = 'rgba(255,240,205,.10)'; polyPath(c, [F(-9, v), F(-9, Math.min(4.5, v + .36)), F(9, Math.min(4.5, v + .36)), F(9, v)]); c.fill(); }
-  if (isA1) { c.strokeStyle = 'rgba(214,170,255,.55)'; c.lineCap = 'butt'; lineWorld(c, -12, -8.6, -12, 8.6, .10, 1); lineWorld(c, 12, -8.6, 12, 8.6, .10, 1); lineWorld(c, -12, -8.6, 12, -8.6, .10, 12); lineWorld(c, -12, 8.6, 12, 8.6, .10, 12); }
+  if (isA1) purpleFrame(c, F);
   c.strokeStyle = 'rgba(90,50,10,.12)';
   for (let v = -4.3; v <= 4.4; v += .45) lineWorld(c, -9, v, 9, v, .02, 8);
   /* riflessi di luce */
@@ -276,13 +284,13 @@ function arenaBuildSide(M, k) {
   const F = (u, v) => proj(u, v);
   const freeQ = [F(-12.2, -7), F(12.2, -7), F(12.2, 9), F(-12.2, 9)];
   const fg = c.createLinearGradient(0, F(0, -7).y, 0, F(0, 9).y);
-  if (isA1) { fg.addColorStop(0, '#3b1a6b'); fg.addColorStop(1, '#5a2f99'); } else { fg.addColorStop(0, '#4a2f86'); fg.addColorStop(1, '#6f52b8'); }
+  if (isA1) { fg.addColorStop(0, '#cdae80'); fg.addColorStop(1, '#dcc093'); } else { fg.addColorStop(0, '#4a2f86'); fg.addColorStop(1, '#6f52b8'); }
   c.fillStyle = fg; polyPath(c, freeQ); c.fill();
-  if (isA1) { c.strokeStyle = 'rgba(214,170,255,.55)'; c.lineCap = 'butt'; lineWorld(c, -12.2, -7, 12.2, -7, .10, 12); lineWorld(c, -12.2, -7, -12.2, 9, .10, 6); lineWorld(c, 12.2, -7, 12.2, 9, .10, 6); }
   const courtQ = [F(-9, -4.5), F(9, -4.5), F(9, 4.5), F(-9, 4.5)];
   const cg = c.createLinearGradient(0, F(0, -4.5).y, 0, F(0, 4.5).y); cg.addColorStop(0, '#d8a867'); cg.addColorStop(1, '#efca94');
   c.fillStyle = cg; polyPath(c, courtQ); c.fill();
   c.fillStyle = 'rgba(120,70,20,.10)'; polyPath(c, [F(-3, -4.5), F(3, -4.5), F(3, 4.5), F(-3, 4.5)]); c.fill();
+  if (isA1) purpleFrame(c, F);
   for (let v = -4.5, kk = 0; v < 4.5; v += .36, kk++) { if (kk % 2) continue; c.fillStyle = 'rgba(255,240,205,.10)'; polyPath(c, [F(-9, v), F(9, v), F(9, Math.min(4.5, v + .36)), F(-9, Math.min(4.5, v + .36))]); c.fill(); }
   c.strokeStyle = 'rgba(90,50,10,.12)'; for (let v = -4.3; v <= 4.4; v += .45) lineWorld(c, -9, v, 9, v, .02, 8);
   const rf = c.createRadialGradient(Cam.cx, F(0, 0).y, 10, Cam.cx, F(0, 0).y, W * .5); rf.addColorStop(0, 'rgba(255,255,255,.16)'); rf.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = rf; polyPath(c, freeQ); c.fill();

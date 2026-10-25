@@ -2,7 +2,7 @@
    Legge le stesse entita' del motore 2D (atlete con u,v e posa, palla u,v,z) e le disegna in una scena 3D.
    Mappa mondo: X = v (destra/sinistra del campo), Y = altezza, Z = u (distanza dalla rete, positivo verso la camera da fondo).
    Il canvas 2D #cv resta sopra, trasparente, per cartellini nome ed effetti: Cam.p3 fa si' che proj() usi la camera 3D. */
-const S3_BUILD = 'm';
+const S3_BUILD = 'n';
 function s3Available() { return typeof THREE !== 'undefined'; }
 function s3Active(M) { return !!(M && M.s3 && UI.mode3d !== false); }
 
@@ -63,15 +63,16 @@ function s3Build(M) {
   const floorTex = s3Tex(TW, TL, (c, w, h) => {
     const X = v => (v + FW / 2) * w / FW, Y = u => (u + FL / 2) * h / FL;
     const g = c.createLinearGradient(0, 0, 0, h);
-    if (isA1) { g.addColorStop(0, '#3b1a6b'); g.addColorStop(1, '#5a2f99'); } else { g.addColorStop(0, '#4a2f86'); g.addColorStop(1, '#6f52b8'); }
+    if (isA1) { g.addColorStop(0, '#cdae80'); g.addColorStop(1, '#dcc093'); } else { g.addColorStop(0, '#4a2f86'); g.addColorStop(1, '#6f52b8'); }
     c.fillStyle = g; c.fillRect(0, 0, w, h);
-    if (isA1) { c.strokeStyle = 'rgba(214,170,255,.55)'; c.lineWidth = .10 * w / FW; c.strokeRect(X(-8.55), Y(-11.95), X(8.55) - X(-8.55), Y(11.95) - Y(-11.95)); }
     const cg = c.createLinearGradient(0, Y(-9), 0, Y(9)); cg.addColorStop(0, '#d8a867'); cg.addColorStop(.5, '#e6bb80'); cg.addColorStop(1, '#efca94');
     c.fillStyle = cg; c.fillRect(X(-4.5), Y(-9), X(4.5) - X(-4.5), Y(9) - Y(-9));
     c.fillStyle = 'rgba(120,70,20,.10)'; c.fillRect(X(-4.5), Y(-3), X(4.5) - X(-4.5), Y(3) - Y(-3));
     for (let v = -4.5, k = 0; v < 4.5; v += .36, k++) { if (k % 2) continue; c.fillStyle = 'rgba(255,240,205,.11)'; c.fillRect(X(v), Y(-9), X(v + .36) - X(v), Y(9) - Y(-9)); }
     c.strokeStyle = 'rgba(90,50,10,.13)'; c.lineWidth = 1;
     for (let v = -4.3; v <= 4.4; v += .45) { c.beginPath(); c.moveTo(X(v), Y(-9)); c.lineTo(X(v), Y(9)); c.stroke(); }
+    /* taraflex A1: cornice viola nel campo (fasce di fondo 2,5 m, laterali 1,5 m) con centro in parquet */
+    if (isA1) { c.fillStyle = 'rgba(143,44,147,.94)'; c.beginPath(); c.rect(X(-4.5), Y(-9), X(4.5) - X(-4.5), Y(9) - Y(-9)); c.rect(X(-3), Y(-6.5), X(3) - X(-3), Y(6.5) - Y(-6.5)); c.fill('evenodd'); }
     c.strokeStyle = '#fff'; c.lineWidth = .05 * w / FW; c.lineCap = 'butt';
     const L = (u1, v1, u2, v2) => { c.beginPath(); c.moveTo(X(v1), Y(u1)); c.lineTo(X(v2), Y(u2)); c.stroke(); };
     L(-9, -4.5, -9, 4.5); L(9, -4.5, 9, 4.5); L(-9, -4.5, 9, -4.5); L(-9, 4.5, 9, 4.5); L(0, -4.5, 0, 4.5); L(-3, -4.5, -3, 4.5); L(3, -4.5, 3, 4.5);
@@ -194,10 +195,15 @@ function s3Build(M) {
   scene.add(ref);
 
   /* palla */
-  const ballTex = s3Tex(256, 128, (c, w, h) => {
-    c.fillStyle = '#fdfdfb'; c.fillRect(0, 0, w, h);
-    c.fillStyle = '#2257d6'; for (let i = 0; i < 4; i++) { c.fillRect(i * 64, h * .1, 22, h * .8); }
-    c.fillStyle = '#f7c62d'; for (let i = 0; i < 4; i++) { c.fillRect(i * 64 + 26, h * .1, 22, h * .8); }
+  /* pallone ufficiale Molten V5M5000: tre spicchi a spirale bianco / verde / rosso */
+  const ballTex = s3Tex(512, 256, (c, w, h) => {
+    const im = c.createImageData(w, h), d = im.data, seg = [[.20, 255, 255, 252], [.30, 22, 150, 112], [.10, 255, 255, 252], [.28, 226, 58, 86], [.12, 255, 255, 252]];
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const v = y / h; let t = (x / w * 3 + .45 * Math.sin(v * Math.PI) * 1.2 + v * .5) % 1; if (t < 0) t += 1;
+      let acc = 0, col = seg[0]; for (const s of seg) { acc += s[0]; if (t < acc) { col = s; break; } }
+      const hex = ((x * 7 + y * 5) % 9 < 1) ? .93 : 1, i = (y * w + x) * 4; d[i] = col[1] * hex; d[i + 1] = col[2] * hex; d[i + 2] = col[3] * hex; d[i + 3] = 255;
+    }
+    c.putImageData(im, 0, 0);
   });
   S.ball = new THREE.Mesh(new THREE.SphereGeometry(.15, 16, 12), new THREE.MeshLambertMaterial({ map: ballTex })); scene.add(S.ball);
   const shTex = s3Tex(64, 64, (c, w, h) => { const g = c.createRadialGradient(w / 2, h / 2, 2, w / 2, h / 2, w / 2); g.addColorStop(0, 'rgba(4,6,14,.62)'); g.addColorStop(.55, 'rgba(4,6,14,.32)'); g.addColorStop(1, 'rgba(4,6,14,0)'); c.fillStyle = g; c.fillRect(0, 0, w, h); });

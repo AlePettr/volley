@@ -274,8 +274,8 @@ function drawBall(c, M, b) {
   c.save(); c.translate(p.x, p.y); c.rotate((M.t * 6) % 6.283);
   c.fillStyle = '#fdfdfb'; c.beginPath(); c.arc(0, 0, r, 0, 7); c.fill();
   c.save(); c.beginPath(); c.arc(0, 0, r, 0, 7); c.clip();
-  c.fillStyle = '#2257d6'; c.beginPath(); c.moveTo(-r, -r * .1); c.quadraticCurveTo(0, -r * .7, r, -r * .1); c.lineTo(r, r * .25); c.quadraticCurveTo(0, -r * .35, -r, r * .25); c.closePath(); c.fill();
-  c.fillStyle = '#f7c62d'; c.beginPath(); c.moveTo(-r, r * .45); c.quadraticCurveTo(0, -r * .1, r, r * .45); c.lineTo(r, r * .8); c.quadraticCurveTo(0, r * .25, -r, r * .8); c.closePath(); c.fill();
+  c.fillStyle = '#16966f'; c.beginPath(); c.moveTo(-r, -r * .1); c.quadraticCurveTo(0, -r * .7, r, -r * .1); c.lineTo(r, r * .25); c.quadraticCurveTo(0, -r * .35, -r, r * .25); c.closePath(); c.fill();
+  c.fillStyle = '#e23b56'; c.beginPath(); c.moveTo(-r, r * .45); c.quadraticCurveTo(0, -r * .1, r, r * .45); c.lineTo(r, r * .8); c.quadraticCurveTo(0, r * .25, -r, r * .8); c.closePath(); c.fill();
   c.restore();
   c.strokeStyle = 'rgba(20,30,60,.5)'; c.lineWidth = Math.max(1, r * .1); c.beginPath(); c.arc(0, 0, r, 0, 7); c.stroke();
   c.restore();
