@@ -5,6 +5,7 @@ const Vs = (() => {
   const PEER_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js';
   const TACS = [['bal', 'Equilibrata'], ['srv', 'Battuta forte'], ['def', 'Muro e difesa']];
   let peer = null, conn = null, role = null, state = 'closed', code = '', msg = '', backup = null;
+  let logs = [], timer = null;
   let mine = { lid: '', id: '', tac: 'bal', ready: false, career: false }, theirs = null, pending = [];
   const $ = s => document.querySelector(s), esc = x => String(x == null ? '' : x).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -14,6 +15,8 @@ const Vs = (() => {
   const snap = t => ({ id: t.id, short: t.short, full: t.full, city: t.city, color: t.color, color2: t.color2, lid: t.lid, idx: t.idx, tier: t.tier });
   const leagues = () => Object.keys(LEAGUES).filter(l => WORLD[l] && WORLD[l].length);
   const teamById = id => { for (const l of Object.keys(WORLD)) for (const t of WORLD[l]) if (t.id === id) return t; return null; };
+  const log = t => { logs.push(t); if (logs.length > 8) logs.shift(); const e = $('#vslog'); if (e) e.textContent = logs.join(' · '); };
+  const ICE = { config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:global.stun.twilio.com:3478' }, { urls: ['turn:eu-0.turn.peerjs.com:3478', 'turn:us-0.turn.peerjs.com:3478'], username: 'peerjs', credential: 'peerjsp' }, { urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:443', 'turn:openrelay.metered.ca:443?transport=tcp'], username: 'openrelayproject', credential: 'openrelayproject' }] } };
   const send = m => { try { if (conn && conn.open) conn.send(m); } catch (e) { } };
 
   function ensureEntry() {
@@ -25,12 +28,12 @@ const Vs = (() => {
   /* ---------- finestra ---------- */
   function open() { if (UI.match) return; if (!$('#vsmodal')) { const d = document.createElement('div'); d.id = 'vsmodal'; d.className = 'vs-modal'; document.body.appendChild(d); } state = 'menu'; msg = ''; draw(); }
   function close() { const m = $('#vsmodal'); if (m) m.remove(); hangup(); state = 'closed'; }
-  function hangup() { try { if (conn) conn.close(); } catch (e) { } try { if (peer) peer.destroy(); } catch (e) { } conn = null; peer = null; theirs = null; pending = []; mine.ready = false; }
+  function hangup() { clearTimeout(timer); try { if (conn) conn.close(); } catch (e) { } try { if (peer) peer.destroy(); } catch (e) { } conn = null; peer = null; theirs = null; pending = []; mine.ready = false; }
   function teamOptions(lid, sel) { return (WORLD[lid] || []).slice().sort((a, b) => a.short.localeCompare(b.short)).map(t => `<option value="${esc(t.id)}" ${t.id === sel ? 'selected' : ''}>${esc(t.short)}</option>`).join(''); }
   function draw() {
     const m = $('#vsmodal'); if (!m) return; let h = '';
     if (state === 'menu') h = `<h3>Sfida un amico</h3><p class="muted small">Due persone, due browser, una partita dal vivo. Serve internet. Una crea la stanza e passa il codice, l'altra lo inserisce.</p><div class="row" style="gap:10px;margin-top:12px"><button class="btn primary big" id="vs-host">Crea stanza</button></div><div class="row" style="gap:8px;margin-top:14px"><input id="vs-code" class="vs-in" placeholder="Codice stanza" maxlength="8" autocapitalize="characters"><button class="btn big" id="vs-join">Entra</button></div>`;
-    else if (state === 'wait') h = `<h3>Stanza creata</h3><p class="muted small">Passa questo codice al tuo amico:</p><div class="vs-code">${esc(code)}</div><p class="muted small">In attesa che si colleghi…</p>`;
+    else if (state === 'wait') h = code ? `<h3>Stanza creata</h3><p class="muted small">Passa questo codice al tuo amico:</p><div class="vs-code">${esc(code)}</div><p class="muted small">In attesa che si colleghi…</p>` : `<h3>Creo la stanza…</h3><p class="muted small">Mi collego al servizio di connessione.</p>`;
     else if (state === 'connecting') h = `<h3>Connessione…</h3><p class="muted small">Mi collego alla stanza ${esc(code)}.</p>`;
     else if (state === 'lobby') {
       const lg = leagues(); if (!mine.lid) mine.lid = lg[0]; if (!mine.id) mine.id = (WORLD[mine.lid][0] || {}).id;
@@ -43,7 +46,7 @@ const Vs = (() => {
       <p class="small" style="margin:10px 0">Avversario: <b>${th ? esc(th.short) + ' · ' + esc((TACS.find(x => x[0] === theirs.tac) || [0, ''])[1]) + (theirs.career ? ' (squadra di carriera)' : '') : 'sta scegliendo…'}</b></p>
       <div class="row" style="gap:10px"><button class="btn ${mine.ready ? '' : 'primary'}" id="vs-ready">${mine.ready ? 'Pronto ✓ (modifica)' : 'Sono pronto'}</button>${role === 'host' ? `<button class="btn primary" id="vs-start" ${mine.ready && theirs && theirs.ready ? '' : 'disabled'}>Inizia partita</button>` : '<span class="muted small">Parte quando l\'host avvia.</span>'}</div>`;
     } else if (state === 'error') h = `<h3>Qualcosa non va</h3><p class="small">${esc(msg)}</p>`;
-    m.innerHTML = `<div class="vs-card card">${h}<div class="row" style="margin-top:14px"><button class="btn" id="vs-close">${state === 'lobby' || state === 'wait' || state === 'connecting' ? 'Annulla' : 'Chiudi'}</button></div></div>`;
+    m.innerHTML = `<div class="vs-card card">${h}<p class="muted small" id="vslog" style="margin-top:10px;font-size:11px;opacity:.7">${esc(logs.join(' · '))}</p><div class="row" style="margin-top:14px"><button class="btn" id="vs-close">${state === 'lobby' || state === 'wait' || state === 'connecting' ? 'Annulla' : 'Chiudi'}</button></div></div>`;
     bind();
   }
   function bind() {
@@ -66,19 +69,31 @@ const Vs = (() => {
   function loadPeer(ok) { if (window.Peer) return ok(); const s = document.createElement('script'); s.src = PEER_SRC; s.onload = ok; s.onerror = () => fail('Non riesco a caricare il servizio di connessione. Controlla internet e riprova.'); document.head.appendChild(s); }
   const newCode = () => { const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let c = ''; for (let i = 0; i < 5; i++) c += A[Math.floor(Math.random() * A.length)]; return c; };
   function startHost() {
-    role = 'host'; code = newCode(); state = 'wait'; draw();
+    role = 'host'; code = ''; state = 'wait'; logs = []; draw();
     loadPeer(() => {
-      peer = new Peer('volleymgr-' + code);
-      peer.on('error', e => fail('Errore di connessione: ' + (e && e.type || e)));
-      peer.on('connection', c => { if (conn) { c.close(); return; } setConn(c); c.on('open', () => { state = 'lobby'; mine.ready = false; draw(); sendPick(); }); });
+      const id = newCode(); log('servizio: collegamento…');
+      peer = new Peer('volleymgr-' + id, ICE);
+      peer.on('open', () => { code = id; log('servizio ok'); draw(); });
+      peer.on('disconnected', () => { log('servizio perso, riconnetto'); try { peer.reconnect(); } catch (e) { } });
+      peer.on('error', e => { log('errore ' + (e && e.type)); fail('Errore di connessione: ' + (e && e.type || e)); });
+      peer.on('connection', c => {
+        if (conn) { c.close(); return; } log('amico trovato, apro il canale…'); setConn(c);
+        clearTimeout(timer); timer = setTimeout(() => { if (state === 'wait') fail('Ti ha trovato ma non riesce a stabilire la connessione diretta (rete o firewall). Provate sulla stessa rete Wi-Fi o disattivate la VPN, poi riprovate.'); }, 20000);
+        c.on('open', () => { clearTimeout(timer); log('canale aperto'); state = 'lobby'; mine.ready = false; draw(); sendPick(); });
+      });
     });
   }
   function startJoin(c) {
-    if (!c) return; role = 'guest'; code = c; state = 'connecting'; draw();
+    if (!c) return; role = 'guest'; code = c; state = 'connecting'; logs = []; draw();
     loadPeer(() => {
-      peer = new Peer();
-      peer.on('error', e => fail(e && e.type === 'peer-unavailable' ? 'Stanza non trovata: controlla il codice.' : 'Errore di connessione: ' + (e && e.type || e)));
-      peer.on('open', () => { const cn = peer.connect('volleymgr-' + code, { reliable: true }); setConn(cn); cn.on('open', () => { state = 'lobby'; mine.ready = false; draw(); sendPick(); }); });
+      log('servizio: collegamento…'); peer = new Peer(undefined, ICE);
+      peer.on('error', e => { log('errore ' + (e && e.type)); fail(e && e.type === 'peer-unavailable' ? 'Stanza non trovata: controlla il codice (e che l\'altra persona sia ancora in attesa).' : 'Errore di connessione: ' + (e && e.type || e)); });
+      peer.on('open', () => {
+        log('servizio ok, cerco la stanza ' + code); const cn = peer.connect('volleymgr-' + code, { reliable: true }); setConn(cn);
+        clearTimeout(timer); timer = setTimeout(() => { if (state === 'connecting') fail('Ho trovato la stanza ma non riesco a stabilire la connessione diretta (rete o firewall). Provate sulla stessa rete Wi-Fi o disattivate la VPN, poi riprovate.'); }, 20000);
+        cn.on('open', () => { clearTimeout(timer); log('canale aperto'); state = 'lobby'; mine.ready = false; draw(); sendPick(); });
+        cn.on('error', e => log('canale: ' + e));
+      });
     });
   }
   function setConn(c) {
