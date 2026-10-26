@@ -3,7 +3,7 @@
    Non tocca il salvataggio della carriera: serve solo per giocare tra amici. */
 const Vs = (() => {
   const PEER_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js';
-  const VER = 'g';
+  const VER = 'h';
   const TACS = [['bal', 'Equilibrata'], ['srv', 'Battuta forte'], ['def', 'Muro e difesa']];
   let peer = null, conn = null, role = null, state = 'closed', code = '', msg = '', backup = null;
   let logs = [], timer = null;
@@ -97,8 +97,17 @@ const Vs = (() => {
       });
     });
   }
+  /* diagnostica: stato ICE e tipi di candidati (host = rete locale, srflx = via STUN, relay = via TURN) */
+  function watchIce(c) {
+    let tries = 0; const att = () => {
+      const pc = c.peerConnection; if (!pc) { if (tries++ < 40) setTimeout(att, 250); return; }
+      const types = {}; pc.addEventListener('icecandidate', e => { if (e.candidate) { const t = (e.candidate.candidate.match(/ typ (\w+)/) || [])[1] || '?'; types[t] = (types[t] || 0) + 1; } });
+      pc.addEventListener('iceconnectionstatechange', () => log('ice ' + pc.iceConnectionState));
+      setTimeout(() => log('candidati ' + JSON.stringify(types)), 5000); setTimeout(() => log('candidati ' + JSON.stringify(types)), 15000);
+    }; att();
+  }
   function setConn(c) {
-    conn = c;
+    conn = c; watchIce(c);
     c.on('data', onData);
     c.on('close', () => { const M = UI.match; if (M && M.pvp && !M.done) { toast('L\'avversario si e\' disconnesso'); pvpFinish(M, true); } else if (state === 'lobby') fail('L\'avversario ha lasciato la stanza.'); });
   }
