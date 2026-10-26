@@ -3,6 +3,7 @@
    Non tocca il salvataggio della carriera: serve solo per giocare tra amici. */
 const Vs = (() => {
   const PEER_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js';
+  const VER = 'g';
   const TACS = [['bal', 'Equilibrata'], ['srv', 'Battuta forte'], ['def', 'Muro e difesa']];
   let peer = null, conn = null, role = null, state = 'closed', code = '', msg = '', backup = null;
   let logs = [], timer = null;
@@ -46,7 +47,7 @@ const Vs = (() => {
       <p class="small" style="margin:10px 0">Avversario: <b>${th ? esc(th.short) + ' · ' + esc((TACS.find(x => x[0] === theirs.tac) || [0, ''])[1]) + (theirs.career ? ' (squadra di carriera)' : '') : 'sta scegliendo…'}</b></p>
       <div class="row" style="gap:10px"><button class="btn ${mine.ready ? '' : 'primary'}" id="vs-ready">${mine.ready ? 'Pronto ✓ (modifica)' : 'Sono pronto'}</button>${role === 'host' ? `<button class="btn primary" id="vs-start" ${mine.ready && theirs && theirs.ready ? '' : 'disabled'}>Inizia partita</button>` : '<span class="muted small">Parte quando l\'host avvia.</span>'}</div>`;
     } else if (state === 'error') h = `<h3>Qualcosa non va</h3><p class="small">${esc(msg)}</p>`;
-    m.innerHTML = `<div class="vs-card card">${h}<p class="muted small" id="vslog" style="margin-top:10px;font-size:11px;opacity:.7">${esc(logs.join(' · '))}</p><div class="row" style="margin-top:14px"><button class="btn" id="vs-close">${state === 'lobby' || state === 'wait' || state === 'connecting' ? 'Annulla' : 'Chiudi'}</button></div></div>`;
+    m.innerHTML = `<div class="vs-card card">${h}<p class="muted small" id="vslog" style="margin-top:10px;font-size:11px;opacity:.7">${esc(logs.join(' · '))}</p><div class="row" style="margin-top:14px;justify-content:space-between;align-items:center"><button class="btn" id="vs-close">${state === 'lobby' || state === 'wait' || state === 'connecting' ? 'Annulla' : 'Chiudi'}</button><span class="muted" style="font-size:11px;opacity:.6">versione ${VER}</span></div></div>`;
     bind();
   }
   function bind() {
