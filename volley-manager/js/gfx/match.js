@@ -185,7 +185,7 @@ function endRallyAnim(a) {
   const M = UI.match, tr = a.script.tracks;
   for (const pid in tr) { const l = tr[pid][tr[pid].length - 1]; M.pos[pid] = [l.u, l.v]; }
   M.lastA = a; M.i++; M.anim = null;
-  if (M.i >= M.res.rallies.length) finishMatch();
+  if (M.i >= M.res.rallies.length) { if (M.res.rallies.length > 3 && !M.fin) M.fin = { t: 0, dur: 11 }; else finishMatch(); }
 }
 
 function tick(ts) {
@@ -194,6 +194,7 @@ function tick(ts) {
   const dt = Math.min(.05, (ts - M.last) / 1000 || 0); M.last = ts;
   if (!M.done && !M.paused) {
     if (M.intro) { const I = M.intro; if (I.started) { I.t += dt; M.excite = Math.max(M.excite, .55); if (I.t >= I.dur) endIntro(M); } }
+    else if (M.fin) { M.fin.t += dt; M.excite = Math.max(M.excite, .5); if (M.fin.t >= M.fin.dur) { M.fin = null; finishMatch(); } }
     else if (M.tout) { M.tout.t += dt; M.excite = Math.max(M.excite, .25); if (M.tout.t >= M.tout.dur) M.tout = null; }
     else if (!M.anim) { if (!M.toCall) aiTimeout(M); if (M.toCall) startTimeout(M); else startNext(); }
     else {
@@ -270,6 +271,15 @@ function drawScene(M, dt) {
       if (sm) { u = sm.u; v = sm.v; pose = sm.pose; name = sm.name; }
       else { const b = M.pos[p.id] || rallyUV(M, side, i); u = b[0]; v = b[1]; }
       if (ip) { u = ip.u; v = ip.v; pose = ip.pose; name = ''; }
+      if (M.fin) {
+        /* fine partita: le due squadre sfilano a rete battendo il cinque */
+        const F = M.fin, N = M.view[side].length, bs = M.pos[p.id] || rallyUV(M, side, i), sgn = side === M.userSide ? 1 : -1, sm = x => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); };
+        const sp = .62, v0 = sgn > 0 ? -5.2 - i * sp : 5.2 + i * sp, v1 = sgn > 0 ? 5.2 - i * sp + 0 : -5.2 + i * sp, uL = sgn * .8;
+        const a1 = sm(F.t / 2), a2 = Math.max(0, Math.min(1, (F.t - 2) / 7.2));
+        const uu = bs[0] + (uL - bs[0]) * a1, vv = bs[1] + (v0 - bs[1]) * a1;
+        u = uu; v = vv + (v1 - v0) * a2; name = a1 >= 1 && a2 < 1 ? 'shake' : ''; pose = name ? { cr: .04, ln: .04, lf: 0, L: [.5, -.1], R: [.5, -.1] } : POSE.ready;
+        if (F.t > 9.4) { pose = Math.sin(M.t * 8 + i) > 0 ? POSE.cheerUp : POSE.cheer; name = ''; }
+      }
       if (M.tout) {
         const T = M.tout, bs = M.pos[p.id] || rallyUV(M, side, i), sgn = side === M.userSide ? 1 : -1, an = i * 1.05 + .5, sm = x => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); };
         const e = sm(T.t / 1.4) * sm((T.dur - T.t) / 1.4), bu = sgn * 5.6 + Math.cos(an) * .75, bv = -5.7 + Math.sin(an) * .75;
