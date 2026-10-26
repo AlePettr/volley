@@ -5,7 +5,7 @@ const Vs = (() => {
   const PEER_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js';
   const TACS = [['bal', 'Equilibrata'], ['srv', 'Battuta forte'], ['def', 'Muro e difesa']];
   let peer = null, conn = null, role = null, state = 'closed', code = '', msg = '', backup = null;
-  let mine = { lid: '', id: '', tac: 'bal', ready: false }, theirs = null, pending = [];
+  let mine = { lid: '', id: '', tac: 'bal', ready: false, career: false }, theirs = null, pending = [];
   const $ = s => document.querySelector(s), esc = x => String(x == null ? '' : x).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
   const rep = (k, v) => k === 'vc' ? undefined : (v && typeof v === 'object' && v.id !== undefined && v.name !== undefined && v.teamId !== undefined) ? { $p: v.id } : v;
@@ -34,12 +34,13 @@ const Vs = (() => {
     else if (state === 'connecting') h = `<h3>Connessione…</h3><p class="muted small">Mi collego alla stanza ${esc(code)}.</p>`;
     else if (state === 'lobby') {
       const lg = leagues(); if (!mine.lid) mine.lid = lg[0]; if (!mine.id) mine.id = (WORLD[mine.lid][0] || {}).id;
-      const th = theirs && theirs.id ? teamById(theirs.id) : null;
+      const th = theirs && theirs.ready ? (theirs.snap || teamById(theirs.id)) : null, cm = mine.career && hasCareer();
       h = `<h3>${role === 'host' ? 'Tu sei la squadra di casa' : 'Sei la squadra ospite'}</h3>
-      <div class="vs-grid"><label>Campionato<select id="vs-lg">${lg.map(l => `<option value="${l}" ${l === mine.lid ? 'selected' : ''}>${esc(LEAGUES[l].name)}</option>`).join('')}</select></label>
+      ${hasCareer() ? `<label class="small" style="display:flex;gap:8px;align-items:center;margin-top:8px"><input type="checkbox" id="vs-car" ${cm ? 'checked' : ''}> Usa la mia squadra della carriera (${esc(myTeam().short)}, con rosa, formazione e tattica attuali)</label>` : ''}
+      ${cm ? `<p class="small" style="margin:10px 0">Giochi con <b>${esc(myTeam().short)}</b>. Sfida amichevole: non cambia nulla nella tua carriera.</p>` : `<div class="vs-grid"><label>Campionato<select id="vs-lg">${lg.map(l => `<option value="${l}" ${l === mine.lid ? 'selected' : ''}>${esc(LEAGUES[l].name)}</option>`).join('')}</select></label>
       <label>La tua squadra<select id="vs-team">${teamOptions(mine.lid, mine.id)}</select></label>
-      <label>Tattica<select id="vs-tac">${TACS.map(([k, l]) => `<option value="${k}" ${k === mine.tac ? 'selected' : ''}>${l}</option>`).join('')}</select></label></div>
-      <p class="small" style="margin:10px 0">Avversario: <b>${theirs && theirs.ready && th ? esc(th.short) + ' · ' + esc((TACS.find(x => x[0] === theirs.tac) || [0, ''])[1]) : 'sta scegliendo…'}</b></p>
+      <label>Tattica<select id="vs-tac">${TACS.map(([k, l]) => `<option value="${k}" ${k === mine.tac ? 'selected' : ''}>${l}</option>`).join('')}</select></label></div>`}
+      <p class="small" style="margin:10px 0">Avversario: <b>${th ? esc(th.short) + ' · ' + esc((TACS.find(x => x[0] === theirs.tac) || [0, ''])[1]) + (theirs.career ? ' (squadra di carriera)' : '') : 'sta scegliendo…'}</b></p>
       <div class="row" style="gap:10px"><button class="btn ${mine.ready ? '' : 'primary'}" id="vs-ready">${mine.ready ? 'Pronto ✓ (modifica)' : 'Sono pronto'}</button>${role === 'host' ? `<button class="btn primary" id="vs-start" ${mine.ready && theirs && theirs.ready ? '' : 'disabled'}>Inizia partita</button>` : '<span class="muted small">Parte quando l\'host avvia.</span>'}</div>`;
     } else if (state === 'error') h = `<h3>Qualcosa non va</h3><p class="small">${esc(msg)}</p>`;
     m.innerHTML = `<div class="vs-card card">${h}<div class="row" style="margin-top:14px"><button class="btn" id="vs-close">${state === 'lobby' || state === 'wait' || state === 'connecting' ? 'Annulla' : 'Chiudi'}</button></div></div>`;
@@ -50,11 +51,15 @@ const Vs = (() => {
     on('vs-close', close); on('vs-host', startHost); on('vs-join', () => startJoin((g('vs-code').value || '').trim().toUpperCase()));
     const lg = g('vs-lg'); if (lg) lg.onchange = () => { mine.lid = lg.value; mine.id = (WORLD[mine.lid][0] || {}).id; mine.ready = false; sendPick(); draw(); };
     const tm = g('vs-team'); if (tm) tm.onchange = () => { mine.id = tm.value; mine.ready = false; sendPick(); draw(); };
+    const cb = g('vs-car'); if (cb) cb.onchange = () => { mine.career = cb.checked; mine.ready = false; sendPick(); draw(); };
     const tc = g('vs-tac'); if (tc) tc.onchange = () => { mine.tac = tc.value; mine.ready = false; sendPick(); };
     on('vs-ready', () => { mine.ready = !mine.ready; sendPick(); draw(); });
     on('vs-start', hostStart);
   }
-  const sendPick = () => send({ t: 'pick', pick: { id: mine.id, tac: mine.tac, ready: mine.ready } });
+  const hasCareer = () => typeof G !== 'undefined' && !!G && typeof myTeam === 'function';
+  /* la squadra della carriera: rosa, formazione e tattica attuali */
+  function careerPick() { const t = myTeam(); return { id: t.id, tac: G.tactic || 'bal', snap: snap(t), players: t.players.map(plain), lu: { ...lineupFor(G, t) } }; }
+  const sendPick = () => send({ t: 'pick', pick: mine.career && hasCareer() ? { ...careerPick(), career: true, ready: mine.ready } : { id: mine.id, tac: mine.tac, ready: mine.ready } });
   const fail = t => { state = 'error'; msg = t; draw(); };
 
   /* ---------- connessione ---------- */
@@ -100,9 +105,16 @@ const Vs = (() => {
   }
   function hostStart() {
     if (!(mine.ready && theirs && theirs.ready)) return;
-    const th = teamById(mine.id), ta = teamById(theirs.id); if (!th || !ta) { fail('Squadra non trovata.'); return; }
-    if (th === ta) { toast('Scegliete due squadre diverse'); return; }
-    const lu = { h: autoLineup(th), a: autoLineup(ta) }, tac = { h: mine.tac, a: theirs.tac };
+    const cm = mine.career && hasCareer(), mp = cm ? careerPick() : null;
+    const th = cm ? myTeam() : teamById(mine.id); if (!th) { fail('Squadra non trovata.'); return; }
+    const hid = th.id; if (hid === theirs.id) { toast('Scegliete due squadre diverse'); return; }
+    let ta;
+    if (theirs.career && theirs.snap) {
+      backup = backup || {}; for (const p of theirs.players) { if (!(p.id in backup)) backup[p.id] = PLAYER_INDEX[p.id]; PLAYER_INDEX[p.id] = p; }
+      ta = { ...theirs.snap, players: theirs.players.map(p => PLAYER_INDEX[p.id]) };
+    } else ta = teamById(theirs.id);
+    if (!ta) { fail('Squadra non trovata.'); return; }
+    const lu = { h: cm ? mp.lu : autoLineup(th), a: theirs.career && theirs.lu ? theirs.lu : autoLineup(ta) }, tac = { h: cm ? mp.tac : mine.tac, a: theirs.tac };
     const res = simMatch(th, ta, lu, tac, Math.random, true); res.rallies.forEach(r => { r.vc = null; });
     const M = buildM(th, ta, lu, tac, res, 'h'); M.pvp = { role: 'host', q: [], sent: new Set() }; M.toLeft = { h: 2, a: 2 };
     send({ t: 'init', home: snap(th), away: snap(ta), homePl: th.players.map(plain), awayPl: ta.players.map(plain), lu, tac, res: JSON.stringify(res, rep) });
