@@ -29,7 +29,7 @@ function renderMatch() {
   M.kits = Gx.matchKits(M.home, M.away);
   const kh = M.kits.h, ka = M.kits.a;
   const row = (side, team, kit) => `<div class="sb-row" style="--kit:${kit.main}"><i id="sv-${side}" class="srv" style="visibility:hidden"></i>${crest(team, 30)}<b class="sb-name">${esc(team.short)}</b><span class="pips" id="pips-${side}"></span><span class="sb-pts num" id="sc-${side}">0</span></div>`;
-  const ctxLabel = M.event ? esc(M.event.stage || 'Fase finale') : `${esc(LEAGUES[G.lid] ? LEAGUES[G.lid].name : '')} · Giornata ${(G.round || 0) + 1}`;
+  const ctxLabel = M.pvp ? 'Sfida online · amichevole' : M.event ? esc(M.event.stage || 'Fase finale') : `${esc(LEAGUES[G.lid] ? LEAGUES[G.lid].name : '')} · Giornata ${(G.round || 0) + 1}`;
   const venue = (typeof arenaTheme === 'function' && arenaTheme(M.home).info) ? ' · ' + esc(arenaTheme(M.home).info.name) : '';
   $("#app").innerHTML = `
   <div class="arena" id="arena">
@@ -80,6 +80,7 @@ function callTimeout(M, side) {
   if (!M || M.done || M.intro || M.tout || M.toCall || M.replay) return;
   if (M.toLeft[side] <= 0) { if (typeof toast === 'function') toast('Time-out finiti in questo set'); return; }
   const i = M.i, rs = M.res.rallies; if (!(i > 0 && rs[i] && rs[i - 1].set === rs[i].set)) { if (typeof toast === 'function') toast('Il time-out si puo\' chiedere solo a set in corso'); return; }
+  if (M.pvp && M.pvp.role === 'guest') { Vs.request(M); if (typeof toast === 'function') toast('Time-out richiesto'); return; }
   M.toCall = side; if (typeof toast === 'function') toast('Time-out richiesto: parte alla fine dell\'azione');
 }
 function startTimeout(M) {
@@ -90,7 +91,11 @@ function startTimeout(M) {
   const self = run >= 3 ? 1.05 : run >= 2 ? 1.04 : 1.025, them = run >= 3 ? .96 : run >= 2 ? .98 : 1;
   M.boost = { n: 6, h: side === 'h' ? self : them, a: side === 'a' ? self : them };
   if (M.i > 0 && typeof simRemainingRallies === 'function') { M.i--; try { simRemainingRallies(M); } finally { M.i++; } }
-  M.boost = null;
+  M.boost = null; if (M.pvp) M.res.rallies.forEach(r => { r.vc = null; });
+  showTimeout(M, side, run);
+  if (M.pvp) Vs.sendTimeout(M, side, run);
+}
+function showTimeout(M, side, run) {
   M.tout = { t: 0, dur: 8, side };
   const b = $("#banner");
   if (b) { b.innerHTML = `<span>TIME-OUT</span><b>${esc((side === 'h' ? M.home : M.away).short)}</b><em>${run >= 2 ? 'serie interrotta' : 'recupero'}</em>`; b.hidden = false; b.className = 'banner show'; setTimeout(() => { const bb = $("#banner"); if (bb) { bb.hidden = true; bb.className = 'banner'; } }, 2200); }
@@ -196,7 +201,7 @@ function tick(ts) {
     if (M.intro) { const I = M.intro; if (I.started) { I.t += dt; M.excite = Math.max(M.excite, .55); if (I.t >= I.dur) endIntro(M); } }
     else if (M.fin) { M.fin.t += dt; M.excite = Math.max(M.excite, .5); if (M.fin.t >= M.fin.dur) { M.fin = null; finishMatch(); } }
     else if (M.tout) { M.tout.t += dt; M.excite = Math.max(M.excite, .25); if (M.tout.t >= M.tout.dur) M.tout = null; }
-    else if (!M.anim) { if (!M.toCall) aiTimeout(M); if (M.toCall) startTimeout(M); else startNext(); }
+    else if (!M.anim) { if (M.pvp) { if (Vs.gate(M)) startNext(); } else { if (!M.toCall) aiTimeout(M); if (M.toCall) startTimeout(M); else startNext(); } }
     else {
       const a = M.anim; a.t += dt * M.speed;
       /* effetti nel momento giusto */
