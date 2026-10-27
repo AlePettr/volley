@@ -23,7 +23,7 @@ const Vs = (() => {
   function ensureEntry() {
     if ($('#vsentry')) return;
     const b = document.createElement('button'); b.id = 'vsentry'; b.className = 'btn vs-entry'; b.textContent = '⚔ Sfida un amico'; b.onclick = open; document.body.appendChild(b);
-    setInterval(() => { b.hidden = !!UI.match || !!$('#vsmodal'); }, 400);
+    setInterval(() => { b.hidden = !!UI.match || !!$('#vsmodal') || !!$('#alertmodal') || !!document.querySelector('.introov') || (!!G && UI.tab !== 'home'); }, 400);
   }
 
   /* ---------- finestra ---------- */
