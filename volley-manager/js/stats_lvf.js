@@ -1012,8 +1012,9 @@ function teamShort(p){const t=WORLD[p.lid].find(x=>x.id===p.teamId);return t?t.s
    poi overall, potenziale e valore. Nessuna chiamata a rng(): le rose non cambiano. */
 /* Ritocchi mirati agli overall A1 (giudizio editoriale sui casi in cui il solo calcolo statistico sfalsa il livello percepito): nome nel gioco -> delta su tutti gli attributi.
    Si applicano una volta sola (p._adjD) e vengono portati anche nei salvataggi esistenti da worldRestore. */
-const OVR_ADJ={"Paola Egonu":4,"Van Ryk":2,"Elena Pietrini":6,"Alondra Denis Tapia Cruz":-4,"Davidovic":-3,"Beatrice Parrocchiale":-3,"Alessia Regoni":-3,"Martina Armini":-2,"Raphaela Folie":-3,"Linda Manfredini":-4,"Elena Arici":-6,"Merit Adigwe":-5,"Anna Piovesan":-3,"Cekulaev":-2,"Aleksic":-2};
-function applyOvrAdj(p,d){for(const k of ["att","blk","srv","rec","def","set"])p[k]=Math.round(Math.max(25,Math.min(98,p[k]+d)));p.ovr=p[KEY_ATTR[p.role]];p._adjD=d;p.val=calcETV(p);}
+const OVR_ADJ={"Paola Egonu":4,"Van Ryk":2,"Elena Pietrini":6,"Alondra Denis Tapia Cruz":-4,"Davidovic":-3,"Beatrice Parrocchiale":-8,"Alessia Regoni":-7,"Martina Armini":-2,"Raphaela Folie":-3,"Linda Manfredini":-4,"Elena Arici":-6,"Merit Adigwe":-5,"Anna Piovesan":-3,"Cekulaev":-2,"Aleksic":-2,
+ "Sillah":-4,"Yao Di":-3,"Sara Alberti":-3,"Emma Graziani":-3,"Dautova":-6,"Benedetta Maria Sartori":-3,"Kurtagic":-2,"Awoleye":-4,"Benedetta Bartolini":-3,"Federica Squarcini":-2,"Stuut":-3,"Yasmina Akrari":-2,"Miku Otomo":-2,"Gelin":-3,"Giada Agazzi":-2,"Denise Meli":-2,"Stigrot":-2,"Erika Esposito":-3,"Sophie Andrea Blasi":-4,"Kochurina":-2};
+function applyOvrAdj(p,d,tot){for(const k of ["att","blk","srv","rec","def","set"])p[k]=Math.round(Math.max(25,Math.min(98,p[k]+d)));p.ovr=p[KEY_ATTR[p.role]];p._adjD=tot!=null?tot:d;p.val=calcETV(p);}
 function finalizeOverall(){
   const fin=p=>{
     for(const k of ["att","blk","srv","rec","def","set"])p[k]=Math.round(Math.max(25,Math.min(98,softCap(p[k]))));
