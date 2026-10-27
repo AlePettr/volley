@@ -36,7 +36,7 @@ function makePlayer(lid,team,i,raw,rng,gen){
  if(age<=19)ovr-=4;
  if(gen)ovr-=9;
  ovr=clamp(ovr,36,115); /* il tetto morbido si applica alla fine, in finalizeOverall() */
- const verifiedRoster=(lid==="A3A"||lid==="A3B"||team.id==="mod_a3"||team.id==="ton_a3"||team.id==="rom"||(lid==="A2"&&(team.id==="ita"||team.id==="per"||team.id==="cos"||team.id==="imo"||team.id==="mes"||team.id==="fut"))); const ra=ROLE_ATTR[role],p={id:lid+":"+team.id+":"+i,name,role,nat,year,age,est,gen:!!gen,rosterStatus:gen?"simulated":(verifiedRoster?"verified":"pending"),teamId:team.id,lid,fatigue:0,inj:0,injName:"",history};
+ const verifiedRoster=(lid==="A1"||lid==="A3A"||lid==="A3B"||team.id==="mod_a3"||team.id==="ton_a3"||team.id==="rom"||(lid==="A2"&&(team.id==="ita"||team.id==="per"||team.id==="cos"||team.id==="imo"||team.id==="mes"||team.id==="fut"))); const ra=ROLE_ATTR[role],p={id:lid+":"+team.id+":"+i,name,role,nat,year,age,est,gen:!!gen,rosterStatus:gen?"simulated":(verifiedRoster?"verified":"pending"),teamId:team.id,lid,fatigue:0,inj:0,injName:"",history};
  for(const k of ["att","blk","srv","rec","def","set"])p[k]=Math.round(clamp(ovr+ra[k]+gauss(rng)*2.3,25,115));
  const blocks=latestHistoricalValue(history,"blocks"), aces=latestHistoricalValue(history,"aces"), receptionPct=latestHistoricalValue(history,"receptionPct");
  if(blocks!==null)p.blk=Math.round(clamp(p.blk+clamp((blocks-(lid==="A1"?55:60))/12,-2,4),25,115));
