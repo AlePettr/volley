@@ -1010,6 +1010,10 @@ function teamShort(p){const t=WORLD[p.lid].find(x=>x.id===p.teamId);return t?t.s
 
 /* Passaggio finale: tetto morbido su tutti gli attributi (la A1 non ha piu' decine di giocatrici ferme a 98),
    poi overall, potenziale e valore. Nessuna chiamata a rng(): le rose non cambiano. */
+/* Ritocchi mirati agli overall A1 (giudizio editoriale sui casi in cui il solo calcolo statistico sfalsa il livello percepito): nome nel gioco -> delta su tutti gli attributi.
+   Si applicano una volta sola (p._adjD) e vengono portati anche nei salvataggi esistenti da worldRestore. */
+const OVR_ADJ={"Paola Egonu":4,"Van Ryk":2,"Elena Pietrini":6,"Alondra Denis Tapia Cruz":-4,"Davidovic":-3,"Beatrice Parrocchiale":-3,"Alessia Regoni":-3,"Martina Armini":-2,"Raphaela Folie":-3,"Linda Manfredini":-4,"Elena Arici":-6,"Merit Adigwe":-5,"Anna Piovesan":-3,"Cekulaev":-2,"Aleksic":-2};
+function applyOvrAdj(p,d){for(const k of ["att","blk","srv","rec","def","set"])p[k]=Math.round(Math.max(25,Math.min(98,p[k]+d)));p.ovr=p[KEY_ATTR[p.role]];p._adjD=d;p.val=calcETV(p);}
 function finalizeOverall(){
   const fin=p=>{
     for(const k of ["att","blk","srv","rec","def","set"])p[k]=Math.round(Math.max(25,Math.min(98,softCap(p[k]))));
@@ -1017,7 +1021,7 @@ function finalizeOverall(){
     p.pot=p.age<=21?Math.max(p.ovr,Math.round(Math.min(96,softCap(p.pot||p.ovr)))):p.ovr;
     p.val=calcETV(p);
   };
-  for(const lid of Object.keys(WORLD))for(const t of WORLD[lid])for(const p of t.players)fin(p);
+  for(const lid of Object.keys(WORLD))for(const t of WORLD[lid])for(const p of t.players){fin(p);if(lid==="A1"&&OVR_ADJ[p.name]&&p._adjD==null)applyOvrAdj(p,OVR_ADJ[p.name]);}
   FREE_AGENTS.forEach(fin);
 }
 
