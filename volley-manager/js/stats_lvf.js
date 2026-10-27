@@ -1013,7 +1013,10 @@ function teamShort(p){const t=WORLD[p.lid].find(x=>x.id===p.teamId);return t?t.s
 /* Ritocchi mirati agli overall A1 (giudizio editoriale sui casi in cui il solo calcolo statistico sfalsa il livello percepito): nome nel gioco -> delta su tutti gli attributi.
    Si applicano una volta sola (p._adjD) e vengono portati anche nei salvataggi esistenti da worldRestore. */
 const OVR_ADJ={"Paola Egonu":4,"Van Ryk":2,"Elena Pietrini":6,"Alondra Denis Tapia Cruz":-4,"Davidovic":-3,"Beatrice Parrocchiale":-8,"Alessia Regoni":-7,"Martina Armini":-2,"Raphaela Folie":-3,"Linda Manfredini":-4,"Elena Arici":-6,"Merit Adigwe":-5,"Anna Piovesan":-3,"Cekulaev":-2,"Aleksic":-2,
- "Sillah":-4,"Yao Di":-3,"Sara Alberti":-3,"Emma Graziani":-3,"Dautova":-6,"Benedetta Maria Sartori":-3,"Kurtagic":-2,"Awoleye":-4,"Benedetta Bartolini":-3,"Federica Squarcini":-2,"Stuut":-3,"Yasmina Akrari":-2,"Miku Otomo":-2,"Gelin":-3,"Giada Agazzi":-2,"Denise Meli":-2,"Stigrot":-2,"Erika Esposito":-3,"Sophie Andrea Blasi":-4,"Kochurina":-2};
+ "Sillah":-4,"Yao Di":-3,"Sara Alberti":-3,"Emma Graziani":-3,"Dautova":-6,"Benedetta Maria Sartori":-3,"Awoleye":-4,"Benedetta Bartolini":-3,"Federica Squarcini":-2,"Stuut":-3,"Yasmina Akrari":-2,"Miku Otomo":-2,"Gelin":-3,"Giada Agazzi":-2,"Denise Meli":-2,"Stigrot":-2,"Erika Esposito":-3,"Sophie Andrea Blasi":-4,"Kochurina":-2,
+ /* A2: liberi gonfiati (soprattutto le giovani) e opposte/bomber con numeri da vertice della classifica marcatrici */
+ "Alice Feduzzi":-6,"Rebecca Laporta":-4,"Nicole Gamba":-3,"Chiara Adorni":-3,"Manuela Ribechi":-3,"Aurora Brambilla":-5,"Federica Baratella":-3,"Giorgia Zannoni":-3,"Luna Cicola":-3,"Noemi D'Onofrio":-3,"Emma Bonansea":-3,"Ludovica Franzoso":-2,"Ilaria Maiezza":-2,
+ "Nikoleta Perović":8,"Monika Krasteva":8,"Lena Große Scharmann":7,"Polina Malik":5,"Irbe Lazda":9,"Piia Korhonen":6};
 function applyOvrAdj(p,d,tot){for(const k of ["att","blk","srv","rec","def","set"])p[k]=Math.round(Math.max(25,Math.min(98,p[k]+d)));p.ovr=p[KEY_ATTR[p.role]];p._adjD=tot!=null?tot:d;p.val=calcETV(p);}
 function finalizeOverall(){
   const fin=p=>{
@@ -1022,7 +1025,7 @@ function finalizeOverall(){
     p.pot=p.age<=21?Math.max(p.ovr,Math.round(Math.min(96,softCap(p.pot||p.ovr)))):p.ovr;
     p.val=calcETV(p);
   };
-  for(const lid of Object.keys(WORLD))for(const t of WORLD[lid])for(const p of t.players){fin(p);if(lid==="A1"&&OVR_ADJ[p.name]&&p._adjD==null)applyOvrAdj(p,OVR_ADJ[p.name]);}
+  for(const lid of Object.keys(WORLD))for(const t of WORLD[lid])for(const p of t.players){fin(p);if((lid==="A1"||lid==="A2")&&OVR_ADJ[p.name]&&p._adjD==null)applyOvrAdj(p,OVR_ADJ[p.name]);}
   FREE_AGENTS.forEach(fin);
 }
 
