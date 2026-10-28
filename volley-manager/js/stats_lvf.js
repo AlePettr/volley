@@ -1027,6 +1027,8 @@ const OVR_ADJ={"Paola Egonu":4,"Van Ryk":2,"Elena Pietrini":6,"Alondra Denis Tap
  "Alice Bernardeschi":-2,"Giorgia Compagnin":-2,"Giovanna Fratangelo":-3,"Martina Stocco":3,"Rebecca Mirarchi":-3,"Valeria Caracuta":-3,"Emma Rizzieri":-2,"Sofia Monza":-2,"Giulia Nonato":-2,"Camilla Lupoli":-2,
  /* Liberi A1 (riferimento: ricezioni totali e % perfette 2025/26) */
  "Imma Sirressi":-3,"Virginia Paola Di Napoli":-5,"Rebecca Scialanca":-3,"Carola Bonafede":-2,"Giulia Fanfani":-3,"Eleonora Fersino":2,"Ilenia Moro":-3,"Ilaria Spirito":-2,"Giorgia Caforio":3};
+/* A2: avvicina il livello alla A1 in modo graduale (la migliore A2 era ~10 punti sotto l'ultima A1). Casalmaggiore e Messina: squadre da meta' classifica/salvezza, quindi ritocco minimo. Si somma al ritocco individuale. */
+const TEAM_ADJ_A2={rom:6,per:6,cos:5,mon:5,mel:5,fas:4,pad:4,tre:4,alt:3,fut:3,imo:3,mar2:3,avs:2,off:2,cas:2,mes:2,ita:1};
 function applyOvrAdj(p,d,tot){for(const k of ["att","blk","srv","rec","def","set"])p[k]=Math.round(Math.max(25,Math.min(98,p[k]+d)));p.ovr=p[KEY_ATTR[p.role]];p._adjD=tot!=null?tot:d;p.val=calcETV(p);}
 function finalizeOverall(){
   const fin=p=>{
@@ -1035,7 +1037,7 @@ function finalizeOverall(){
     p.pot=p.age<=21?Math.max(p.ovr,Math.round(Math.min(96,softCap(p.pot||p.ovr)))):p.ovr;
     p.val=calcETV(p);
   };
-  for(const lid of Object.keys(WORLD))for(const t of WORLD[lid])for(const p of t.players){fin(p);if((lid==="A1"||lid==="A2")&&OVR_ADJ[p.name]&&p._adjD==null)applyOvrAdj(p,OVR_ADJ[p.name]);}
+  for(const lid of Object.keys(WORLD))for(const t of WORLD[lid])for(const p of t.players){fin(p);if(lid==="A1"||lid==="A2"){const d=(OVR_ADJ[p.name]||0)+(lid==="A2"?(TEAM_ADJ_A2[t.id]||0):0);if(d&&p._adjD==null)applyOvrAdj(p,d);}}
   FREE_AGENTS.forEach(fin);
 }
 
