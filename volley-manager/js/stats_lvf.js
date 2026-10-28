@@ -1013,10 +1013,15 @@ function teamShort(p){const t=WORLD[p.lid].find(x=>x.id===p.teamId);return t?t.s
 /* Ritocchi mirati agli overall A1 (giudizio editoriale sui casi in cui il solo calcolo statistico sfalsa il livello percepito): nome nel gioco -> delta su tutti gli attributi.
    Si applicano una volta sola (p._adjD) e vengono portati anche nei salvataggi esistenti da worldRestore. */
 const OVR_ADJ={"Paola Egonu":4,"Van Ryk":2,"Elena Pietrini":6,"Alondra Denis Tapia Cruz":-4,"Davidovic":-3,"Beatrice Parrocchiale":-8,"Alessia Regoni":-7,"Martina Armini":-2,"Raphaela Folie":-3,"Linda Manfredini":-4,"Elena Arici":-6,"Merit Adigwe":-5,"Anna Piovesan":-3,"Cekulaev":-2,"Aleksic":-2,
- "Sillah":-4,"Yao Di":-3,"Sara Alberti":-3,"Emma Graziani":-3,"Dautova":-6,"Benedetta Maria Sartori":-3,"Awoleye":-4,"Benedetta Bartolini":-3,"Federica Squarcini":-2,"Stuut":-3,"Yasmina Akrari":-2,"Miku Otomo":-2,"Gelin":-3,"Giada Agazzi":-2,"Denise Meli":-2,"Stigrot":-2,"Erika Esposito":-3,"Sophie Andrea Blasi":-4,"Kochurina":-2,
+ "Sillah":-4,"Yao Di":-3,"Dautova":-6,"Awoleye":-4,"Stuut":-3,"Yasmina Akrari":-2,"Gelin":-3,"Giada Agazzi":-2,"Denise Meli":-2,"Stigrot":-2,"Erika Esposito":-3,"Sophie Andrea Blasi":-4,"Kochurina":-2,
  /* A2: liberi gonfiati (soprattutto le giovani) e opposte/bomber con numeri da vertice della classifica marcatrici */
  "Alice Feduzzi":-6,"Rebecca Laporta":-4,"Nicole Gamba":-3,"Chiara Adorni":-3,"Manuela Ribechi":-3,"Aurora Brambilla":-5,"Federica Baratella":-3,"Giorgia Zannoni":-3,"Luna Cicola":-3,"Noemi D'Onofrio":-3,"Emma Bonansea":-3,"Ludovica Franzoso":-2,"Ilaria Maiezza":-2,
- "Nikoleta Perović":8,"Monika Krasteva":8,"Lena Große Scharmann":7,"Polina Malik":5,"Irbe Lazda":9,"Piia Korhonen":6};
+ "Nikoleta Perović":8,"Monika Krasteva":8,"Lena Große Scharmann":7,"Polina Malik":5,"Irbe Lazda":9,"Piia Korhonen":6,
+ /* Schiacciatrici e centrali (A1/A2): riserve o giovani con poco impatto nelle statistiche scendono, bomber e muratrici da classifica salgono */
+ "Miku Otomo":-5,"Sara Alberti":-6,"Benedetta Maria Sartori":-6,"Emma Graziani":-5,"Federica Squarcini":-4,"Benedetta Bartolini":-5,"Matilde Munarini":-4,"Sofia Ferrarini":-5,"Wilson":-3,"Marković":-3,"Maia Carlotta Monaco":-3,"Karin Barbazeni":-3,"Gambatto Kudiess":-2,"Dalila Modestino":3,
+ "Federica Carletti":-4,"Vázquez Gomez":-3,"Caterina Bosetti":-2,"Giorgia Amoruso":3,"Tolok":3,"Beatrice Gardini":2,"Alice Nardo":3,"Cucu":-6,"Ven eva":-5,"Guezen":-3,"Grozer":-3,"Pucelj":-2,
+ "Candela Salinas":4,"Sara Bellia":4,"Aurora Pistolesi":5,"Martina Susio":2,"Bianca Bucciarelli":3,"Cristina Fiorio":3,"Marika Longobardi":2,"Lisa Esposito":2,"Chiara Costagli":3,"Giulia Resmini":-6,"Gaia Farelli":-3,"Irene Mescoli":-3,"Alessia Fiesoli":-3,"Victoria Sassolini":-3,"Arianna Visentin":-4,"Carolina Pecorari":-3,"Francesca Bosso":-4,
+ "Giulia Mancini":-6,"Chiara Biesso":-3,"Sveva Parini":-3,"Alessandra Colzi":-4,"Valentina Colombo":-2,"Aurora Micheletti":-3,"Amelie Joyce Pixner":-3,"Greta Iob":-3,"Francesca Evola":-3,"Alice Farina":3,"Giulia Marconato":2};
 function applyOvrAdj(p,d,tot){for(const k of ["att","blk","srv","rec","def","set"])p[k]=Math.round(Math.max(25,Math.min(98,p[k]+d)));p.ovr=p[KEY_ATTR[p.role]];p._adjD=tot!=null?tot:d;p.val=calcETV(p);}
 function finalizeOverall(){
   const fin=p=>{

@@ -266,7 +266,8 @@ function playerHistory(name){
  // identifica una sola atleta nel dataset, per evitare di assegnare statistiche alla persona sbagliata.
  const surname=key.split(" ").pop();
  if(!surname||surname.length<5)return [];
- const candidates=LVF_HISTORICAL_STATS.filter(x=>normalizeAthleteName(x.name).split(" ").pop()===surname);
+ const kts=key.split(" "); /* tutti i token del nome nel gioco devono comparire nel nome statistico: evita che "Francesca Bosso" erediti i dati di "Teresa Maria Bosso" */
+ const candidates=LVF_HISTORICAL_STATS.filter(x=>{const t=normalizeAthleteName(x.name).split(" ");return t[t.length-1]===surname&&kts.every(k=>t.includes(k));});
  const identities=[...new Set(candidates.map(x=>normalizeAthleteName(x.name)))];
  return identities.length===1?candidates.slice().sort((a,b)=>b.season.localeCompare(a.season)):[];
 }
