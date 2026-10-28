@@ -1021,7 +1021,10 @@ const OVR_ADJ={"Paola Egonu":4,"Van Ryk":2,"Elena Pietrini":6,"Alondra Denis Tap
  "Miku Otomo":-5,"Sara Alberti":-6,"Benedetta Maria Sartori":-6,"Emma Graziani":-5,"Federica Squarcini":-4,"Benedetta Bartolini":-5,"Matilde Munarini":-4,"Sofia Ferrarini":-5,"Wilson":-3,"Marković":-3,"Maia Carlotta Monaco":-3,"Karin Barbazeni":-3,"Gambatto Kudiess":-2,"Dalila Modestino":3,
  "Federica Carletti":-4,"Vázquez Gomez":-3,"Caterina Bosetti":-2,"Giorgia Amoruso":3,"Tolok":3,"Beatrice Gardini":2,"Alice Nardo":3,"Cucu":-6,"Ven eva":-5,"Guezen":-3,"Grozer":-3,"Pucelj":-2,
  "Candela Salinas":4,"Sara Bellia":4,"Aurora Pistolesi":5,"Martina Susio":2,"Bianca Bucciarelli":3,"Cristina Fiorio":3,"Marika Longobardi":2,"Lisa Esposito":2,"Chiara Costagli":3,"Giulia Resmini":-6,"Gaia Farelli":-3,"Irene Mescoli":-3,"Alessia Fiesoli":-3,"Victoria Sassolini":-3,"Arianna Visentin":-4,"Carolina Pecorari":-3,"Francesca Bosso":-4,
- "Giulia Mancini":-6,"Chiara Biesso":-3,"Sveva Parini":-3,"Alessandra Colzi":-4,"Valentina Colombo":-2,"Aurora Micheletti":-3,"Amelie Joyce Pixner":-3,"Greta Iob":-3,"Francesca Evola":-3,"Alice Farina":3,"Giulia Marconato":2};
+ "Giulia Mancini":-6,"Chiara Biesso":-3,"Sveva Parini":-3,"Alessandra Colzi":-4,"Valentina Colombo":-2,"Aurora Micheletti":-3,"Amelie Joyce Pixner":-3,"Greta Iob":-3,"Francesca Evola":-3,"Alice Farina":3,"Giulia Marconato":2,
+ /* Palleggiatrici */
+ "Wolosz":-3,"Ognjenovic":-3,"Seki":-3,"Giulia Gennari":-3,"Jennifer Boldini":-3,"Glaab":-4,"Francesca Bosio":3,"Caterina Schillkowski":-3,"Asia Spaziano":-3,"Safa Allaoui":-2,
+ "Alice Bernardeschi":-2,"Giorgia Compagnin":-2,"Giovanna Fratangelo":-3,"Martina Stocco":3,"Rebecca Mirarchi":-3,"Valeria Caracuta":-3,"Emma Rizzieri":-2,"Sofia Monza":-2,"Giulia Nonato":-2,"Camilla Lupoli":-2};
 function applyOvrAdj(p,d,tot){for(const k of ["att","blk","srv","rec","def","set"])p[k]=Math.round(Math.max(25,Math.min(98,p[k]+d)));p.ovr=p[KEY_ATTR[p.role]];p._adjD=tot!=null?tot:d;p.val=calcETV(p);}
 function finalizeOverall(){
   const fin=p=>{
