@@ -1012,8 +1012,8 @@ function teamShort(p){const t=WORLD[p.lid].find(x=>x.id===p.teamId);return t?t.s
    poi overall, potenziale e valore. Nessuna chiamata a rng(): le rose non cambiano. */
 /* Ritocchi mirati agli overall A1 (giudizio editoriale sui casi in cui il solo calcolo statistico sfalsa il livello percepito): nome nel gioco -> delta su tutti gli attributi.
    Si applicano una volta sola (p._adjD) e vengono portati anche nei salvataggi esistenti da worldRestore. */
-const OVR_ADJ={"Paola Egonu":4,"Van Ryk":2,"Elena Pietrini":6,"Alondra Denis Tapia Cruz":-4,"Davidovic":-3,"Beatrice Parrocchiale":-8,"Alessia Regoni":-7,"Martina Armini":-2,"Raphaela Folie":-3,"Linda Manfredini":-4,"Elena Arici":-6,"Merit Adigwe":-5,"Anna Piovesan":-3,"Cekulaev":-2,"Aleksic":-2,
- "Sillah":-4,"Yao Di":-3,"Dautova":-6,"Awoleye":-4,"Stuut":-3,"Yasmina Akrari":-2,"Gelin":-3,"Giada Agazzi":-2,"Denise Meli":-2,"Stigrot":-2,"Erika Esposito":-3,"Sophie Andrea Blasi":-4,"Kochurina":-2,
+const OVR_ADJ={"Paola Egonu":4,"Van Ryk":2,"Elena Pietrini":6,"Alondra Denis Tapia Cruz":-4,"Davidovic":-3,"Beatrice Parrocchiale":-8,"Alessia Regoni":-10,"Martina Armini":-4,"Raphaela Folie":-3,"Linda Manfredini":-4,"Elena Arici":-6,"Merit Adigwe":-5,"Anna Piovesan":-3,"Cekulaev":-2,"Aleksic":-2,
+ "Sillah":-4,"Yao Di":-3,"Dautova":-6,"Awoleye":-4,"Stuut":-3,"Yasmina Akrari":-2,"Giada Agazzi":-2,"Denise Meli":-2,"Stigrot":-2,"Erika Esposito":-3,"Sophie Andrea Blasi":-4,"Kochurina":-2,
  /* A2: liberi gonfiati (soprattutto le giovani) e opposte/bomber con numeri da vertice della classifica marcatrici */
  "Alice Feduzzi":-6,"Rebecca Laporta":-4,"Nicole Gamba":-3,"Chiara Adorni":-3,"Manuela Ribechi":-3,"Aurora Brambilla":-5,"Federica Baratella":-3,"Giorgia Zannoni":-3,"Luna Cicola":-3,"Noemi D'Onofrio":-3,"Emma Bonansea":-3,"Ludovica Franzoso":-2,"Ilaria Maiezza":-2,
  "Nikoleta Perović":8,"Monika Krasteva":8,"Lena Große Scharmann":7,"Polina Malik":5,"Irbe Lazda":9,"Piia Korhonen":6,
@@ -1024,7 +1024,9 @@ const OVR_ADJ={"Paola Egonu":4,"Van Ryk":2,"Elena Pietrini":6,"Alondra Denis Tap
  "Giulia Mancini":-6,"Chiara Biesso":-3,"Sveva Parini":-3,"Alessandra Colzi":-4,"Valentina Colombo":-2,"Aurora Micheletti":-3,"Amelie Joyce Pixner":-3,"Greta Iob":-3,"Francesca Evola":-3,"Alice Farina":3,"Giulia Marconato":2,
  /* Palleggiatrici */
  "Wolosz":-3,"Ognjenovic":-3,"Seki":-3,"Giulia Gennari":-3,"Jennifer Boldini":-3,"Glaab":-4,"Francesca Bosio":3,"Caterina Schillkowski":-3,"Asia Spaziano":-3,"Safa Allaoui":-2,
- "Alice Bernardeschi":-2,"Giorgia Compagnin":-2,"Giovanna Fratangelo":-3,"Martina Stocco":3,"Rebecca Mirarchi":-3,"Valeria Caracuta":-3,"Emma Rizzieri":-2,"Sofia Monza":-2,"Giulia Nonato":-2,"Camilla Lupoli":-2};
+ "Alice Bernardeschi":-2,"Giorgia Compagnin":-2,"Giovanna Fratangelo":-3,"Martina Stocco":3,"Rebecca Mirarchi":-3,"Valeria Caracuta":-3,"Emma Rizzieri":-2,"Sofia Monza":-2,"Giulia Nonato":-2,"Camilla Lupoli":-2,
+ /* Liberi A1 (riferimento: ricezioni totali e % perfette 2025/26) */
+ "Imma Sirressi":-3,"Virginia Paola Di Napoli":-5,"Rebecca Scialanca":-3,"Carola Bonafede":-2,"Giulia Fanfani":-3,"Eleonora Fersino":2,"Ilenia Moro":-3,"Ilaria Spirito":-2,"Giorgia Caforio":3};
 function applyOvrAdj(p,d,tot){for(const k of ["att","blk","srv","rec","def","set"])p[k]=Math.round(Math.max(25,Math.min(98,p[k]+d)));p.ovr=p[KEY_ATTR[p.role]];p._adjD=tot!=null?tot:d;p.val=calcETV(p);}
 function finalizeOverall(){
   const fin=p=>{
