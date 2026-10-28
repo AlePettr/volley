@@ -121,7 +121,7 @@ function finishSeasonCareer(){
  const entry={season:2026+G.season-1,league:LEAGUES[oldLid]?.name||oldLid,leagueId:oldLid,teamId:oldTeamId,club:oldTeam.short,rank:rank||table.length,teams:table.length,points:(table.find(r=>r.id===oldTeamId)||{}).pts||0,wins:(table.find(r=>r.id===oldTeamId)||{}).w||0,goal:G.board?.goal||"salvezza",budgetEnd:G.budget,notes:[]};
  if(!G.careerHistory)G.careerHistory=[];
  // Evoluzione stagionale: crescita più rapida per giovani ad alto potenziale, lieve calo per veterane.
- for(const lid of Object.keys(WORLD))for(const club of WORLD[lid])for(const p of club.players){if(p.age===undefined)p.age=24;p.age++;const pot=Number(p.pot||p.ovr);let delta=p.age<=23?Math.max(0,Math.min(3,Math.round((pot-p.ovr)*.22))):p.age>=32?-1:0;if(p.age>=35&&Math.random()<.22){p.retiring=true;}if(delta)p.ovr=clamp(p.ovr+delta,36,96);if(p.age>=32&&Math.random()<.25)p.ovr=clamp(p.ovr-1,36,96);p.pot=Math.max(p.ovr,Number(p.pot||p.ovr));p.val=calcETV(p);for(const k of ["att","blk","srv","rec","def","set"])p[k]=clamp(p[k]+(delta>0?Math.min(2,delta):p.age>=33?-1:0),25,98);PLAYER_INDEX[p.id]=p;}
+ seasonGrowthAll();
  // I contratti restano gestibili: rimuove le atlete ritirate e annota l'evento.
  for(const lid of Object.keys(WORLD))for(const club of WORLD[lid]){const gone=club.players.filter(p=>p.retiring);if(gone.length){club.players=club.players.filter(p=>!p.retiring);gone.forEach(p=>{p.teamId=null;p.lid=null;p.retiring=false;p.contractYears=0;p.contractStatus="retired";});}}
  // Passaggio di categoria applicato a ogni club, indipendentemente dalla squadra controllata.

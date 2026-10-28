@@ -149,6 +149,7 @@ function marketHTML(){
     ["buy", "Svincolate"],
     ["clubs", "Trattative Club"],
     ["sell", "Cessioni"],
+    ["staff", "Staff"],
     ["offers", "Offerte" + (typeof offersCount === "function" && offersCount() ? " (" + offersCount() + ")" : "")],
     ["contracts", "Contratti"]
   ].map(([k, l]) => `<button data-act="mkttab" data-v="${k}" aria-pressed="${UI.mktTab === k}">${l}</button>`).join("");
@@ -218,6 +219,8 @@ function marketHTML(){
         }).join("") || `<div class="empty">Nessuna atleta trovata con questi filtri.</div>`}
       </div>
     </div>`;
+  } else if (UI.mktTab === "staff") {
+    body = staffHTML();
   } else if (UI.mktTab === "offers") {
     body = offersHTML();
   } else if (UI.mktTab === "sell") {

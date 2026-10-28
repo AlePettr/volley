@@ -32,13 +32,7 @@ playRound = function (g, res) {
   try {
     const m = mgr(), t = myTeam(), lr = lastUserResult();
     if (lr) { m.morale = clamp(m.morale + (lr.win ? 4 : -4) + (lr.win && lr.l === 0 ? 1 : 0), 20, 100); m.form.push(lr.win ? 1 : 0); if (m.form.length > 10) m.form.shift(); m.press = lr; }
-    const gains = [];
-    t.players.forEach(p => {
-      if (m.focus === 'rest') { p.fatigue = clamp((p.fatigue || 0) - 12, 0, 100); return; }
-      const room = (p.pot || p.ovr) - p.ovr, ch = (p.age <= 23 ? .09 : p.age <= 29 ? .045 : .02) * (room > 0 ? 1.2 : .6);
-      if (p[m.focus] < 99 && Math.random() < ch) { p[m.focus]++; if (p.role && typeof KEY_ATTR !== 'undefined' && KEY_ATTR[p.role] === m.focus) p.ovr = p[m.focus]; if (p.age <= 23) gains.push(p.name); }
-    });
-    if (gains.length) toast('Allenamento: progressi per ' + gains.slice(0, 2).join(', '));
+    trainRound(t, m); const up = staffUpkeep(); if (up) G.budget -= up;
   } catch (e) { }
   return r;
 };
