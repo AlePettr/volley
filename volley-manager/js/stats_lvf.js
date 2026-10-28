@@ -1027,8 +1027,8 @@ const OVR_ADJ={"Paola Egonu":4,"Van Ryk":2,"Elena Pietrini":6,"Alondra Denis Tap
  "Alice Bernardeschi":-2,"Giorgia Compagnin":-2,"Giovanna Fratangelo":-3,"Martina Stocco":3,"Rebecca Mirarchi":-3,"Valeria Caracuta":-3,"Emma Rizzieri":-2,"Sofia Monza":-2,"Giulia Nonato":-2,"Camilla Lupoli":-2,
  /* Liberi A1 (riferimento: ricezioni totali e % perfette 2025/26) */
  "Imma Sirressi":-3,"Virginia Paola Di Napoli":-5,"Rebecca Scialanca":-3,"Carola Bonafede":-2,"Giulia Fanfani":-3,"Eleonora Fersino":2,"Ilenia Moro":-3,"Ilaria Spirito":-2,"Giorgia Caforio":3};
-/* A2: avvicina il livello alla A1 in modo graduale (la migliore A2 era ~10 punti sotto l'ultima A1). Casalmaggiore e Messina: squadre da meta' classifica/salvezza, quindi ritocco minimo. Si somma al ritocco individuale. */
-const TEAM_ADJ_A2={rom:6,per:6,cos:5,mon:5,mel:5,fas:4,pad:4,tre:4,alt:3,fut:3,imo:3,mar2:3,avs:2,off:2,cas:2,mes:2,ita:1};
+/* A2: avvicina il livello alla A1 in modo graduale (la migliore A2 era ~10 punti sotto l'ultima A1). Ordine di forza voluto: Perugia, Vallecamonica, Padova, Futura, Roma, Monviso, Melendugno, Fasano, poi le altre (Casalmaggiore e Messina da meta' classifica/salvezza). Si somma al ritocco individuale. */
+const TEAM_ADJ_A2={per:7,cos:6,pad:7,fut:7,rom:2,mon:3,mel:3,fas:3,tre:3,alt:3,imo:3,mar2:3,avs:2,off:2,cas:2,mes:2,ita:1};
 function applyOvrAdj(p,d,tot){for(const k of ["att","blk","srv","rec","def","set"])p[k]=Math.round(Math.max(25,Math.min(98,p[k]+d)));p.ovr=p[KEY_ATTR[p.role]];p._adjD=tot!=null?tot:d;p.val=calcETV(p);}
 function finalizeOverall(){
   const fin=p=>{
