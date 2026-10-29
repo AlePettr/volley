@@ -1026,7 +1026,7 @@ const OVR_ADJ={"Paola Egonu":4,"Van Ryk":2,"Elena Pietrini":6,"Alondra Denis Tap
  "Wolosz":-3,"Ognjenovic":-3,"Seki":-3,"Giulia Gennari":-3,"Jennifer Boldini":-3,"Glaab":-4,"Francesca Bosio":3,"Caterina Schillkowski":-3,"Asia Spaziano":-3,"Safa Allaoui":-2,
  "Alice Bernardeschi":-2,"Giorgia Compagnin":-2,"Giovanna Fratangelo":-3,"Martina Stocco":3,"Rebecca Mirarchi":-3,"Valeria Caracuta":-3,"Emma Rizzieri":-2,"Sofia Monza":-2,"Giulia Nonato":-2,"Camilla Lupoli":-2,
  /* Liberi A1 (riferimento: ricezioni totali e % perfette 2025/26) */
- "Imma Sirressi":-3,"Virginia Paola Di Napoli":-5,"Rebecca Scialanca":-3,"Carola Bonafede":-2,"Giulia Fanfani":-3,"Eleonora Fersino":2,"Ilenia Moro":-3,"Ilaria Spirito":-2,"Giorgia Caforio":3};
+ "Monica De Gennaro":-3,"Imma Sirressi":-3,"Virginia Paola Di Napoli":-5,"Rebecca Scialanca":-3,"Carola Bonafede":-2,"Giulia Fanfani":-3,"Eleonora Fersino":2,"Ilenia Moro":-3,"Ilaria Spirito":-2,"Giorgia Caforio":3};
 /* A2: avvicina il livello alla A1 in modo graduale (la migliore A2 era ~10 punti sotto l'ultima A1). Ordine di forza voluto: Perugia, Vallecamonica, Padova, Futura, Roma, Monviso, Melendugno, Fasano, poi le altre (Casalmaggiore e Messina da meta' classifica/salvezza). Si somma al ritocco individuale. */
 const TEAM_ADJ_A2={per:7,cos:6,pad:7,fut:7,rom:2,mon:3,mel:3,fas:3,tre:3,alt:3,imo:3,mar2:3,avs:2,off:2,cas:2,mes:2,ita:1};
 function applyOvrAdj(p,d,tot){for(const k of ["att","blk","srv","rec","def","set"])p[k]=Math.round(Math.max(25,Math.min(98,p[k]+d)));p.ovr=p[KEY_ATTR[p.role]];p._adjD=tot!=null?tot:d;p.val=calcETV(p);}
