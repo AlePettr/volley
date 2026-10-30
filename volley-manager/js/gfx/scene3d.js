@@ -54,7 +54,11 @@ function s3Setup(M) {
     try {
       let cv = $("#cv3");
       if (!cv) { cv = document.createElement('canvas'); cv.id = 'cv3'; cv.className = 'cv3'; ar.insertBefore(cv, ar.firstChild); }
+      /* Three r158: stessa resa di r128 (colori e luci "legacy"); si puo' passare al nuovo modello in un secondo momento */
+      if (THREE.ColorManagement) THREE.ColorManagement.enabled = false;
       const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: 'high-performance' });
+      if ('outputColorSpace' in renderer) renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+      if ('useLegacyLights' in renderer) renderer.useLegacyLights = true;
       M.s3 = { cv, renderer, rigs: new Map(), crowd: null, last: 0 };
       s3Build(M);
     } catch (e) { console.warn('3D non disponibile', e); UI.mode3d = false; M.s3 = null; const c = $("#cv3"); if (c) c.remove(); return; }
