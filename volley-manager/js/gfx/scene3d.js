@@ -62,6 +62,7 @@ function s3Setup(M) {
       if ('useLegacyLights' in renderer) renderer.useLegacyLights = true;
       renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       M.s3 = { cv, renderer, rigs: new Map(), crowd: null, last: 0 };
+      if (typeof skLoad === 'function') skLoad();
       s3Build(M);
     } catch (e) { console.warn('3D non disponibile', e); UI.mode3d = false; M.s3 = null; const c = $("#cv3"); if (c) c.remove(); return; }
   }
@@ -354,11 +355,13 @@ function s3Pose(rig, P, name, face, time) {
   const hipH = .90 - cr * .30, hipY = lf + hipH, lean = ln * .9, tl = .52 * (1 - .2 * ln);
   const hipC = v(ox * .5, hipY, 0), shC = v(ox, hipY + tl * Math.cos(lean), tl * Math.sin(lean));
   /* gambe: coscia, stinco, calzettone, ginocchiera, scarpa */
+  const J = { hipC, shC, hd: null, legs: [], arms: [] };
   for (const [s, sx] of [['L', -1], ['R', 1]]) {
     const run = ((!name || name === 'shake') && rig.run) || 0, ph = (rig.sph || 0) + (sx < 0 ? 0 : Math.PI);
     const hp = v(sx * .09 + ox * .5, hipY, 0), ft = v(sx * (.11 + cr * .07), lf + .06 + Math.max(0, Math.cos(ph)) * .09 * run, (sx < 0 ? cr * .10 : -cr * .05) + Math.sin(ph) * .2 * run);
     const mid = hp.clone().add(ft).multiplyScalar(.5), dist = hp.distanceTo(ft), d = Math.sqrt(Math.max(0, .46 * .46 - (dist / 2) * (dist / 2)));
     const kn = mid.clone().add(v(sx * .02, 0, d * .9));
+    J.legs.push({ sx, hp, kn, ft });
     s3Seg(p['thigh' + s], hp, kn, .074); s3Seg(p['shin' + s], kn, ft, .056);
     s3Seg(p['sock' + s], ft.clone().add(v(0, .015, 0)), ft.clone().lerp(kn, .42), .058);
     s3Seg(p['shl' + s], hp.clone().add(v(0, .03, 0)), hp.clone().lerp(kn, .3), .083);
@@ -374,7 +377,7 @@ function s3Pose(rig, P, name, face, time) {
   p.collar.position.copy(shC).add(v(0, .015, 0)); p.collar.scale.set(.085, .03, .07);
   for (const [s, sx] of [['L', -1], ['R', 1]]) s3Seg(p['str' + s], tb.clone().add(v(sx * .147, .03, 0)), shC.clone().add(v(sx * .185, -.045, 0)), .011);
   /* testa con occhi, naso e capelli (stile in base all'atleta) */
-  const hd = shC.clone().add(v(0, .25, Math.sin(lean * .7) * .05)), H = rig.hair;
+  const hd = shC.clone().add(v(0, .25, Math.sin(lean * .7) * .05)), H = rig.hair; J.hd = hd;
   p.head.position.copy(hd).add(v(0, -.005, 0)); p.head.scale.set(.1, .135, .108);
   s3Seg(p.neck, shC.clone().add(v(0, -.02, 0)), hd.clone().add(v(0, -.09, 0)), .046);
   for (const [s, sx] of [['L', -1], ['R', 1]]) { p['ear' + s].position.copy(hd).add(v(sx * .099, -.005, .0)); p['ear' + s].scale.set(.016, .026, .02); p['brow' + s].position.copy(hd).add(v(sx * .042, .05, .099)); p['brow' + s].scale.set(.03, .0055, .008); }
@@ -400,7 +403,7 @@ function s3Pose(rig, P, name, face, time) {
     let bend;
     if (b < 0) bend = v(0, 0, 1); else if (a > 1.5) bend = v(0, 0, -1); else bend = v(-sx, 0, 0);
     const fdir = dir.clone().multiplyScalar(Math.cos(b)).addScaledVector(bend, Math.sin(Math.abs(b))).normalize();
-    const wr = el.clone().addScaledVector(fdir, .27);
+    const wr = el.clone().addScaledVector(fdir, .27); J.arms.push({ sx, sh, el, wr, fdir });
     s3Seg(p['uarm' + s], sh, el, .05); s3Seg(p['farm' + s], el, wr, .042);
     s3Seg(p['slv' + s], sh.clone().add(v(0, .005, 0)), sh.clone().lerp(el, .42), .062);
     p['sho' + s].position.copy(sh); p['sho' + s].scale.set(.078, .072, .072);
@@ -411,6 +414,8 @@ function s3Pose(rig, P, name, face, time) {
     if (rig.band) s3Seg(p['wb' + s], wr.clone().addScaledVector(fdir, -.05), wr.clone().addScaledVector(fdir, -.005), .046); else p['wb' + s].scale.setScalar(.0001);
   }
   rig.g.rotation.y = face;
+  if (!rig.sk && typeof skAttach === 'function') skAttach(rig);
+  if (rig.sk) skPose(rig, J);
 }
 
 /* ---------- ciclo di disegno ---------- */

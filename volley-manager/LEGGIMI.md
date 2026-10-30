@@ -26,6 +26,7 @@ Solo HTML, CSS e JavaScript: **nessuna build, nessun framework**. Si apre `index
 | `js/offers.js` | Avviso rinnovi (modale + carta in Home nelle ultime 3 giornate) e offerte di mercato in uscita da altri club (scheda Mercato › Offerte: accetta, rilancia +15%, rifiuta). Hook: `offersTick()` in `playRound`, `alertsRender()` in `render` |
 | `js/growth.js` | Crescita e allenamenti: scheda Mercato › Staff (allenatore in seconda, preparatore, fisioterapista, palestra, livelli 1-5 con costi), piani individuali nella Home (slot dipendenti dalla palestra), crescita stagionale per età/ruolo/potenziale (`seasonGrowthAll`, chiamata da `finishSeasonCareer`) e report di fine stagione con storico OVR nella scheda giocatrice |
 | `js/season.js` | Fine stagione: premi (MVP, migliori per ruolo, rivelazione) e Albo d'oro, finestra di mercato estiva di 4 settimane (svincolati, mosse dei club, offerte), poi avvio della nuova stagione. |
+| `js/gfx/skel.js` | Atlete con modello 3D a scheletro (opzionale: aggiungi `?sk=1` all'indirizzo del gioco). Converte le pose di `s3Pose()` in rotazioni delle ossa; se il modello non si carica restano le figure classiche. |
 | `js/audio.js` + `audio/` | Audio: effetti sintetizzati con WebAudio (colpi di palla, rimbalzi, fischi, boato e brusio del pubblico) e musiche da `audio/*.mp3` (inno Lega all'ingresso, brani nei time-out, tra i set e a fine partita vinta). Bottone "Audio" nei controlli: tutto / effetti / off (salvato in localStorage) |
 | `js/gfx/numbers.js` | Numeri di maglia ufficiali (`JERSEY`, rose LVF 2026/27) per A1 e A2, per id squadra e nome completo. `assignNumbers` (match.js) abbina per nome/cognome; A3 e senza corrispondenza: numero libero casuale ma stabile |
 | `js/gfx/scene3d.js` | Partita in 3D con Three.js r128 (caricato da cdnjs in index.html): palazzetto, rete, LED con i video, pubblico a istanze, atlete articolate dalle pose di `figure.js` (maglia con bordi e strisce, cognome e numero sulla schiena, calzettoni, ginocchiere, volto, 6 stili di capelli, movimento da ferme), camere laterale/fondo/alta. Legge le stesse entita' di `drawScene` (u,v,posa) e lascia sopra il canvas 2D per cartellini ed effetti (`Cam.p3` fa usare la camera 3D a `proj`). Se Three.js non carica o WebGL fallisce si torna al 2D; tasto 2D/3D nei comandi partita |
@@ -49,3 +50,9 @@ Solo HTML, CSS e JavaScript: **nessuna build, nessun framework**. Si apre `index
 
 ## Idee ancora aperte
 Loghi A3 e sponsor di partita; colori reali dei club; statistiche delle liberi A2 e 2024/25; giocatrici di profilo nella vista laterale; allenamento, giovani, infortuni e trattative (rimandati).
+
+
+## Crediti
+
+- Modello 3D delle atlete (opzionale): This work is based on "Sporty Girl _Rigged_ Free." (https://sketchfab.com/3d-models/sporty-girl--rigged--free-00d9e7c3bc1648fd8d994bf27640d8a7) by NABEEL619 (https://sketchfab.com/NABEEL619) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/). Modificato: texture ridotte.
+- Three.js r158 (MIT) con GLTFLoader e SkeletonUtils adattati come script globali, in `vendor/`.
