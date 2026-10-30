@@ -42,7 +42,8 @@ function s3Geos() {
     torso: s3Lathe([[.02, .62], [.1, .72], [.3, .8], [.55, .93], [.78, 1.0], [.93, .96], [.99, .72]], 18),
     hips: s3Lathe([[.02, .8], [.2, 1.0], [.6, .98], [.98, .84]], 16),
     head: s3Lathe([[.0, .07], [.08, .46], [.25, .8], [.5, .98], [.75, 1.0], [.92, .8], [.99, .3]], 16),
-    shoe: new THREE.SphereGeometry(1, 12, 8)
+    /* scarpa: sfera con suola piatta, tallone stretto e punta tonda */
+    shoe: (() => { const g = new THREE.SphereGeometry(1, 16, 12), pa = g.attributes.position; for (let i = 0; i < pa.count; i++) { let x = pa.getX(i), y = pa.getY(i), z = pa.getZ(i); if (y < 0) y *= .22; x *= z < 0 ? .78 + .22 * (1 + z) : 1 - .3 * z * z; pa.setXYZ(i, x, y, z); } g.computeVertexNormals(); return g; })()
   };
 }
 
@@ -301,7 +302,7 @@ function s3Rig(M, e) {
   const K = lib ? { main: M.kits.lib, num: M.kits.libNum, shorts: Gx.dark(M.kits.lib, .5), trim: Gx.lum(M.kits.lib) > .5 ? '#1b2234' : '#fff' } : M.kits[e.side];
   const look = e.p._look || (e.p._look = avatarLook(e.p));
   const mat = c => new THREE.MeshLambertMaterial({ color: c });
-  const cyl = new THREE.CylinderGeometry(1, 1, 1, 8), sph = new THREE.SphereGeometry(1, 10, 8), box = new THREE.BoxGeometry(1, 1, 1);
+  const cyl = new THREE.CylinderGeometry(1, 1, 1, 8), sph = new THREE.SphereGeometry(1, 14, 10), box = new THREE.BoxGeometry(1, 1, 1);
   const G = s3Geos();
   const g = new THREE.Group(), parts = {};
   const mk = (name, geo, m) => { const o = new THREE.Mesh(geo, m); o.castShadow = true; g.add(o); parts[name] = o; return o; };
@@ -318,10 +319,10 @@ function s3Rig(M, e) {
     c.fillStyle = look.skin; for (const dx of [0, w]) { c.beginPath(); c.moveTo(dx - w * .055, 0); c.lineTo(dx + w * .055, 0); c.lineTo(dx, h * .15); c.closePath(); c.fill(); }
     c.strokeStyle = K.trim; c.lineWidth = 3; for (const dx of [0, w]) { c.beginPath(); c.moveTo(dx - w * .06, 0); c.lineTo(dx, h * .16); c.lineTo(dx + w * .06, 0); c.stroke(); }
   });
-  const skin = mat(look.skin), jersey = mat(K.main), shorts = mat(K.shorts), hair = mat(look.hair), shoe = mat(['#f4f6fa', '#f4f6fa', '#1d2230', '#f4f6fa'][hh % 4]), sock = mat(K.trim), trim = mat(K.trim), pad = mat('#1e2433'), eye = mat('#16161c');
+  const skin = mat(look.skin), jersey = mat(K.main), shorts = mat(K.shorts), hair = new THREE.MeshPhongMaterial({ color: look.hair, shininess: 38, specular: 0x333333 }), shoe = mat(['#f4f6fa', '#f4f6fa', '#1d2230', Gx.light(K.main, .72)][hh % 4]), sock = mat(K.trim), trim = mat(K.trim), pad = mat('#1e2433'), eye = mat('#16161c');
   const jerseyT = new THREE.MeshLambertMaterial({ map: jTex });
   for (const s of ['L', 'R']) {
-    mk('thigh' + s, G.thigh, skin); mk('shin' + s, G.shin, skin); mk('sock' + s, G.sock, sock); mk('knee' + s, sph, pad); mk('shoe' + s, G.shoe, shoe); mk('sole' + s, box, mat(K.trim));
+    mk('thigh' + s, G.thigh, skin); mk('shin' + s, G.shin, skin); mk('sock' + s, G.sock, sock); mk('knee' + s, sph, pad); mk('shoe' + s, G.shoe, shoe); mk('sole' + s, box, mat('#eef1f6'));
     mk('uarm' + s, G.uarm, skin); mk('farm' + s, G.farm, skin); mk('elb' + s, sph, skin); mk('hand' + s, G.hand, skin); mk('fing' + s, sph, skin); mk('thumb' + s, sph, skin); mk('wb' + s, cyl, trim); mk('sho' + s, sph, jersey);
     mk('slv' + s, G.cuff, jersey); mk('shl' + s, G.cuff, shorts); mk('ear' + s, sph, skin); mk('brow' + s, box, hair);
     mk('str' + s, cyl, trim); mk('eye' + s, sph, mat('#f3f1ee')); mk('iris' + s, sph, mat(['#2a1a10', '#2a1a10', '#2d4a66', '#3d5a2c'][hh % 4]));
@@ -362,7 +363,7 @@ function s3Pose(rig, P, name, face, time) {
     s3Seg(p['sock' + s], ft.clone().add(v(0, .015, 0)), ft.clone().lerp(kn, .42), .058);
     s3Seg(p['shl' + s], hp.clone().add(v(0, .03, 0)), hp.clone().lerp(kn, .3), .083);
     p['knee' + s].position.copy(kn); p['knee' + s].scale.set(.066, .066, .06);
-    p['shoe' + s].position.set(ft.x, lf + .042, ft.z + .05); p['shoe' + s].scale.set(.1, .062, .25);
+    p['shoe' + s].position.set(ft.x, lf + .042, ft.z + .05); p['shoe' + s].scale.set(.088, .075, .215);
     p['sole' + s].position.set(ft.x, lf + .011, ft.z + .055); p['sole' + s].scale.set(.098, .02, .25);
   }
   p.shorts.position.set(hipC.x, hipY + .01, 0); p.shorts.scale.set(.2, .25, .145);
