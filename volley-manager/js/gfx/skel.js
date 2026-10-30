@@ -2,7 +2,9 @@
    Modello: "Sporty Girl _Rigged_ Free." di NABEEL619 (https://sketchfab.com/NABEEL619), licenza CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
    Le pose arrivano da s3Pose(): posizioni di anca, ginocchia, caviglie, spalle, gomiti, polsi e testa vengono convertite in rotazioni delle ossa. */
 const SK = { url: 'vendor/models/sporty_girl/scene.gltf', state: 'idle', gltf: null, bind: null };
-function skEnabled() { try { return /[?&]sk=1/.test(location.search) || localStorage.getItem('vm-sk') === '1'; } catch (e) { return /[?&]sk=1/.test(location.search); } }
+/* attivo di default; ?sk=0 (o localStorage vm-sk=0) lo spegne, ?sk=1 lo forza anche se il dispositivo e' lento */
+function skEnabled() { const q = location.search; if (/[?&]sk=0/.test(q)) return false; if (/[?&]sk=1/.test(q)) return true; try { return localStorage.getItem('vm-sk') !== '0'; } catch (e) { return true; } }
+const skForced = () => /[?&]sk=1/.test(location.search);
 const skBase = n => String(n).replace(/_\d+$/, '');
 function skBones(root) { const m = {}; root.traverse(o => { if (o.isBone) m[skBase(o.name)] = o; }); return m; }
 
@@ -19,6 +21,7 @@ function skLoad() {
       bind.torso = bind.p.Neck.clone().sub(bind.p.Hips).normalize(); bind.head = bind.p.HeadTop_End.clone().sub(bind.p.Neck).normalize();
       bind.hipsParentInv = B.Hips.parent.matrixWorld.clone().invert();
       bind.len = {}; for (const n of ['LeftForeArm', 'LeftHand', 'RightForeArm', 'RightHand', 'LeftLeg', 'LeftFoot', 'RightLeg', 'RightFoot']) bind.len[n] = B[n].position.length();
+      try { const im = g.scene.getObjectByProperty('type', 'SkinnedMesh'); let tone = [.88, .67, .55]; g.scene.traverse(o => { if (o.isMesh && o.material.name === 'Wolf3D_Body' && o.material.map && o.material.map.image) { const c = document.createElement('canvas'); c.width = c.height = 1; const x = c.getContext('2d'); x.drawImage(o.material.map.image, 0, 0, 1, 1); const d = x.getImageData(0, 0, 1, 1).data; tone = [d[0] / 255, d[1] / 255, d[2] / 255]; } }); bind.tone = tone; } catch (e) { bind.tone = [.88, .67, .55]; }
       SK.bind = bind; SK.gltf = g; SK.state = 'ready';
     } catch (e) { SK.state = 'error'; console.warn('Modello atleta non utilizzabile', e); }
   }, undefined, e => { SK.state = 'error'; console.warn('Modello atleta non caricato', e); });
@@ -26,9 +29,10 @@ function skLoad() {
 
 /* aggiunge il modello a una atleta e nasconde le parti della figura classica */
 function skAttach(rig) {
-  if (rig.sk || SK.state !== 'ready') return;
+  if (rig.sk || SK.off || SK.state !== 'ready') return;
   const root = THREE.SkeletonUtils.clone(SK.gltf.scene);
   root.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
+  const mats = {}; root.traverse(o => { if (o.isMesh) { const n = o.material.name; o.material = mats[n] || (mats[n] = skMat(o.material, rig)); } });
   rig.g.add(root);
   for (const n in rig.parts) if (n !== 'num' && n !== 'numF') rig.parts[n].visible = false;
   rig.sk = { root, B: skBones(root) };
@@ -76,3 +80,42 @@ function skPose(rig, J) {
     drive(B[s + 'UpLeg'], aim(s + 'UpLeg', K.clone().sub(S))); drive(B[s + 'Leg'], aim(s + 'Leg', F.clone().sub(K))); drive(B[s + 'Foot'], aim(s + 'Foot', new V(0, -.3, 1)));
   }
 }
+
+/* materiali per atleta: divisa di squadra (maglia, pantaloncini corti, scarpe), pelle e capelli */
+function skMat(base, rig) {
+  const m = base.clone(), K = rig.K, look = rig.look, hh = rig.hh, n = base.name, flat = c => { m.map = null; m.metalnessMap = null; m.roughnessMap = null; m.metalness = 0; m.roughness = .85; m.color.set(c); };
+  if (n === 'Wolf3D_Outfit_Top') flat(K.main);
+  else if (n === 'Wolf3D_Outfit_Bottom') {
+    flat(K.shorts); m.normalMap = null;
+    /* il modello ha i leggings lunghi: sotto la coscia il tessuto diventa del colore della pelle, cosi' restano pantaloncini corti */
+    const skinC = new THREE.Color(look.skin);
+    m.onBeforeCompile = sh => {
+      sh.uniforms.skinC = { value: skinC };
+      sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying float vBY;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvBY = position.y;');
+      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vBY;\nuniform vec3 skinC;').replace('#include <color_fragment>', '#include <color_fragment>\n if (vBY < .74) diffuseColor.rgb = skinC;');
+    };
+  }
+  else if (n === 'Wolf3D_Outfit_Footwear') flat(['#f4f6fa', '#f4f6fa', '#1d2230', Gx.light(K.main, .72)][hh % 4]);
+  else if (n === 'Wolf3D_Hair') { m.map = null; m.color.set(look.hair); }
+  else if (n === 'Wolf3D_Body') { m.map = null; m.color.set(look.skin); }
+  else if (n === 'Wolf3D_Skin') { const t = SK.bind.tone, c = new THREE.Color(look.skin); m.color.setRGB(Math.min(1.5, Math.max(.5, c.r / t[0])), Math.min(1.5, Math.max(.5, c.g / t[1])), Math.min(1.5, Math.max(.5, c.b / t[2]))); }
+  return m;
+}
+
+/* se il dispositivo e' lento, torna alle figure classiche (non succede con ?sk=1) */
+function skPerf(M, dt) {
+  if (SK.off || skForced() || !dt || dt > .5) return;
+  const S = M.s3; if (!S || !S.rigs.size || ![...S.rigs.values()].some(r => r.sk)) return;
+  S.skN = (S.skN || 0) + 1; S.skT = (S.skT || 0) + dt;
+  if (S.skN >= 90) {
+    if (S.skT / S.skN > .045) { SK.off = true; for (const r of S.rigs.values()) skDetach(r); console.warn('Dispositivo lento: figure classiche'); }
+    S.skN = -1e9;
+  }
+}
+function skDetach(rig) { if (!rig.sk) return; rig.g.remove(rig.sk.root); rig.sk = null; for (const n in rig.parts) rig.parts[n].visible = true; }
+
+/* credito richiesto dalla licenza CC BY, in fondo alla Home quando il modello e' attivo */
+const _homeHTMLsk = homeHTML;
+homeHTML = function () {
+  return _homeHTMLsk() + (skEnabled() && SK.state !== 'error' && !SK.off ? `<p class="muted small" style="margin:14px 0 4px;text-align:center;font-size:11px">Modello 3D delle atlete: "Sporty Girl _Rigged_ Free." di <a href="https://sketchfab.com/NABEEL619" target="_blank" rel="noopener">NABEEL619</a> (<a href="https://sketchfab.com/3d-models/sporty-girl--rigged--free-00d9e7c3bc1648fd8d994bf27640d8a7" target="_blank" rel="noopener">fonte</a>), licenza <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Modificato: colori e texture.</p>` : '');
+};

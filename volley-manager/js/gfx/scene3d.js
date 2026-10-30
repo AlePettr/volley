@@ -343,7 +343,7 @@ function s3Rig(M, e) {
   const numF = new THREE.Mesh(new THREE.PlaneGeometry(.12, .12), new THREE.MeshBasicMaterial({ map: frontTex, transparent: true })); g.add(numF); parts.numF = numF;
   const shadow = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), S.shadowMat); shadow.rotation.x = -Math.PI / 2; shadow.position.y = .012;
   S.scene.add(g); S.scene.add(shadow);
-  rig = { key, g, parts, shadow, hair: S3_HAIR[(look.style || 0) % S3_HAIR.length], ph: (hh % 628) / 100, band: hh % 3 === 0, fringe: (look.style === 2 || look.style === 3) };
+  rig = { K, look, hh, key, g, parts, shadow, hair: S3_HAIR[(look.style || 0) % S3_HAIR.length], ph: (hh % 628) / 100, band: hh % 3 === 0, fringe: (look.style === 2 || look.style === 3) };
   S.rigs.set(e.p.id, rig); return rig;
 }
 
@@ -420,6 +420,7 @@ function s3Pose(rig, P, name, face, time) {
 
 /* ---------- ciclo di disegno ---------- */
 function s3Frame(M, ents, dt) {
+  if (typeof skPerf === 'function') skPerf(M, dt);
   const S = M.s3, scene = S.scene, cam = S.camera, a = M.anim, t = a ? a.t : 0, time = M.t;
   const seen = new Set();
   const bE = ents.find(e => e.kind === 'b');
