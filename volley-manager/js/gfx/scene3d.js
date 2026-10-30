@@ -389,8 +389,10 @@ function s3Pose(rig, P, name, face, time) {
   if (rig.fringe) { p.fringe.position.copy(hd).add(v(0, .075, .068)); p.fringe.scale.set(.098, .04, .05); } else p.fringe.scale.setScalar(.0001);
   for (const [s, sx] of [['L', -1], ['R', 1]]) { p['eye' + s].position.copy(hd).add(v(sx * .04, .012, .098)); p['eye' + s].scale.set(.019, .014, .01); p['iris' + s].position.copy(hd).add(v(sx * .04, .012, .105)); p['iris' + s].scale.set(.0095, .0095, .006); }
   p.nose.position.copy(hd).add(v(0, -.015, .108)); p.nose.scale.setScalar(.015);
+  if (!rig.sk) {
   p.num.position.copy(shC).lerp(hipC, .38).add(v(0, 0, -.13)); p.num.rotation.set(0, Math.PI, 0);
   p.numF.position.copy(shC).lerp(hipC, .3).add(v(.07, 0, .128)); p.numF.rotation.set(0, 0, 0);
+  }
   /* braccia: L = prima, R = seconda; R e' la destra dell'atleta */
   for (const [s, sx, A] of [['L', 1, P.L], ['R', -1, P.R]]) {
     const swing = Math.sin((rig.sph || 0) + (sx > 0 ? 0 : Math.PI)) * .55 * run0, sh = shC.clone().add(v(sx * .21, -.04, 0)), a = A[0] + (idle ? sw * .05 : 0) + swing, b = A[1] - Math.abs(swing) * .5;

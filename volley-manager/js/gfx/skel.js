@@ -34,6 +34,8 @@ function skAttach(rig) {
   root.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
   const mats = {}; root.traverse(o => { if (o.isMesh) { const n = o.material.name; o.material = mats[n] || (mats[n] = skMat(o.material, rig)); } });
   rig.g.add(root);
+  /* numeri di maglia attaccati al busto (ossa della schiena): seguono la rotazione e stanno sulla superficie della maglia */
+  const ch = skBones(root).Spine2; if (ch && rig.parts.num) { ch.add(rig.parts.num, rig.parts.numF); rig.parts.num.position.set(0, -.09, -.102); rig.parts.num.rotation.set(0, Math.PI, 0); rig.parts.numF.position.set(.07, -.05, .153); rig.parts.numF.rotation.set(0, 0, 0); }
   for (const n in rig.parts) if (n !== 'num' && n !== 'numF') rig.parts[n].visible = false;
   rig.sk = { root, B: skBones(root) };
 }
@@ -112,7 +114,7 @@ function skPerf(M, dt) {
     S.skN = -1e9;
   }
 }
-function skDetach(rig) { if (!rig.sk) return; rig.g.remove(rig.sk.root); rig.sk = null; for (const n in rig.parts) rig.parts[n].visible = true; }
+function skDetach(rig) { if (!rig.sk) return; rig.g.remove(rig.sk.root); rig.g.add(rig.parts.num, rig.parts.numF); rig.sk = null; for (const n in rig.parts) rig.parts[n].visible = true; }
 
 /* credito richiesto dalla licenza CC BY, in fondo alla Home quando il modello e' attivo */
 const _homeHTMLsk = homeHTML;
