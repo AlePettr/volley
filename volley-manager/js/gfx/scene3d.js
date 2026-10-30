@@ -59,6 +59,7 @@ function s3Setup(M) {
       const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: 'high-performance' });
       if ('outputColorSpace' in renderer) renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
       if ('useLegacyLights' in renderer) renderer.useLegacyLights = true;
+      renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       M.s3 = { cv, renderer, rigs: new Map(), crowd: null, last: 0 };
       s3Build(M);
     } catch (e) { console.warn('3D non disponibile', e); UI.mode3d = false; M.s3 = null; const c = $("#cv3"); if (c) c.remove(); return; }
@@ -85,6 +86,9 @@ function s3Build(M) {
   scene.add(new THREE.AmbientLight(0xffffff, .6));
   scene.add(new THREE.HemisphereLight(0xdfeaff, 0x2a2540, .42));
   const sun = new THREE.DirectionalLight(0xffffff, .42); sun.position.set(-6, 22, 10); scene.add(sun);
+  /* ombre reali: il sole proietta giocatrici, rete, pali e palla sul campo (piano che riceve solo l'ombra) */
+  sun.castShadow = true; { const q = Math.min(innerWidth, innerHeight) < 600 ? 1024 : 2048; sun.shadow.mapSize.set(q, q); } sun.shadow.bias = -.0004; sun.shadow.normalBias = .03; sun.shadow.radius = 3;
+  Object.assign(sun.shadow.camera, { left: -13, right: 13, top: 13, bottom: -13, near: 8, far: 50 }); sun.shadow.camera.updateProjectionMatrix();
   const isA1 = ((M.home && M.home.lid) || (typeof G !== 'undefined' && G && G.lid) || 'A1') !== 'A2';
 
   /* pavimento: zona libera viola + campo in parquet (texture disegnata una volta) */
@@ -109,6 +113,8 @@ function s3Build(M) {
   floorTex.anisotropy = Math.min(8, S.renderer.capabilities.getMaxAnisotropy());
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(FW, FL), new THREE.MeshBasicMaterial({ map: floorTex, color: 0xd4d4d4 }));
   floor.rotation.x = -Math.PI / 2; floor.position.y = .0; scene.add(floor);
+  const shadowPlane = new THREE.Mesh(new THREE.PlaneGeometry(FW, FL), new THREE.ShadowMaterial({ opacity: .34 }));
+  shadowPlane.rotation.x = -Math.PI / 2; shadowPlane.position.y = .004; shadowPlane.receiveShadow = true; scene.add(shadowPlane);
   const outer = new THREE.Mesh(new THREE.PlaneGeometry(90, 90), new THREE.MeshLambertMaterial({ color: 0x0e1422 }));
   outer.rotation.x = -Math.PI / 2; outer.position.y = -.02; scene.add(outer);
 
@@ -210,7 +216,7 @@ function s3Build(M) {
   net.position.set(0, 1.74, 0); scene.add(net);
   const tape = new THREE.Mesh(new THREE.BoxGeometry(10, .075, .03), new THREE.MeshLambertMaterial({ color: 0xf5f7fb })); tape.position.set(0, 2.22, 0); scene.add(tape);
   const post = new THREE.MeshLambertMaterial({ color: 0x2a3347 });
-  for (const x of [-5, 5]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(.055, .055, 2.55, 10), post); p.position.set(x, 1.275, 0); scene.add(p); }
+  for (const x of [-5, 5]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(.055, .055, 2.55, 10), post); p.position.set(x, 1.275, 0); p.castShadow = true; scene.add(p); }
   const antTex = s3Tex(8, 64, (c, w, h) => { for (let i = 0; i < 8; i++) { c.fillStyle = i % 2 ? '#f5f7fb' : '#e03a3a'; c.fillRect(0, i * 8, w, 8); } });
   for (const x of [-4.5, 4.5]) { const a = new THREE.Mesh(new THREE.CylinderGeometry(.02, .02, 1.8, 6), new THREE.MeshBasicMaterial({ map: antTex })); a.position.set(x, 2.24 + .4, 0); scene.add(a); }
 
@@ -270,7 +276,7 @@ function s3Build(M) {
     }
     c.putImageData(im, 0, 0);
   });
-  S.ball = new THREE.Mesh(new THREE.SphereGeometry(.15, 16, 12), new THREE.MeshLambertMaterial({ map: ballTex })); scene.add(S.ball);
+  S.ball = new THREE.Mesh(new THREE.SphereGeometry(.15, 16, 12), new THREE.MeshLambertMaterial({ map: ballTex })); S.ball.castShadow = true; scene.add(S.ball);
   const shTex = s3Tex(64, 64, (c, w, h) => { const g = c.createRadialGradient(w / 2, h / 2, 2, w / 2, h / 2, w / 2); g.addColorStop(0, 'rgba(4,6,14,.62)'); g.addColorStop(.55, 'rgba(4,6,14,.32)'); g.addColorStop(1, 'rgba(4,6,14,0)'); c.fillStyle = g; c.fillRect(0, 0, w, h); });
   const shadowMat = new THREE.MeshBasicMaterial({ map: shTex, transparent: true, depthWrite: false });
   S.ballShadow = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), shadowMat); S.ballShadow.rotation.x = -Math.PI / 2; S.ballShadow.position.y = .012; scene.add(S.ballShadow);
@@ -298,7 +304,7 @@ function s3Rig(M, e) {
   const cyl = new THREE.CylinderGeometry(1, 1, 1, 8), sph = new THREE.SphereGeometry(1, 10, 8), box = new THREE.BoxGeometry(1, 1, 1);
   const G = s3Geos();
   const g = new THREE.Group(), parts = {};
-  const mk = (name, geo, m) => { const o = new THREE.Mesh(geo, m); g.add(o); parts[name] = o; return o; };
+  const mk = (name, geo, m) => { const o = new THREE.Mesh(geo, m); o.castShadow = true; g.add(o); parts[name] = o; return o; };
   const hh = Gx.hash(String(e.p.id));
   /* maglia con texture: pannelli laterali piu' scuri, scollo a V, pieghe leggere */
   const jTex = s3Tex(256, 256, (c, w, h) => {
