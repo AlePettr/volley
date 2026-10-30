@@ -97,6 +97,7 @@ function alertCardsHTML() {
 
 function alertsRender() {
   const old = document.getElementById("alertmodal"); if (old) old.remove();
+  if (G && UI.alert === "awards" && !UI.match) { awardsModal(); return; }
   if (G && UI.alert === "growth" && !UI.match) { growthModal(); return; }
   if (!G || UI.alert !== "renew" || UI.match) return;
   const e = expiringPlayers(); if (!e.length) { UI.alert = null; return; }

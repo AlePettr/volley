@@ -7,6 +7,12 @@ const Vs = (() => {
   const TACS = [['bal', 'Equilibrata'], ['srv', 'Battuta forte'], ['def', 'Muro e difesa']];
   let peer = null, conn = null, role = null, state = 'closed', code = '', msg = '', backup = null;
   let logs = [], timer = null;
+  const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } };
+  const nick = () => lsGet('vm-nick', '') || '';
+  let oppNick = '';
+  const boardRec = (name, win, sf, ss) => { const b = lsGet('vm-vs-board', {}), r = b[name] || { w: 0, l: 0, sf: 0, ss: 0 }; if (win) r.w++; else r.l++; r.sf += sf; r.ss += ss; b[name] = r; lsSet('vm-vs-board', b); };
+  const boardHTML = () => { const b = lsGet('vm-vs-board', {}), n = nick() || 'Tu'; let w = 0, l = 0; const rows = Object.keys(b).map(k => ({ k, ...b[k] })).sort((a, c) => (c.w - c.l) - (a.w - a.l) || (c.sf - c.ss) - (a.sf - a.ss)); rows.forEach(r => { w += r.w; l += r.l; }); if (!rows.length) return '<p class="muted small" style="margin-top:12px">Nessuna sfida giocata: la classifica compare dopo la prima partita.</p>'; return `<h3 style="margin-top:14px">Classifica sfide</h3><p class="muted small">${esc(n)}: ${w} vittorie, ${l} sconfitte. I tuoi risultati contro ciascun amico.</p>` + rows.map((r, i) => `<div class="prow"><span class="nm"><b>${i + 1}. ${esc(r.k)}</b><span class="muted small">V ${r.w} · S ${r.l} · set ${r.sf}-${r.ss}</span></span></div>`).join(''); };
   let mine = { lid: '', id: '', tac: 'bal', ready: false, career: false }, theirs = null, pending = [];
   const $ = s => document.querySelector(s), esc = x => String(x == null ? '' : x).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -33,7 +39,7 @@ const Vs = (() => {
   function teamOptions(lid, sel) { return (WORLD[lid] || []).slice().sort((a, b) => a.short.localeCompare(b.short)).map(t => `<option value="${esc(t.id)}" ${t.id === sel ? 'selected' : ''}>${esc(t.short)}</option>`).join(''); }
   function draw() {
     const m = $('#vsmodal'); if (!m) return; let h = '';
-    if (state === 'menu') h = `<h3>Sfida un amico</h3><p class="muted small">Due persone, due browser, una partita dal vivo. Serve internet. Una crea la stanza e passa il codice, l'altra lo inserisce.</p><div class="row" style="gap:10px;margin-top:12px"><button class="btn primary big" id="vs-host">Crea stanza</button></div><div class="row" style="gap:8px;margin-top:14px"><input id="vs-code" class="vs-in" placeholder="Codice stanza" maxlength="8" autocapitalize="characters"><button class="btn big" id="vs-join">Entra</button></div>`;
+    if (state === 'menu') h = `<h3>Sfida un amico</h3><p class="muted small">Due persone, due browser, una partita dal vivo. Serve internet. Una crea la stanza e passa il codice, l'altra lo inserisce.</p><div class="row" style="gap:10px;margin-top:12px"><button class="btn primary big" id="vs-host">Crea stanza</button></div><div class="row" style="gap:8px;margin-top:14px"><input id="vs-code" class="vs-in" placeholder="Codice stanza" maxlength="8" autocapitalize="characters"><button class="btn big" id="vs-join">Entra</button></div><label class="small" style="display:block;margin-top:14px">Il tuo nome in classifica<input id="vs-nick" class="vs-in" placeholder="Es. Ale" maxlength="14" value="${esc(nick())}" style="width:100%;margin-top:4px"></label>${boardHTML()}`;
     else if (state === 'wait') h = code ? `<h3>Stanza creata</h3><p class="muted small">Passa questo codice al tuo amico:</p><div class="vs-code">${esc(code)}</div><p class="muted small">In attesa che si colleghi…</p>` : `<h3>Creo la stanza…</h3><p class="muted small">Mi collego al servizio di connessione.</p>`;
     else if (state === 'connecting') h = `<h3>Connessione…</h3><p class="muted small">Mi collego alla stanza ${esc(code)}.</p>`;
     else if (state === 'lobby') {
@@ -53,6 +59,7 @@ const Vs = (() => {
   function bind() {
     const g = id => document.getElementById(id), on = (id, fn) => { const e = g(id); if (e) e.onclick = fn; };
     on('vs-close', close); on('vs-host', startHost); on('vs-join', () => startJoin((g('vs-code').value || '').trim().toUpperCase()));
+    const nk = g('vs-nick'); if (nk) nk.oninput = () => lsSet('vm-nick', nk.value.trim().slice(0, 14));
     const lg = g('vs-lg'); if (lg) lg.onchange = () => { mine.lid = lg.value; mine.id = (WORLD[mine.lid][0] || {}).id; mine.ready = false; sendPick(); draw(); };
     const tm = g('vs-team'); if (tm) tm.onchange = () => { mine.id = tm.value; mine.ready = false; sendPick(); draw(); };
     const cb = g('vs-car'); if (cb) cb.onchange = () => { mine.career = cb.checked; mine.ready = false; sendPick(); draw(); };
@@ -63,7 +70,7 @@ const Vs = (() => {
   const hasCareer = () => typeof G !== 'undefined' && !!G && typeof myTeam === 'function';
   /* la squadra della carriera: rosa, formazione e tattica attuali */
   function careerPick() { const t = myTeam(); return { id: t.id, tac: G.tactic || 'bal', snap: snap(t), players: t.players.map(plain), lu: { ...lineupFor(G, t) } }; }
-  const sendPick = () => send({ t: 'pick', pick: mine.career && hasCareer() ? { ...careerPick(), career: true, ready: mine.ready } : { id: mine.id, tac: mine.tac, ready: mine.ready } });
+  const sendPick = () => send({ t: 'pick', nick: nick(), pick: mine.career && hasCareer() ? { ...careerPick(), career: true, ready: mine.ready } : { id: mine.id, tac: mine.tac, ready: mine.ready } });
   const fail = t => { state = 'error'; msg = t; draw(); };
 
   /* ---------- connessione ---------- */
@@ -113,7 +120,7 @@ const Vs = (() => {
   }
   function onData(d) {
     if (!d || !d.t) return; const M = UI.match;
-    if (d.t === 'pick') { theirs = d.pick; if (state === 'lobby') draw(); }
+    if (d.t === 'pick') { theirs = d.pick; if (d.nick) oppNick = String(d.nick).slice(0, 14); if (state === 'lobby') draw(); }
     else if (d.t === 'init' && role === 'guest') guestStart(d);
     else if (d.t === 'toReq' && M && M.pvp && role === 'host') callTimeout(M, 'a');
     else if ((d.t === 'go' || d.t === 'to') && M && M.pvp) M.pvp.q.push(d);
@@ -184,6 +191,7 @@ const Vs = (() => {
   function pvpFinish(M, abandoned) {
     M.done = true; const res = M.res, me = M.userSide, mineS = me === 'h' ? res.hs : res.as, thS = me === 'h' ? res.as : res.hs, win = mineS > thS;
     const opp = me === 'h' ? M.away : M.home;
+    if (!abandoned || win) boardRec(oppNick || 'Amico', win, mineS, thS);
     $('#ctl').innerHTML = ''; if (typeof Snd !== 'undefined') Snd.end(win && !abandoned);
     $('#feed').textContent = `Finale: ${M.home.short} ${res.hs}-${res.as} ${M.away.short}.`; $('#sets').textContent = `FINALE · ${res.hs}-${res.as}`;
     const last = res.sets[res.sets.length - 1]; if (last) { $('#sc-h').textContent = last[0]; $('#sc-a').textContent = last[1]; }
