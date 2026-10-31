@@ -81,7 +81,7 @@ function seasonGrowthAll() {
       for (const k of ['att', 'blk', 'srv', 'rec', 'def', 'set']) p[k] = clamp(p[k] + d + (Math.random() < .3 ? (Math.random() < .5 ? 1 : -1) : 0), 25, 98);
       p.ovr = p[KEY_ATTR[p.role]];
       p.pot = p.age <= 23 ? Math.max(p.ovr, Number(p.pot || p.ovr)) : p.ovr;
-      if (p.age >= 35 && Math.random() < Math.min(.6, .15 * (p.age - 34))) p.retiring = true;
+      if (p.age >= 33 && Math.random() < Math.min(.7, .10 * (p.age - 32))) p.retiring = true;
       p.val = calcETV(p); p.trainGain = 0; PLAYER_INDEX[p.id] = p;
       (p.growth || (p.growth = [])).push({ s: yearLabel(G.season || 1), o: p.ovr }); if (p.growth.length > 8) p.growth.shift();
       if (isMine) rows.push({ id: p.id, name: p.name, role: p.role, age: p.age, o0: ovr0, o1: p.ovr, tg, ret: false });

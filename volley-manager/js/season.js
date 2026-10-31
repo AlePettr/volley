@@ -28,11 +28,12 @@ function awardsModal() {
 }
 
 function endSeason() {
-  const club = myTeam(); completeSeasonLeagueResults();
+  const club0 = myTeam(); completeSeasonLeagueResults();
   const aw = computeAwards(), a1 = standings('A1', G.results)[0], a2 = (WORLD.A2 && WORLD.A2.length) ? standings('A2', G.results)[0] : null;
   const prize = Math.round(aw.filter(a => a.mine).length * 6000 * staffScale() / 250) * 250;
   const result = finishSeasonCareer();
-  (G.hall = G.hall || []).unshift({ season: yearLabel(G.season || 1), champ: { A1: a1 && a1.short, A2: a2 && a2.short }, awards: aw, prize, mine: { club: club.short, rank: result.rank, league: result.entry.league } });
+  worldDedupe(); const club = myTeam(); // dopo promozioni/retrocessioni il club può essere un altro oggetto
+  (G.hall = G.hall || []).unshift({ season: yearLabel(G.season || 1), champ: { A1: a1 && a1.short, A2: a2 && a2.short }, awards: aw, prize, mine: { club: club0.short, rank: result.rank, league: result.entry.league } });
   G.hall = G.hall.slice(0, 15); if (prize) G.budget += prize;
   const departures = [], retained = []; ensureContracts(club, G.lid);
   club.players.forEach(p => {
@@ -62,7 +63,49 @@ function mwAdvance() {
   marketNews('Calciomercato estivo: settimana ' + G.mw.week + ' di ' + G.mw.max + '.');
   persist(); render(); toast('Settimana ' + G.mw.week + ' di mercato: i club si muovono.');
 }
+
+/* Ricambio generazionale: ogni estate i club non controllati rifanno la rosa (14 atlete, ruoli coperti) e arrivano nuove giovani sul mercato. */
+let _rkN = 0;
+function makeRookie(club, lid, role) {
+  const rng = Math.random, nm = FIRST[Math.floor(rng() * FIRST.length)] + ' ' + LAST[Math.floor(rng() * LAST.length)];
+  const top = club.players.slice().sort((a, b) => b.ovr - a.ovr).slice(0, 7), avg = top.length ? top.reduce((x, p) => x + p.ovr, 0) / top.length : (lid === 'A1' ? 78 : lid === 'A2' ? 62 : 52);
+  const p = makePlayer('FA', { tier: 2.8, id: 'fa' }, 0, null, mulberry32((Math.random() * 1e9) | 0), { role, name: nm });
+  const age = 17 + Math.floor(rng() * 4), target = clamp(Math.round(avg - 12 + gauss(rng) * 4), 38, 74), d = target - p.ovr;
+  for (const k of ['att', 'blk', 'srv', 'rec', 'def', 'set']) p[k] = clamp(p[k] + d, 25, 98);
+  p.ovr = p[KEY_ATTR[role]]; p.age = age; p.year = SEASON_YEAR + ((G.season || 1) - 1) - age; p.est = false; p.gen = true; p.rosterStatus = 'simulated';
+  p.pot = Math.round(clamp(p.ovr + 5 + rng() * 14, p.ovr, 94)); p.val = calcETV(p);
+  p.id = 'rk' + (G.season || 1) + '_' + (++_rkN) + '_' + ((rng() * 1e6) | 0); p.teamId = null; p.lid = null; p.contractStatus = 'free'; p.contractYears = 0;
+  PLAYER_INDEX[p.id] = p; return p;
+}
+function worldDedupe() {
+  const seen = new Set(); let n = 0;
+  for (const lid of ['A1', 'A2', 'A3A', 'A3B']) for (const t of (WORLD[lid] || [])) {
+    const before = t.players.length; t.players = t.players.filter(p => { if (seen.has(p.id)) return false; seen.add(p.id); return true; }); n += before - t.players.length;
+  }
+  G.freeAgents = (G.freeAgents || []).filter(p => !seen.has(p.id)); return n;
+}
+function seasonIntake() {
+  worldDedupe();
+  const need = { P: 2, O: 2, S: 3, C: 3, L: 2 }, extra = ['S', 'C', 'O', 'S', 'C'], me = myTeam().id; let signed = 0, rookies = 0;
+  for (const lid of ['A1', 'A2', 'A3A', 'A3B']) for (const club of (WORLD[lid] || [])) {
+    if (club.id === me) continue;
+    const take = role => {
+      const top = club.players.slice().sort((a, b) => b.ovr - a.ovr).slice(0, 7), avg = top.length ? top.reduce((x, p) => x + p.ovr, 0) / top.length : 60;
+      const fa = G.freeAgents.filter(p => p.role === role && p.ovr >= avg - 14 && p.ovr <= avg + 4).sort((a, b) => b.ovr - a.ovr)[0];
+      let p = fa; if (p) { G.freeAgents = G.freeAgents.filter(x => x.id !== p.id); signed++; } else { p = makeRookie(club, lid, role); rookies++; }
+      p.teamId = club.id; p.lid = lid; p.contractYears = 1; p.contractStatus = 'signed'; p.wage = p.wage || salaryFor(p, lid); club.players.push(p); PLAYER_INDEX[p.id] = p;
+    };
+    for (const r of Object.keys(need)) while (club.players.filter(p => p.role === r).length < need[r]) take(r);
+    let k = 0; while (club.players.length < 14) take(extra[k++ % extra.length]);
+  }
+  // Nuove giovani sul mercato degli svincolati
+  const pool = [WORLD.A2, WORLD.A3A, WORLD.A3B].filter(Boolean);
+  for (let i = 0; i < 12; i++) { const L = pool[i % pool.length], club = L[Math.floor(Math.random() * L.length)], p = makeRookie(club, club.lid, ROLE_ORDER[i % 5]); p.ovr = Math.min(p.ovr, 66); G.freeAgents.push(p); }
+  G.freeAgents.sort((a, b) => b.ovr - a.ovr); G.freeAgents = G.freeAgents.slice(0, 70);
+  return { signed, rookies };
+}
 function closeMarketWindow() {
+  seasonIntake();
   G.round = 0; G.season++; G.phase = 1; G.event = null; G.cupA2 = null; G.cupA1 = null; G.playoffsA1 = null; G.playoffsA2 = null;
   G.results = { A1: [], A2: [], A3A: [], A3B: [] };
   delete WORLD.A3_PROM; delete WORLD.A3_RETR; delete LEAGUES.A3_PROM; delete LEAGUES.A3_RETR; delete SCHEDULE.A3_PROM; delete SCHEDULE.A3_RETR;
@@ -92,5 +135,5 @@ function mwHTML() {
 }
 
 const _homeHTML4 = homeHTML;
-const APP_BUILD = '1026k';
+const APP_BUILD = '1026l';
 homeHTML = function () { return (G && G.mw ? mwHTML() + hallHTML(true) : _homeHTML4() + hallHTML(false)) + `<p class="muted small" style="text-align:center;font-size:11px;margin:10px 0 0">versione ${APP_BUILD}</p>`; };
