@@ -19,6 +19,7 @@ function skLoad() {
       d('LeftArm', 'LeftForeArm'); d('RightArm', 'RightForeArm'); d('LeftForeArm', 'LeftHand'); d('RightForeArm', 'RightHand'); d('LeftHand', 'LeftHandMiddle1'); d('RightHand', 'RightHandMiddle1');
       d('LeftUpLeg', 'LeftLeg'); d('RightUpLeg', 'RightLeg'); d('LeftLeg', 'LeftFoot'); d('RightLeg', 'RightFoot'); d('LeftFoot', 'LeftToeBase'); d('RightFoot', 'RightToeBase');
       bind.torso = bind.p.Neck.clone().sub(bind.p.Hips).normalize(); bind.head = bind.p.HeadTop_End.clone().sub(bind.p.Neck).normalize();
+      bind.mHead = B.Head.matrixWorld.clone();
       bind.hipsParentInv = B.Hips.parent.matrixWorld.clone().invert();
       bind.len = {}; for (const n of ['LeftForeArm', 'LeftHand', 'RightForeArm', 'RightHand', 'LeftLeg', 'LeftFoot', 'RightLeg', 'RightFoot']) bind.len[n] = B[n].position.length();
       try { const im = g.scene.getObjectByProperty('type', 'SkinnedMesh'); let tone = [.88, .67, .55]; g.scene.traverse(o => { if (o.isMesh && o.material.name === 'Wolf3D_Body' && o.material.map && o.material.map.image) { const c = document.createElement('canvas'); c.width = c.height = 1; const x = c.getContext('2d'); x.drawImage(o.material.map.image, 0, 0, 1, 1); const d = x.getImageData(0, 0, 1, 1).data; tone = [d[0] / 255, d[1] / 255, d[2] / 255]; } }); bind.tone = tone; } catch (e) { bind.tone = [.88, .67, .55]; }
@@ -34,6 +35,9 @@ function skAttach(rig) {
   root.traverse(o => { if (o.isMesh) { o.castShadow = true; o.frustumCulled = false; } });
   const mats = {}; root.traverse(o => { if (o.isMesh) { const n = o.material.name; o.material = mats[n] || (mats[n] = skMat(o.material, rig)); } });
   rig.g.add(root);
+  { const head = skBones(root).Head, H = skHairStyle(rig), inv = SK.bind.mHead.clone().invert(), qi = SK.bind.q.Head.clone().invert();
+    if (head && H.parts.length) { const hm = new THREE.MeshStandardMaterial({ color: rig.look.hair, roughness: .6 }); SK.hairGeo = SK.hairGeo || new THREE.SphereGeometry(1, 14, 10);
+      for (const q of H.parts) { const o = new THREE.Mesh(SK.hairGeo, hm); o.position.set(...q.c).applyMatrix4(inv); o.quaternion.copy(qi); if (q.rx) o.rotateX(q.rx); o.scale.set(...q.s); o.castShadow = true; head.add(o); } } }
   /* numeri di maglia attaccati al busto (ossa della schiena): seguono la rotazione e stanno sulla superficie della maglia */
   const ch = skBones(root).Spine2; if (ch && rig.parts.num) { ch.add(rig.parts.num, rig.parts.numF); rig.parts.num.position.set(0, -.09, -.102); rig.parts.num.rotation.set(0, Math.PI, 0); rig.parts.numF.position.set(.07, -.05, .153); rig.parts.numF.rotation.set(0, 0, 0); }
   for (const n in rig.parts) if (n !== 'num' && n !== 'numF') rig.parts[n].visible = false;
@@ -83,6 +87,16 @@ function skPose(rig, J) {
   }
 }
 
+/* acconciature: cut = quota sotto la quale il caschetto del modello viene tagliato; poi codini, crocchia, treccia o lunghi, attaccati alla testa */
+const SK_HAIR = [
+  { cut: 1.585, parts: [{ c: [0, 1.56, -.125], s: [.034, .095, .034] }] },                          // coda bassa
+  { cut: 1.60, parts: [{ c: [0, 1.775, -.04], s: [.055, .05, .055] }] },                             // crocchia
+  { cut: 0, parts: [] },                                                                              // caschetto (resta quello del modello)
+  { cut: 0, parts: [{ c: [0, 1.50, -.10], s: [.12, .19, .04] }] },                                   // lunghi sciolti
+  { cut: 1.615, parts: [{ c: [0, 1.74, -.125], s: [.04, .11, .04], rx: .55 }] },                     // coda alta
+  { cut: 1.575, parts: [{ c: [0, 1.50, -.125], s: [.036, .16, .036] }, { c: [0, 1.61, -.10], s: [.045, .03, .045] }] }   // coda lunga con elastico
+];
+function skHairStyle(rig) { return SK_HAIR[((rig.look && rig.look.style) || 0) % SK_HAIR.length]; }
 /* materiali per atleta: divisa di squadra (maglia, pantaloncini corti, scarpe), pelle e capelli */
 function skMat(base, rig) {
   const m = base.clone(), K = rig.K, look = rig.look, hh = rig.hh, n = base.name, flat = c => { m.map = null; m.metalnessMap = null; m.roughnessMap = null; m.metalness = 0; m.roughness = .85; m.color.set(c); };
@@ -98,7 +112,13 @@ function skMat(base, rig) {
     };
   }
   else if (n === 'Wolf3D_Outfit_Footwear') flat(['#f4f6fa', '#f4f6fa', '#1d2230', Gx.light(K.main, .72)][hh % 4]);
-  else if (n === 'Wolf3D_Hair') { m.map = null; m.color.set(look.hair); }
+  else if (n === 'Wolf3D_Hair') {
+    m.map = null; m.color.set(look.hair); const cut = skHairStyle(rig).cut;
+    if (cut) m.onBeforeCompile = sh => {   /* capelli raccolti: del caschetto resta solo la calotta sopra le orecchie */
+      sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying float vHY;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvHY = position.y;');
+      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vHY;').replace('#include <color_fragment>', '#include <color_fragment>\n if (vHY < ' + cut.toFixed(3) + ') discard;');
+    };
+  }
   else if (n === 'Wolf3D_Body') { m.map = null; m.color.set(look.skin); }
   else if (n === 'Wolf3D_Skin') { const t = SK.bind.tone, c = new THREE.Color(look.skin); m.color.setRGB(Math.min(1.5, Math.max(.5, c.r / t[0])), Math.min(1.5, Math.max(.5, c.g / t[1])), Math.min(1.5, Math.max(.5, c.b / t[2]))); }
   return m;
