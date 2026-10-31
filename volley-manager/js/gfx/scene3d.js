@@ -61,7 +61,7 @@ function s3Setup(M) {
       if ('outputColorSpace' in renderer) renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
       if ('useLegacyLights' in renderer) renderer.useLegacyLights = true;
       renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-      M.s3 = { cv, renderer, rigs: new Map(), crowd: null, last: 0 };
+      M.s3 = { cv, renderer, rigs: new Map(), crowd: null, last: 0, hi: typeof s3Hi === 'function' && s3Hi() };
       if (typeof skLoad === 'function') skLoad();
       s3Build(M);
     } catch (e) { console.warn('3D non disponibile', e); UI.mode3d = false; M.s3 = null; const c = $("#cv3"); if (c) c.remove(); return; }
@@ -122,7 +122,7 @@ function s3Build(M) {
 
   /* tribune a gradoni nei colori del club di casa + pubblico a istanze */
   const seat = [Gx.dark(homeKit.main, .8), Gx.dark(homeKit.main, .72)], tint = [homeKit.main, Gx.light(homeKit.main, .4), '#f5f7fb', '#1d2a44'];
-  const stepD = .95, rowsEnd = TH.rowsFar, rowsSide = TH.rowsSide, spots = [];
+  const stepD = .95, rowsEnd = TH.rowsFar, rowsSide = TH.rowsSide, spots = [], seatsL = [];
   const addStand = (axis, sign, rows, start, span, centre) => {
     for (let r = 0; r < rows; r++) {
       const h = .5 + r * .4, d = start + r * stepD + stepD / 2;
@@ -131,10 +131,12 @@ function s3Build(M) {
       if (axis === 'z') m.position.set(centre, h / 2, sign * d); else m.position.set(sign * d, h / 2, centre);
       scene.add(m);
       const n = Math.floor(span / .56);
+      const yawS = axis === 'z' ? (sign > 0 ? Math.PI : 0) : (sign > 0 ? -Math.PI / 2 : Math.PI / 2);
       for (let i = 0; i < n; i++) {
+        { const a0 = centre - span / 2 + (i + .5) * span / n; seatsL.push(axis === 'z' ? { x: a0, y: h, z: sign * d, yaw: yawS, a: a0 + 20, r } : { x: sign * d, y: h, z: a0, yaw: yawS, a: a0 + 20, r }); }
         if (R() > Math.min(1, TH.density * .95 + .1)) continue;
         const a = centre - span / 2 + (i + .5) * span / n + (R() - .5) * .12;
-        spots.push(axis === 'z' ? { x: a, y: h, z: sign * (d + (R() - .5) * .25) } : { x: sign * (d + (R() - .5) * .25), y: h, z: a });
+        spots.push(axis === 'z' ? { x: a, y: h, z: sign * (d + (R() - .5) * .25), yaw: yawS } : { x: sign * (d + (R() - .5) * .25), y: h, z: a, yaw: yawS });
       }
     }
   };
@@ -165,6 +167,7 @@ function s3Build(M) {
   const mtx = new THREE.Matrix4(), col = new THREE.Color(), skins = ['#f1c9a5', '#e0ac82', '#b9835b', '#8a5a3b', '#f5d6bd'], base = new Float32Array(N), ph = new Float32Array(N);
   const hs = M.userSide === 'a' ? -1 : 1, kh = M.kits.h, ka = M.kits.a, team = new Uint8Array(N), flagSpots = [];
   const homePal = [kh.main, kh.main, kh.trim, Gx.light(kh.main, .3)], awayPal = [ka.main, ka.main, ka.trim, Gx.light(ka.main, .3)];
+  const cc_ = [], sk_ = [];
   spots.forEach((p, i) => {
     base[i] = p.y + .32; ph[i] = R() * 6.28;
     mtx.makeTranslation(p.x, base[i], p.z); bodies.setMatrixAt(i, mtx);
@@ -178,7 +181,7 @@ function s3Build(M) {
     team[i] = tm;
     if (tm && R() < .12) flagSpots.push({ x: p.x, y: base[i] + .55, z: p.z, ph: R() * 6.28, tm, i });
     bodies.setColorAt(i, col.set(cc));
-    heads.setColorAt(i, col.set(skins[Math.floor(R() * skins.length)]));
+    const skn = skins[Math.floor(R() * skins.length)]; heads.setColorAt(i, col.set(skn)); cc_[i] = cc; sk_[i] = skn;
   });
   bodies.frustumCulled = false; heads.frustumCulled = false;
   scene.add(bodies); scene.add(heads);
@@ -187,6 +190,14 @@ function s3Build(M) {
   flagSpots.forEach((f, k) => { flags.setColorAt(k, col.set(f.tm === 1 ? kh.main : ka.main)); mtx.makeTranslation(f.x, f.y + .1, f.z); poles.setMatrixAt(k, mtx); });
   flags.count = NF; poles.count = NF; flags.frustumCulled = false; poles.frustumCulled = false; scene.add(flags); scene.add(poles);
   S.crowd = { bodies, heads, base, ph, N, spots, team, flags, flagSpots, NF };
+  if (S.hi && typeof s3RichCrowd === 'function') {
+    try {
+      scene.remove(bodies); scene.remove(heads);
+      S.crowd.rich = s3RichCrowd(S, scene, { spots, cc: cc_, sk: sk_, team, base });
+      const bandTex = s3Tex(2048, 64, (c, w, h) => { c.fillStyle = homeKit.shade; c.fillRect(0, 0, w, h); const it = [(M.home.city || M.home.short).toUpperCase(), 'SERIE A FEMMINILE', M.home.short.toUpperCase(), 'VOLLEY MANAGER', 'FRECCIAROSSA', 'FINECO']; c.fillStyle = Gx.onColor(homeKit.shade); c.font = '700 38px "Barlow Condensed",Arial Narrow,sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; for (let k = 0; k < 12; k++) c.fillText(it[k % it.length], (k + .5) * w / 12, h / 2 + 2); });
+      s3RichArena(S, scene, { TH, kit: homeKit, xW, zW, END0, SIDE0, endSpan, stepD, seats: seatsL, rowsEnd, rowsSide, bandTex, home: (M.home.city || M.home.short).toUpperCase() });
+    } catch (e) { console.warn('palazzetto HD non disponibile', e); S.hi = false; S.crowd.rich = null; if (!bodies.parent) { scene.add(bodies); scene.add(heads); } }
+  }
 
   /* cartelloni LED: filmati della Lega se disponibili, altrimenti nomi di squadre e sponsor */
   S.panels = []; S.vtex = new Map();
@@ -260,6 +271,7 @@ function s3Build(M) {
   /* raccattapalle ai quattro angoli e segnalinee con bandierina */
   for (const [x, z] of [[-8, -10.4], [8, -10.4], [-8, 10.4], [8, 10.4]]) person(x, z, Math.atan2(-x, -z), '#f2f4f8', '#243153', true, 0, 0).scale.setScalar(.8);
   for (const [x, z] of [[-6.4, -10.3], [6.4, 10.3]]) { const g = person(x, z, Math.atan2(-x, -z), '#f2f4f8', '#141b2d', false, 0, 0); const fl = new THREE.Mesh(new THREE.PlaneGeometry(.28, .22), new THREE.MeshBasicMaterial({ color: 0xf2c230, side: THREE.DoubleSide })); fl.position.set(.3, 1.45, .1); g.add(fl); }
+  if (S.hi && S.richStewards) for (const [x, z] of S.richStewards) person(x, z, Math.atan2(-x, -z), '#e8d23a', '#1c2538', false, 0, 0);
   /* tabellone sospeso sopra il campo (4 facce) */
   { const bt = S.sbTex = s3Tex(512, 192, () => { }), bm = new THREE.MeshBasicMaterial({ map: bt });
     const body = new THREE.Mesh(new THREE.BoxGeometry(5.4, 2.1, 5.4), lam(0x0a0f1c)); body.position.set(0, 16.2, 0); scene.add(body);
@@ -473,7 +485,8 @@ function s3Frame(M, ents, dt) {
 
   /* pubblico */
   const cr = S.crowd, ex = M.excite || 0, ia = cr.bodies.instanceMatrix.array, ha = cr.heads.instanceMatrix.array, lw = M.lastWin;
-  for (let i = 0; i < cr.N; i++) {
+  if (cr.rich) s3RichCrowdUpdate(cr, time, ex, lw);
+  else for (let i = 0; i < cr.N; i++) {
     const tm = cr.team[i], win = (tm === 1 && lw === 'h') || (tm === 2 && lw === 'a');
     const y = cr.base[i] + ex * (win ? .22 : .02) + Math.max(0, Math.sin(time * (win ? 4 : 2.4) + cr.ph[i])) * (.012 + ex * (win ? .12 : .03));
     ia[i * 16 + 13] = y; ha[i * 16 + 13] = y + .43;
@@ -487,7 +500,7 @@ function s3Frame(M, ents, dt) {
     }
     cr.flags.instanceMatrix.needsUpdate = true;
   }
-  cr.bodies.instanceMatrix.needsUpdate = true; cr.heads.instanceMatrix.needsUpdate = true;
+  if (!cr.rich) { cr.bodies.instanceMatrix.needsUpdate = true; cr.heads.instanceMatrix.needsUpdate = true; }
 
   /* cartelloni LED con i video della Lega */
   if (typeof LED !== 'undefined' && LED.vids.length) {
@@ -501,6 +514,7 @@ function s3Frame(M, ents, dt) {
     }
   }
 
+  if (S.richWall) { const v2 = UI.camView || 'side'; for (const o of S.richWall.xp) o.visible = v2 !== 'side'; for (const o of S.richWall.zp) o.visible = v2 === 'side'; for (const o of S.richWall.cc) o.visible = false; }
   { const vw = UI.camView || 'side'; for (const k in S.boards) { const hide = vw === 'side' ? (k === 's+') : (k[0] === 'e' && k[1] === '+'); for (const m of S.boards[k]) m.visible = !hide; } }
   s3Camera(M, ents, dt);
   S.ref.position.set(Cam.side || UI.camView === 'side' ? -6.1 : 6.1, 0, 0);
