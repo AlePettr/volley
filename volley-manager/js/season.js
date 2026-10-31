@@ -135,5 +135,5 @@ function mwHTML() {
 }
 
 const _homeHTML4 = homeHTML;
-const APP_BUILD = '1026o';
+const APP_BUILD = '1026p';
 homeHTML = function () { return (G && G.mw ? mwHTML() + hallHTML(true) : _homeHTML4() + hallHTML(false)) + `<p class="muted small" style="text-align:center;font-size:11px;margin:10px 0 0">versione ${APP_BUILD}</p>`; };
