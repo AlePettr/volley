@@ -107,11 +107,6 @@ function s3RichArena(S, scene, c) {
   const win = []; for (let x = -xW + 2; x <= xW - 2; x += 3.4) for (const s of [-1, 1]) win.push([keyZ(s), { g: BOX, m: s3M4(x + 1.7, 17.5, s * (zW - .15), 2.2, 2.4, .05) }]);
   for (let z = -zW + 2; z <= zW - 2; z += 3.4) for (const s of [-1, 1]) win.push([keyX(s), { g: BOX, m: s3M4(s * (xW - .15), 17.5, z + 1.7, .05, 2.4, 2.2) }]);
   grp(win, new THREE.MeshBasicMaterial({ color: 0x24385e }));
-  const band = c.bandTex;
-  for (const s of [-1, 1]) {
-    const a = new THREE.Mesh(new THREE.PlaneGeometry(2 * xW - 1, 1.1), new THREE.MeshBasicMaterial({ map: band })); a.position.set(0, 9.6, s * (zW - .35)); a.rotation.y = s > 0 ? Math.PI : 0; scene.add(a); W[keyZ(s)].push(a);
-    const b = new THREE.Mesh(new THREE.PlaneGeometry(2 * zW - 1, 1.1), new THREE.MeshBasicMaterial({ map: band })); b.position.set(s * (xW - .35), 9.6, 0); b.rotation.y = s > 0 ? -Math.PI / 2 : Math.PI / 2; scene.add(b); W[keyX(s)].push(b);
-  }
   /* portali con insegna USCITA */
   const exitTex = s3Tex(128, 32, (cx, w, h) => { cx.fillStyle = '#0c6b3a'; cx.fillRect(0, 0, w, h); cx.fillStyle = '#e8fff0'; cx.font = '700 22px Arial'; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText('USCITA', w / 2, h / 2 + 1); });
   const frameM = new THREE.MeshBasicMaterial({ color: 0x20314f }), holeM = new THREE.MeshBasicMaterial({ color: 0x02040a }), signM = new THREE.MeshBasicMaterial({ map: exitTex });
@@ -130,11 +125,6 @@ function s3RichArena(S, scene, c) {
   grp(cols, steel);
   const lite = []; for (let i = -4; i <= 4; i++) for (let x = -L + 2; x < L - 1; x += 4.4) lite.push({ g: BOX, m: s3M4(x, 22.45, i * 3.3, .5, .14, .28) });
   add(s3Merge(lite), new THREE.MeshBasicMaterial({ color: 0xfff1d6 }));
-
-  /* striscioni appesi */
-  const mkBanner = (top, mid, txt, sub) => s3Tex(128, 320, (cx, w, h) => { const g = cx.createLinearGradient(0, 0, 0, h); g.addColorStop(0, top); g.addColorStop(1, mid); cx.fillStyle = g; cx.fillRect(0, 0, w, h); cx.fillStyle = 'rgba(255,255,255,.88)'; cx.fillRect(0, h * .72, w, 6); cx.fillStyle = Gx.onColor(mid); cx.textAlign = 'center'; cx.font = '700 30px "Barlow Condensed",Arial Narrow,sans-serif'; cx.save(); cx.translate(w / 2, h * .45); cx.rotate(-Math.PI / 2); cx.fillText(txt, 0, 10); cx.restore(); cx.font = '600 15px Arial'; cx.fillText(sub, w / 2, h * .9); });
-  const bt = [mkBanner(kit.main, kit.shade, c.home, 'CASA'), mkBanner('#16213a', '#0b1222', 'SERIE A', 'FEMMINILE'), mkBanner('#f2f4f8', '#c9d0de', 'VOLLEY', 'ITALIA')];
-  let bi = 0; for (const s of [-1, 1]) for (let x = -8.5; x <= 8.5; x += 4.25) { const m = new THREE.Mesh(new THREE.PlaneGeometry(2, 5), new THREE.MeshBasicMaterial({ map: bt[bi++ % 3], side: THREE.DoubleSide })); m.position.set(x, 18.2, s * (zW - 2.2)); scene.add(m); W[keyZ(s)].push(m); const m2 = m.clone(); m2.position.set(s * (xW - 2.2), 18.2, x * 1.1); m2.rotation.y = Math.PI / 2; scene.add(m2); W[keyX(s)].push(m2); }
 
   /* telecamere TV e steward dietro i cartelloni */
   const camG = (x, z, ry) => { const g = new THREE.Group(), leg = new THREE.MeshLambertMaterial({ color: 0x141a28 }); for (const a of [0, 2.1, 4.2]) { const l = new THREE.Mesh(new THREE.CylinderGeometry(.015, .02, 1.3, 5), leg); l.position.set(Math.cos(a) * .22, .65, Math.sin(a) * .22); l.rotation.set(Math.sin(a) * .18, 0, -Math.cos(a) * .18); g.add(l); } const body = new THREE.Mesh(new THREE.BoxGeometry(.32, .28, .6), leg); body.position.set(0, 1.45, 0); const lens = new THREE.Mesh(new THREE.CylinderGeometry(.09, .1, .36, 10), new THREE.MeshLambertMaterial({ color: 0x0a0e18 })); lens.rotation.x = Math.PI / 2; lens.position.set(0, 1.45, .46); const lamp = new THREE.Mesh(new THREE.SphereGeometry(.03, 6, 4), new THREE.MeshBasicMaterial({ color: 0xff2a2a })); lamp.position.set(0, 1.62, -.2); g.add(body, lens, lamp); g.position.set(x, 0, z); g.rotation.y = ry; scene.add(g); };
