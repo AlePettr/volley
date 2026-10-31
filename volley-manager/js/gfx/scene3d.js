@@ -343,7 +343,7 @@ function s3Rig(M, e) {
   const numF = new THREE.Mesh(new THREE.PlaneGeometry(.12, .12), new THREE.MeshBasicMaterial({ map: frontTex, transparent: true })); g.add(numF); parts.numF = numF;
   const shadow = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), S.shadowMat); shadow.rotation.x = -Math.PI / 2; shadow.position.y = .012;
   S.scene.add(g); S.scene.add(shadow);
-  rig = { K, look, hh, key, g, parts, shadow, hair: S3_HAIR[(look.style || 0) % S3_HAIR.length], ph: (hh % 628) / 100, band: hh % 3 === 0, fringe: (look.style === 2 || look.style === 3) };
+  rig = { team: e.side === 'h' ? M.home : M.away, K, look, hh, key, g, parts, shadow, hair: S3_HAIR[(look.style || 0) % S3_HAIR.length], ph: (hh % 628) / 100, band: hh % 3 === 0, fringe: (look.style === 2 || look.style === 3) };
   S.rigs.set(e.p.id, rig); return rig;
 }
 

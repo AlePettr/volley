@@ -39,7 +39,9 @@ function skAttach(rig) {
     if (head && H.parts.length) { const hm = new THREE.MeshStandardMaterial({ color: rig.look.hair, roughness: .6 }); SK.hairGeo = SK.hairGeo || new THREE.SphereGeometry(1, 14, 10);
       for (const q of H.parts) { const o = new THREE.Mesh(SK.hairGeo, hm); o.position.set(...q.c).applyMatrix4(inv); o.quaternion.copy(qi); if (q.rx) o.rotateX(q.rx); o.scale.set(...q.s); o.castShadow = true; head.add(o); } } }
   /* numeri di maglia attaccati al busto (ossa della schiena): seguono la rotazione e stanno sulla superficie della maglia */
-  const ch = skBones(root).Spine2; if (ch && rig.parts.num) { ch.add(rig.parts.num, rig.parts.numF); rig.parts.num.position.set(0, -.09, -.102); rig.parts.num.rotation.set(0, Math.PI, 0); rig.parts.numF.position.set(.07, -.05, .153); rig.parts.numF.rotation.set(0, 0, 0); }
+  const ch = skBones(root).Spine2; if (ch && rig.parts.num) { ch.add(rig.parts.num, rig.parts.numF); rig.parts.num.position.set(0, -.09, -.102); rig.parts.num.rotation.set(0, Math.PI, 0); rig.parts.numF.position.set(-.075, -.05, .153); rig.parts.numF.rotation.set(0, 0, 0);
+    /* stemma della squadra sul petto, a destra guardando la giocatrice di fronte */
+    if (rig.team) { const cm = new THREE.Mesh(SK.crestGeo || (SK.crestGeo = new THREE.PlaneGeometry(.12, .12)), new THREE.MeshBasicMaterial({ map: skCrestTex(rig.team), transparent: true })); cm.position.set(.08, -.035, .154); ch.add(cm); } }
   for (const n in rig.parts) if (n !== 'num' && n !== 'numF') rig.parts[n].visible = false;
   rig.sk = { root, B: skBones(root) };
 }
@@ -141,3 +143,14 @@ const _homeHTMLsk = homeHTML;
 homeHTML = function () {
   return _homeHTMLsk() + (skEnabled() && SK.state !== 'error' && !SK.off ? `<p class="muted small" style="margin:14px 0 4px;text-align:center;font-size:11px">Modello 3D delle atlete: "Sporty Girl _Rigged_ Free." di <a href="https://sketchfab.com/NABEEL619" target="_blank" rel="noopener">NABEEL619</a> (<a href="https://sketchfab.com/3d-models/sporty-girl--rigged--free-00d9e7c3bc1648fd8d994bf27640d8a7" target="_blank" rel="noopener">fonte</a>), licenza <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Modificato: colori e texture.</p>` : '');
 };
+
+/* texture dello stemma: usa il logo del club se c'e' (cartella logos/), altrimenti lo stemma generato; si disegna quando l'immagine e' pronta */
+const SK_CREST = {};
+function skCrestTex(t) {
+  const key = t.id; if (SK_CREST[key]) return SK_CREST[key];
+  const c = document.createElement('canvas'); c.width = c.height = 128; const tex = new THREE.CanvasTexture(c); tex.anisotropy = 4; SK_CREST[key] = tex;
+  const img = new Image();
+  img.onload = () => { const x = c.getContext('2d'), r = Math.min(124 / img.width, 124 / img.height), w = img.width * r, h = img.height * r; x.clearRect(0, 0, 128, 128); x.drawImage(img, (128 - w) / 2, (128 - h) / 2, w, h); tex.needsUpdate = true; };
+  try { img.src = t.logo || ('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(crestSVG(t, 128))); } catch (e) { }
+  return tex;
+}
