@@ -283,7 +283,7 @@ function s3Build(M) {
   }
   /* raccattapalle ai quattro angoli e segnalinee con bandierina */
   for (const [x, z] of [[-8, -10.4], [8, -10.4], [-8, 10.4], [8, 10.4]]) person(x, z, Math.atan2(-x, -z), '#f2f4f8', '#243153', true, 0, 0).scale.setScalar(.8);
-  for (const [x, z] of [[-6.4, -10.3], [6.4, 10.3]]) { const g = person(x, z, Math.atan2(-x, -z), '#f2f4f8', '#141b2d', false, 0, 0); const fl = new THREE.Mesh(new THREE.PlaneGeometry(.28, .22), new THREE.MeshBasicMaterial({ color: 0xf2c230, side: THREE.DoubleSide })); fl.position.set(.3, 1.45, .1); g.add(fl); }
+  for (const [x, z] of []) { const g = person(x, z, Math.atan2(-x, -z), '#f2f4f8', '#141b2d', false, 0, 0); const fl = new THREE.Mesh(new THREE.PlaneGeometry(.28, .22), new THREE.MeshBasicMaterial({ color: 0xf2c230, side: THREE.DoubleSide })); fl.position.set(.3, 1.45, .1); g.add(fl); }
   if (S.hi && S.richStewards) for (const [x, z] of S.richStewards) person(x, z, Math.atan2(-x, -z), '#e8d23a', '#1c2538', false, 0, 0);
   /* tabellone sospeso sopra il campo (4 facce) */
   { const bt = S.sbTex = s3Tex(512, 192, () => { }), bm = new THREE.MeshBasicMaterial({ map: bt });
