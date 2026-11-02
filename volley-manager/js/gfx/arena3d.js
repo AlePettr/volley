@@ -101,9 +101,9 @@ function s3RichArena(S, scene, c) {
     const glow = new THREE.MeshBasicMaterial({ color: 0xbfd9ff });
     for (const s of [-1, 1]) {
       const zl = END0 + c.rEL * stepD, zu = END0 + (c.rEL + c.GAP) * stepD, xl = SIDE0 + c.rSL * stepD, xu = SIDE0 + (c.rSL + c.GAP) * stepD, yu = c.hTopE + 1.8 + .5, ys = c.hTopS + 1.8 + .5;
-      add(new THREE.BoxGeometry(c.endSpanU, .8, .04), glass).position.set(0, c.hTopE + .9, s * (zl - .1)); add(new THREE.BoxGeometry(c.endSpanU, .05, .09), rail).position.set(0, c.hTopE + 1.32, s * (zl - .1));
-      add(new THREE.BoxGeometry(.04, .8, 2 * END0 - 1), glass).position.set(s * (xl - .1), c.hTopS + .9, 0); add(new THREE.BoxGeometry(.09, .05, 2 * END0 - 1), rail).position.set(s * (xl - .1), c.hTopS + 1.32, 0);
-      add(new THREE.BoxGeometry(c.endSpanU, .1, .12), glow).position.set(0, yu - .05, s * (zu + .02)); add(new THREE.BoxGeometry(.12, .1, 2 * END0 - 1), glow).position.set(s * (xu + .02), ys - .05, 0);
+      add(new THREE.BoxGeometry(2 * (SIDE0 + c.rEL * stepD), .8, .04), glass).position.set(0, c.hTopE + .9, s * (zl - .1)); add(new THREE.BoxGeometry(2 * (SIDE0 + c.rEL * stepD), .05, .09), rail).position.set(0, c.hTopE + 1.32, s * (zl - .1));
+      add(new THREE.BoxGeometry(.04, .8, 2 * (END0 + c.rSL * stepD)), glass).position.set(s * (xl - .1), c.hTopS + .9, 0); add(new THREE.BoxGeometry(.09, .05, 2 * (END0 + c.rSL * stepD)), rail).position.set(s * (xl - .1), c.hTopS + 1.32, 0);
+      add(new THREE.BoxGeometry(2 * (SIDE0 + (c.rEL + c.GAP) * stepD), .1, .12), glow).position.set(0, yu - .05, s * (zu + .02)); add(new THREE.BoxGeometry(.12, .1, 2 * (END0 + (c.rSL + c.GAP) * stepD)), glow).position.set(s * (xu + .02), ys - .05, 0);
     }
   }
   /* le pareti dal lato della camera (x+ per la laterale, z+ per le altre) nascondono i propri dettagli: la camera sta oltre il muro */

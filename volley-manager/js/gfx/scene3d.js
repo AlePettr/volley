@@ -123,36 +123,39 @@ function s3Build(M) {
   /* tribune a gradoni nei colori del club di casa + pubblico a istanze */
   const seat = [Gx.dark(homeKit.main, .8), Gx.dark(homeKit.main, .72)], tint = [homeKit.main, Gx.light(homeKit.main, .4), '#f5f7fb', '#1d2a44'];
   const stepD = .95, rowsEnd = TH.rowsFar, rowsSide = TH.rowsSide, spots = [], seatsL = [];
-  const addStand = (axis, sign, rows, start, span, centre, h0 = 0, dh = .4, rr0 = 0) => {
+  const addStand = (axis, sign, rows, start, span, centre, h0 = 0, dh = .4, rr0 = 0, mit = false) => {
     for (let r = 0; r < rows; r++) {
       const h = .5 + h0 + r * dh, d = start + r * stepD + stepD / 2;
-      const geo = axis === 'z' ? new THREE.BoxGeometry(span, h, stepD) : new THREE.BoxGeometry(stepD, h, span);
-      const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: seat[r % 2] }));
+      /* anello con angoli a 45 gradi: ogni fila di fondo e laterale arriva fino alla diagonale, dove gli spettatori si dividono senza sovrapporsi */
+      const spanR = mit ? 2 * ((axis === 'z' ? SIDE0 : END0) + (Math.floor((d - (axis === 'z' ? END0 : SIDE0)) / stepD) + 1) * stepD) : span;
+      const geo = axis === 'z' ? new THREE.BoxGeometry(spanR, h, stepD) : new THREE.BoxGeometry(stepD, h, spanR);
+      const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: seat[(r + rr0) % 2] }));
       if (axis === 'z') m.position.set(centre, h / 2, sign * d); else m.position.set(sign * d, h / 2, centre);
       scene.add(m);
-      const n = Math.floor(span / .56);
+      const n = Math.floor(spanR / .56);
       const yawS = axis === 'z' ? (sign > 0 ? Math.PI : 0) : (sign > 0 ? -Math.PI / 2 : Math.PI / 2);
       for (let i = 0; i < n; i++) {
-        { const a0 = centre - span / 2 + (i + .5) * span / n; seatsL.push(axis === 'z' ? { x: a0, y: h, z: sign * d, yaw: yawS, a: a0 + 20, r } : { x: sign * d, y: h, z: a0, yaw: yawS, a: a0 + 20, r }); }
+        const a0 = centre - spanR / 2 + (i + .5) * spanR / n;
+        if (mit) { const cross = Math.abs(a0) - (axis === 'z' ? SIDE0 : END0), own = d - (axis === 'z' ? END0 : SIDE0); if (axis === 'z' ? !(cross < own) : !(cross <= own)) continue; }
+        seatsL.push(axis === 'z' ? { x: a0, y: h, z: sign * d, yaw: yawS, a: a0 + 20, r: r + rr0 } : { x: sign * d, y: h, z: a0, yaw: yawS, a: a0 + 20, r: r + rr0 });
         if (R() > Math.min(1, TH.density * .95 + .1)) continue;
-        const a = centre - span / 2 + (i + .5) * span / n + (R() - .5) * .12;
+        const a = a0 + (R() - .5) * .12;
         spots.push(axis === 'z' ? { x: a, y: h, z: sign * (d + (R() - .5) * .25), yaw: yawS } : { x: sign * (d + (R() - .5) * .25), y: h, z: a, yaw: yawS });
       }
     }
   };
-  /* alta definizione: gradinata bassa piu' profonda, corridoio e anello superiore, come in un'arena */
-  const HI = !!S.hi, XL = HI ? 2 : 0, GAP = HI ? 2 : 0, RU = HI ? 4 : 0, DH = HI ? .45 : .4, DU = .55;
-  const rEL = rowsEnd + XL, rSL = rowsSide + XL;
-  const END0 = 14.4, SIDE0 = 11.2, endSpan = 2 * (SIDE0 + rSL * stepD), endSpanU = 2 * (SIDE0 + (rSL + GAP + RU) * stepD);
+  /* alta definizione: anello unico piu' profondo con corridoio e secondo anello, come in un'arena */
+  const HI = !!S.hi, GAP = HI ? 2 : 0, RU = HI ? 4 : 0, DH = HI ? .45 : .4, DU = .55;
+  const RL = HI ? Math.round((rowsEnd + rowsSide) / 2) + 2 : 0, rEL = HI ? RL : rowsEnd, rSL = HI ? RL : rowsSide;
+  const END0 = 14.4, SIDE0 = 11.2, endSpan = HI ? 2 * SIDE0 : 2 * (SIDE0 + rSL * stepD), endSpanU = 2 * (SIDE0 + (rSL + GAP + RU) * stepD);
   const hTopE = .5 + (rEL - 1) * DH, hTopS = .5 + (rSL - 1) * DH, concMat = new THREE.MeshLambertMaterial({ color: 0x1a2438 });
   for (const s of [-1, 1]) {
-    addStand('z', s, rEL, END0, endSpan, 0, 0, DH); addStand('x', s, rSL, SIDE0, 2 * END0 - 1, 0, 0, DH);
-    if (HI) {
-      const cz = new THREE.Mesh(new THREE.BoxGeometry(endSpanU, hTopE, GAP * stepD), concMat); cz.position.set(0, hTopE / 2, s * (END0 + rEL * stepD + GAP * stepD / 2)); scene.add(cz);
-      const cx = new THREE.Mesh(new THREE.BoxGeometry(GAP * stepD, hTopS, 2 * END0 - 1), concMat); cx.position.set(s * (SIDE0 + rSL * stepD + GAP * stepD / 2), hTopS / 2, 0); scene.add(cx);
-      addStand('z', s, RU, END0 + (rEL + GAP) * stepD, endSpanU, 0, hTopE - .5 + 1.8, DU, rEL);
-      addStand('x', s, RU, SIDE0 + (rSL + GAP) * stepD, 2 * END0 - 1, 0, hTopS - .5 + 1.8, DU, rSL);
-    }
+    if (!HI) { addStand('z', s, rEL, END0, endSpan, 0, 0, DH); addStand('x', s, rSL, SIDE0, 2 * END0 - 1, 0, 0, DH); continue; }
+    addStand('z', s, RL, END0, 0, 0, 0, DH, 0, true); addStand('x', s, RL, SIDE0, 0, 0, 0, DH, 0, true);
+    const cz = new THREE.Mesh(new THREE.BoxGeometry(2 * (SIDE0 + (RL + GAP) * stepD), hTopE, GAP * stepD), concMat); cz.position.set(0, hTopE / 2, s * (END0 + RL * stepD + GAP * stepD / 2)); scene.add(cz);
+    const cx = new THREE.Mesh(new THREE.BoxGeometry(GAP * stepD, hTopS, 2 * (END0 + (RL + GAP) * stepD)), concMat); cx.position.set(s * (SIDE0 + RL * stepD + GAP * stepD / 2), hTopS / 2, 0); scene.add(cx);
+    addStand('z', s, RU, END0 + (RL + GAP) * stepD, 0, 0, hTopE - .5 + 1.8, DU, RL, true);
+    addStand('x', s, RU, SIDE0 + (RL + GAP) * stepD, 0, 0, hTopS - .5 + 1.8, DU, RL, true);
   }
   S.topH = Math.max(hTopE, hTopS) + 1.8 + RU * DU;
   /* pareti scure dietro le gradinate e soffitto con fari */
