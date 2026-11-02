@@ -7,6 +7,7 @@ function s3Hi() {
   } catch (e) { }
   return !(/Android|iPhone|iPad|Mobi/i.test(navigator.userAgent) || Math.min(innerWidth, innerHeight) < 520);
 }
+function s3Rnd() { try { return localStorage.getItem('vm-arena') === 'rnd'; } catch (e) { return false; } }
 function s3Merge(items) {
   const P = [], N = [], I = []; let off = 0;
   for (const it of items) {
@@ -22,6 +23,24 @@ function s3Merge(items) {
 }
 const s3M4 = (x, y, z, sx = 1, sy = 1, sz = 1, rx = 0, ry = 0, rz = 0) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz)), new THREE.Vector3(sx, sy, sz));
 const S3_HAIRC = ['#14100c', '#241a12', '#3a281a', '#5a3b22', '#8a5a2e', '#c9a25a', '#d9c08a', '#6b6b6b', '#b8b8b8', '#7a2a1c'];
+/* forme e palette dei palazzetti: ogni club ne ha una stabile (da id), oppure casuale a ogni partita */
+const S3_PAL = [
+  { conc: 0x1a2438, steel: 0x1b2438, pil: 0x15203a, glow: 0xbfd9ff, win: 0x24385e },
+  { conc: 0x3a3028, steel: 0x2c2823, pil: 0x2a221c, glow: 0xffe2b0, win: 0x4a3a28 },
+  { conc: 0x4a5262, steel: 0x6a7384, pil: 0x3a4252, glow: 0xffffff, win: 0x56688a }
+];
+const S3_FORMS = [
+  { name: 'Arena a due anelli', xl: 2, gap: 2, ru: 4, dh: .45, du: .55 },
+  { name: 'Palasport a un anello', xl: 5, gap: 0, ru: 0, dh: .5, du: .5 },
+  { name: 'Conca ripida', xl: 1, gap: 1, ru: 6, dh: .5, du: .7 },
+  { name: 'Doppio anello largo', xl: 3, gap: 3, ru: 3, dh: .4, du: .5 }
+];
+function s3ArenaVariant(M) {
+  let rnd = false; try { rnd = localStorage.getItem('vm-arena') === 'rnd'; } catch (e) { }
+  const q = new URLSearchParams(location.search).get('arena'), h = Gx.hash(String((M.home && M.home.id) || 'x') + 'forma');
+  const f = q !== null && S3_FORMS[+q % 4] ? +q % 4 : rnd ? Math.floor(Math.random() * 4) : h % 4, p = q !== null ? (+q >> 2) % 3 : rnd ? Math.floor(Math.random() * 3) : (h >> 3) % 3;
+  return Object.assign({ pal: p }, S3_FORMS[f]);
+}
 const S3_JEANS = ['#1f2a44', '#26344f', '#141820', '#3a4a66', '#5a5040', '#d8d4c8', '#2c2c32'];
 
 /* ---------- pubblico ---------- */
@@ -79,7 +98,7 @@ function s3RichCrowdUpdate(cr, time, ex, lw) {
 /* ---------- struttura del palazzetto ---------- */
 function s3RichArena(S, scene, c) {
   const { TH, kit, xW, zW, END0, SIDE0, endSpan, stepD, seats, rowsEnd, rowsSide } = c, R = Gx.rng(Gx.hash('rich-arena')), BOX = new THREE.BoxGeometry(1, 1, 1);
-  const steel = new THREE.MeshLambertMaterial({ color: 0x1b2438 }), dark = new THREE.MeshLambertMaterial({ color: 0x0c1220 });
+  const PAL = c.pal || S3_PAL[0], steel = new THREE.MeshLambertMaterial({ color: PAL.steel }), dark = new THREE.MeshLambertMaterial({ color: 0x0c1220 });
   const beam = (a, b, t) => { const d = b.clone().sub(a), len = d.length(), q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); return { g: BOX, m: new THREE.Matrix4().compose(a.clone().add(b).multiplyScalar(.5), q, new THREE.Vector3(t, len, t)) }; };
   const V = (x, y, z) => new THREE.Vector3(x, y, z), add = (g, m) => { const o = new THREE.Mesh(g, m); scene.add(o); return o; };
 
@@ -98,7 +117,7 @@ function s3RichArena(S, scene, c) {
   }
   /* anello superiore: parapetti e fascia luminosa al bordo di ogni settore */
   if (c.RU) {
-    const glow = new THREE.MeshBasicMaterial({ color: 0xbfd9ff });
+    const glow = new THREE.MeshBasicMaterial({ color: PAL.glow });
     for (const s of [-1, 1]) {
       const zl = END0 + c.rEL * stepD, zu = END0 + (c.rEL + c.GAP) * stepD, xl = SIDE0 + c.rSL * stepD, xu = SIDE0 + (c.rSL + c.GAP) * stepD, yu = c.hTopE + 1.8 + .5, ys = c.hTopS + 1.8 + .5;
       add(new THREE.BoxGeometry(2 * (SIDE0 + c.rEL * stepD), .8, .04), glass).position.set(0, c.hTopE + .9, s * (zl - .1)); add(new THREE.BoxGeometry(2 * (SIDE0 + c.rEL * stepD), .05, .09), rail).position.set(0, c.hTopE + 1.32, s * (zl - .1));
@@ -113,10 +132,10 @@ function s3RichArena(S, scene, c) {
   /* pilastri a parete, fascia LED, finestre alte */
   const pil = []; for (let x = -xW + 1; x <= xW - .9; x += 3.4) for (const s of [-1, 1]) pil.push([keyZ(s), { g: BOX, m: s3M4(x, 12, s * (zW - .25), .5, 24, .5) }]);
   for (let z = -zW + 1; z <= zW - .9; z += 3.4) for (const s of [-1, 1]) pil.push([keyX(s), { g: BOX, m: s3M4(s * (xW - .25), 12, z, .5, 24, .5) }]);
-  grp(pil, new THREE.MeshLambertMaterial({ color: 0x15203a }));
+  grp(pil, new THREE.MeshLambertMaterial({ color: PAL.pil }));
   const win = []; for (let x = -xW + 2; x <= xW - 2; x += 3.4) for (const s of [-1, 1]) win.push([keyZ(s), { g: BOX, m: s3M4(x + 1.7, 17.5, s * (zW - .15), 2.2, 2.4, .05) }]);
   for (let z = -zW + 2; z <= zW - 2; z += 3.4) for (const s of [-1, 1]) win.push([keyX(s), { g: BOX, m: s3M4(s * (xW - .15), 17.5, z + 1.7, .05, 2.4, 2.2) }]);
-  grp(win, new THREE.MeshBasicMaterial({ color: 0x24385e }));
+  grp(win, new THREE.MeshBasicMaterial({ color: PAL.win }));
   /* portali con insegna USCITA */
   const exitTex = s3Tex(128, 32, (cx, w, h) => { cx.fillStyle = '#0c6b3a'; cx.fillRect(0, 0, w, h); cx.fillStyle = '#e8fff0'; cx.font = '700 22px Arial'; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText('USCITA', w / 2, h / 2 + 1); });
   const frameM = new THREE.MeshBasicMaterial({ color: 0x20314f }), holeM = new THREE.MeshBasicMaterial({ color: 0x02040a }), signM = new THREE.MeshBasicMaterial({ map: exitTex });
@@ -144,6 +163,8 @@ function s3RichArena(S, scene, c) {
 
 /* ---------- impostazione dal menu ---------- */
 document.addEventListener('click', e => {
+  const el2 = e.target.closest('[data-arena]');
+  if (el2) { let r = false; try { r = localStorage.getItem('vm-arena') === 'rnd'; localStorage.setItem('vm-arena', r ? 'club' : 'rnd'); } catch (x) { } if (typeof toast === 'function') toast(r ? 'Ogni club avra\' il proprio palazzetto.' : 'Palazzetto casuale a ogni partita.'); if (typeof render === 'function') render(); return; }
   const el = e.target.closest('[data-gfx]'); if (!el) return;
   let hi = s3Hi(); try { localStorage.setItem('vm-gfx', hi ? 'lo' : 'hi'); } catch (x) { }
   if (typeof toast === 'function') toast(hi ? 'Palazzetto standard: dalla prossima partita.' : 'Palazzetto ad alto dettaglio: dalla prossima partita.');
@@ -151,5 +172,5 @@ document.addEventListener('click', e => {
 });
 (function () {
   const _h = homeHTML;
-  homeHTML = function () { const h = _h.apply(this, arguments); return h + `<p style="text-align:center;margin:10px 0 0"><button class="btn" data-gfx="1">Palazzetto 3D: ${s3Hi() ? 'Alta definizione' : 'Standard'}</button></p>`; };
+  homeHTML = function () { const h = _h.apply(this, arguments); return h + `<p style="text-align:center;margin:10px 0 0"><button class="btn" data-gfx="1">Palazzetto 3D: ${s3Hi() ? 'Alta definizione' : 'Standard'}</button>${s3Hi() ? ` <button class="btn" data-arena="1">Forma: ${s3Rnd() ? 'casuale' : 'per club'}</button>` : ''}</p>`; };
 })();

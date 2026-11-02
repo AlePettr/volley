@@ -145,19 +145,20 @@ function s3Build(M) {
     }
   };
   /* alta definizione: anello unico piu' profondo con corridoio e secondo anello, come in un'arena */
-  const HI = !!S.hi, GAP = HI ? 2 : 0, RU = HI ? 4 : 0, DH = HI ? .45 : .4, DU = .55;
-  const RL = HI ? Math.round((rowsEnd + rowsSide) / 2) + 2 : 0, rEL = HI ? RL : rowsEnd, rSL = HI ? RL : rowsSide;
+  const HI = !!S.hi, AV = HI && typeof s3ArenaVariant === 'function' ? s3ArenaVariant(M) : { xl: 2, gap: 2, ru: 4, dh: .45, du: .55, pal: 0 };
+  S.av = AV; const GAP = HI ? AV.gap : 0, RU = HI ? AV.ru : 0, DH = HI ? AV.dh : .4, DU = AV.du;
+  const RL = HI ? Math.round((rowsEnd + rowsSide) / 2) + AV.xl : 0, rEL = HI ? RL : rowsEnd, rSL = HI ? RL : rowsSide;
   const END0 = 14.4, SIDE0 = 11.2, endSpan = HI ? 2 * SIDE0 : 2 * (SIDE0 + rSL * stepD), endSpanU = 2 * (SIDE0 + (rSL + GAP + RU) * stepD);
-  const hTopE = .5 + (rEL - 1) * DH, hTopS = .5 + (rSL - 1) * DH, concMat = new THREE.MeshLambertMaterial({ color: 0x1a2438 });
+  const hTopE = .5 + (rEL - 1) * DH, hTopS = .5 + (rSL - 1) * DH, concMat = new THREE.MeshLambertMaterial({ color: (typeof S3_PAL !== 'undefined' && S3_PAL[AV.pal || 0].conc) || 0x1a2438 });
   for (const s of [-1, 1]) {
     if (!HI) { addStand('z', s, rEL, END0, endSpan, 0, 0, DH); addStand('x', s, rSL, SIDE0, 2 * END0 - 1, 0, 0, DH); continue; }
     addStand('z', s, RL, END0, 0, 0, 0, DH, 0, true); addStand('x', s, RL, SIDE0, 0, 0, 0, DH, 0, true);
-    const cz = new THREE.Mesh(new THREE.BoxGeometry(2 * (SIDE0 + (RL + GAP) * stepD), hTopE, GAP * stepD), concMat); cz.position.set(0, hTopE / 2, s * (END0 + RL * stepD + GAP * stepD / 2)); scene.add(cz);
-    const cx = new THREE.Mesh(new THREE.BoxGeometry(GAP * stepD, hTopS, 2 * (END0 + (RL + GAP) * stepD)), concMat); cx.position.set(s * (SIDE0 + RL * stepD + GAP * stepD / 2), hTopS / 2, 0); scene.add(cx);
-    addStand('z', s, RU, END0 + (RL + GAP) * stepD, 0, 0, hTopE - .5 + 1.8, DU, RL, true);
-    addStand('x', s, RU, SIDE0 + (RL + GAP) * stepD, 0, 0, hTopS - .5 + 1.8, DU, RL, true);
+    if (GAP) { const cz = new THREE.Mesh(new THREE.BoxGeometry(2 * (SIDE0 + (RL + GAP) * stepD), hTopE, GAP * stepD), concMat); cz.position.set(0, hTopE / 2, s * (END0 + RL * stepD + GAP * stepD / 2)); scene.add(cz);
+    const cx = new THREE.Mesh(new THREE.BoxGeometry(GAP * stepD, hTopS, 2 * (END0 + (RL + GAP) * stepD)), concMat); cx.position.set(s * (SIDE0 + RL * stepD + GAP * stepD / 2), hTopS / 2, 0); scene.add(cx); }
+    if (RU) { addStand('z', s, RU, END0 + (RL + GAP) * stepD, 0, 0, hTopE - .5 + 1.8, DU, RL, true);
+    addStand('x', s, RU, SIDE0 + (RL + GAP) * stepD, 0, 0, hTopS - .5 + 1.8, DU, RL, true); }
   }
-  S.topH = Math.max(hTopE, hTopS) + 1.8 + RU * DU;
+  S.topH = Math.max(hTopE, hTopS) + (RU ? 1.8 + RU * DU : .6);
   /* pareti scure dietro le gradinate e soffitto con fari */
   /* pareti visibili solo dall'interno: le camere larghe stanno oltre i gradoni e non devono vedere il retro */
   const wallMat = new THREE.MeshLambertMaterial({ color: new THREE.Color(TH.wall[1]).multiplyScalar(.8) });
@@ -211,7 +212,7 @@ function s3Build(M) {
       scene.remove(bodies); scene.remove(heads);
       S.crowd.rich = s3RichCrowd(S, scene, { spots, cc: cc_, sk: sk_, team, base });
       const bandTex = s3Tex(2048, 64, (c, w, h) => { c.fillStyle = homeKit.shade; c.fillRect(0, 0, w, h); const it = [(M.home.city || M.home.short).toUpperCase(), 'SERIE A FEMMINILE', M.home.short.toUpperCase(), 'VOLLEY MANAGER', 'FRECCIAROSSA', 'FINECO']; c.fillStyle = Gx.onColor(homeKit.shade); c.font = '700 38px "Barlow Condensed",Arial Narrow,sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; for (let k = 0; k < 12; k++) c.fillText(it[k % it.length], (k + .5) * w / 12, h / 2 + 2); });
-      s3RichArena(S, scene, { TH, kit: homeKit, xW, zW, END0, SIDE0, endSpan, endSpanU, stepD, seats: seatsL, rowsEnd: rEL, rowsSide: rSL, rEL, rSL, GAP, RU, DH, DU, hTopE, hTopS, topH: S.topH, bandTex, home: (M.home.city || M.home.short).toUpperCase() });
+      s3RichArena(S, scene, { pal: (typeof S3_PAL !== 'undefined' && S3_PAL[AV.pal || 0]) || null, TH, kit: homeKit, xW, zW, END0, SIDE0, endSpan, endSpanU, stepD, seats: seatsL, rowsEnd: rEL, rowsSide: rSL, rEL, rSL, GAP, RU, DH, DU, hTopE, hTopS, topH: S.topH, bandTex, home: (M.home.city || M.home.short).toUpperCase() });
     } catch (e) { console.warn('palazzetto HD non disponibile', e); S.hi = false; S.crowd.rich = null; if (!bodies.parent) { scene.add(bodies); scene.add(heads); } }
   }
 
