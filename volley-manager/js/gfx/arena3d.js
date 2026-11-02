@@ -96,6 +96,16 @@ function s3RichArena(S, scene, c) {
     add(new THREE.BoxGeometry(endSpan, .8, .04), glass).position.set(0, .9, s * (END0 - .22)); add(new THREE.BoxGeometry(endSpan, .05, .09), rail).position.set(0, 1.32, s * (END0 - .22));
     add(new THREE.BoxGeometry(.04, .8, 2 * END0 - 1), glass).position.set(s * (SIDE0 - .22), .9, 0); add(new THREE.BoxGeometry(.09, .05, 2 * END0 - 1), rail).position.set(s * (SIDE0 - .22), 1.32, 0);
   }
+  /* anello superiore: parapetti e fascia luminosa al bordo di ogni settore */
+  if (c.RU) {
+    const glow = new THREE.MeshBasicMaterial({ color: 0xbfd9ff });
+    for (const s of [-1, 1]) {
+      const zl = END0 + c.rEL * stepD, zu = END0 + (c.rEL + c.GAP) * stepD, xl = SIDE0 + c.rSL * stepD, xu = SIDE0 + (c.rSL + c.GAP) * stepD, yu = c.hTopE + 1.8 + .5, ys = c.hTopS + 1.8 + .5;
+      add(new THREE.BoxGeometry(c.endSpanU, .8, .04), glass).position.set(0, c.hTopE + .9, s * (zl - .1)); add(new THREE.BoxGeometry(c.endSpanU, .05, .09), rail).position.set(0, c.hTopE + 1.32, s * (zl - .1));
+      add(new THREE.BoxGeometry(.04, .8, 2 * END0 - 1), glass).position.set(s * (xl - .1), c.hTopS + .9, 0); add(new THREE.BoxGeometry(.09, .05, 2 * END0 - 1), rail).position.set(s * (xl - .1), c.hTopS + 1.32, 0);
+      add(new THREE.BoxGeometry(c.endSpanU, .1, .12), glow).position.set(0, yu - .05, s * (zu + .02)); add(new THREE.BoxGeometry(.12, .1, 2 * END0 - 1), glow).position.set(s * (xu + .02), ys - .05, 0);
+    }
+  }
   /* le pareti dal lato della camera (x+ per la laterale, z+ per le altre) nascondono i propri dettagli: la camera sta oltre il muro */
   const W = S.richWall = { xp: [], xm: [], zp: [], zm: [], cc: [] }, keyZ = s => s > 0 ? 'zp' : 'zm', keyX = s => s > 0 ? 'xp' : 'xm';
   const wadd = (key, obj) => { W[key].push(obj); return obj; };
@@ -110,7 +120,7 @@ function s3RichArena(S, scene, c) {
   /* portali con insegna USCITA */
   const exitTex = s3Tex(128, 32, (cx, w, h) => { cx.fillStyle = '#0c6b3a'; cx.fillRect(0, 0, w, h); cx.fillStyle = '#e8fff0'; cx.font = '700 22px Arial'; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText('USCITA', w / 2, h / 2 + 1); });
   const frameM = new THREE.MeshBasicMaterial({ color: 0x20314f }), holeM = new THREE.MeshBasicMaterial({ color: 0x02040a }), signM = new THREE.MeshBasicMaterial({ map: exitTex });
-  const portal = (x, z, ry, key) => { const g = new THREE.Group(); const fr = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 4.4), frameM), ho = new THREE.Mesh(new THREE.PlaneGeometry(3.1, 4), holeM), sg = new THREE.Mesh(new THREE.PlaneGeometry(1.4, .35), signM); ho.position.z = .01; sg.position.set(0, 2.6, .02); g.add(fr, ho, sg); g.position.set(x, 6.6, z); g.rotation.y = ry; scene.add(g); W[key].push(g); };
+  const portal = (x, z, ry, key) => { const g = new THREE.Group(); const fr = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 4.4), frameM), ho = new THREE.Mesh(new THREE.PlaneGeometry(3.1, 4), holeM), sg = new THREE.Mesh(new THREE.PlaneGeometry(1.4, .35), signM); ho.position.z = .01; sg.position.set(0, 2.6, .02); g.add(fr, ho, sg); g.position.set(x, (c.topH || 4) + 3.4, z); g.rotation.y = ry; scene.add(g); W[key].push(g); };
   for (const x of [-8, 0, 8]) for (const s of [-1, 1]) portal(x, s * (zW - .32), s > 0 ? Math.PI : 0, keyZ(s));
   for (const z of [-8, 0, 8]) for (const s of [-1, 1]) portal(s * (xW - .32), z, s > 0 ? -Math.PI / 2 : Math.PI / 2, keyX(s));
 
