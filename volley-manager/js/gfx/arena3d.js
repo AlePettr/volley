@@ -39,7 +39,12 @@ const S3_FORMS = [
   { name: 'Palasport ad arco', xl: 5, gap: 0, ru: 0, dh: .5, du: .5, arch: true },
   { name: 'Staffa con tetto ad arco', xl: 5, gap: 0, ru: 0, dh: .5, du: .5, horse: true, arch: true }
 ];
+/* palazzetti con disegno proprio (id club) */
+const S3_CUSTOM = {
+  mel: { name: 'Melendugno', xl: 5, gap: 0, ru: 0, dh: .5, du: .5, horse: true, arch: true, openSign: 1, wall: '#b5121f', pal: 0 }
+};
 function s3ArenaVariant(M) {
+  if (M && M.home && S3_CUSTOM[M.home.id]) return Object.assign({}, S3_CUSTOM[M.home.id]);
   let rnd = false; try { rnd = localStorage.getItem('vm-arena') === 'rnd'; } catch (e) { }
   const q = new URLSearchParams(location.search).get('arena'), h = Gx.hash(String((M.home && M.home.id) || 'x') + 'forma') >>> 0;
   const NF = S3_FORMS.length, f = q !== null ? +q % NF : rnd ? Math.floor(Math.random() * NF) : h % NF, p = q !== null ? Math.floor(+q / NF) % 3 : rnd ? Math.floor(Math.random() * 3) : (h >>> 4) % 3;
@@ -116,7 +121,7 @@ function s3RichArena(S, scene, c) {
   /* parapetti trasparenti davanti ai gradoni */
   const glass = new THREE.MeshLambertMaterial({ color: 0x9fc4e6, transparent: true, opacity: .16, depthWrite: false }), rail = new THREE.MeshLambertMaterial({ color: 0xcfd6e2 });
   for (const s of [-1, 1]) {
-    if (!(c.open && s < 0)) { add(new THREE.BoxGeometry(endSpan, .8, .04), glass).position.set(0, .9, s * (END0 - .22)); add(new THREE.BoxGeometry(endSpan, .05, .09), rail).position.set(0, 1.32, s * (END0 - .22)); }
+    if (!(c.open && s === c.openSign)) { add(new THREE.BoxGeometry(endSpan, .8, .04), glass).position.set(0, .9, s * (END0 - .22)); add(new THREE.BoxGeometry(endSpan, .05, .09), rail).position.set(0, 1.32, s * (END0 - .22)); }
     add(new THREE.BoxGeometry(.04, .8, 2 * END0 - 1), glass).position.set(s * (SIDE0 - .22), .9, 0); add(new THREE.BoxGeometry(.09, .05, 2 * END0 - 1), rail).position.set(s * (SIDE0 - .22), 1.32, 0);
   }
   /* anello superiore: parapetti e fascia luminosa al bordo di ogni settore */
