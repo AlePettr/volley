@@ -123,11 +123,12 @@ function s3Build(M) {
   /* tribune a gradoni nei colori del club di casa + pubblico a istanze */
   const seat = [Gx.dark(homeKit.main, .8), Gx.dark(homeKit.main, .72)], tint = [homeKit.main, Gx.light(homeKit.main, .4), '#f5f7fb', '#1d2a44'];
   const stepD = .95, rowsEnd = TH.rowsFar, rowsSide = TH.rowsSide, spots = [], seatsL = [];
-  const addStand = (axis, sign, rows, start, span, centre, h0 = 0, dh = .4, rr0 = 0, mit = false) => {
+  const addStand = (axis, sign, rows, start, span, centre0, h0 = 0, dh = .4, rr0 = 0, mit = false, open = false) => {
     for (let r = 0; r < rows; r++) {
       const h = .5 + h0 + r * dh, d = start + r * stepD + stepD / 2;
       /* anello con angoli a 45 gradi: ogni fila di fondo e laterale arriva fino alla diagonale, dove gli spettatori si dividono senza sovrapporsi */
-      const spanR = mit ? 2 * ((axis === 'z' ? SIDE0 : END0) + (Math.floor((d - (axis === 'z' ? END0 : SIDE0)) / stepD) + 1) * stepD) : span;
+      let spanR = mit ? 2 * ((axis === 'z' ? SIDE0 : END0) + (Math.floor((d - (axis === 'z' ? END0 : SIDE0)) / stepD) + 1) * stepD) : span, centre = centre0;
+      if (mit && open && axis === 'x') { const zmax = END0 + (Math.floor((d - SIDE0) / stepD) + 1) * stepD, zmin = -(END0 + 1.2); spanR = zmax - zmin; centre = (zmax + zmin) / 2; }   /* lato corto aperto: la gradinata arriva fino al sipario */
       const geo = axis === 'z' ? new THREE.BoxGeometry(spanR, h, stepD) : new THREE.BoxGeometry(stepD, h, spanR);
       const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: seat[(r + rr0) % 2] }));
       if (axis === 'z') m.position.set(centre, h / 2, sign * d); else m.position.set(sign * d, h / 2, centre);
@@ -136,7 +137,7 @@ function s3Build(M) {
       const yawS = axis === 'z' ? (sign > 0 ? Math.PI : 0) : (sign > 0 ? -Math.PI / 2 : Math.PI / 2);
       for (let i = 0; i < n; i++) {
         const a0 = centre - spanR / 2 + (i + .5) * spanR / n;
-        if (mit) { const cross = Math.abs(a0) - (axis === 'z' ? SIDE0 : END0), own = d - (axis === 'z' ? END0 : SIDE0); if (axis === 'z' ? !(cross < own) : !(cross <= own)) continue; }
+        if (mit && !(open && axis === 'x' && a0 < 0)) { const cross = Math.abs(a0) - (axis === 'z' ? SIDE0 : END0), own = d - (axis === 'z' ? END0 : SIDE0); if (axis === 'z' ? !(cross < own) : !(cross <= own)) continue; }
         seatsL.push(axis === 'z' ? { x: a0, y: h, z: sign * d, yaw: yawS, a: a0 + 20, r: r + rr0 } : { x: sign * d, y: h, z: a0, yaw: yawS, a: a0 + 20, r: r + rr0 });
         if (R() > Math.min(1, TH.density * .95 + .1)) continue;
         const a = a0 + (R() - .5) * .12;
@@ -145,14 +146,14 @@ function s3Build(M) {
     }
   };
   /* alta definizione: anello unico piu' profondo con corridoio e secondo anello, come in un'arena */
-  const HI = !!S.hi, AV = HI && typeof s3ArenaVariant === 'function' ? s3ArenaVariant(M) : { xl: 2, gap: 2, ru: 4, dh: .45, du: .55, pal: 0 };
+  const HI = !!S.hi, AV = HI && typeof s3ArenaVariant === 'function' ? s3ArenaVariant(M) : { xl: 2, gap: 2, ru: 4, dh: .45, du: .55, pal: 0 }, OPEN = !!(HI && AV.horse);
   S.av = AV; const GAP = HI ? AV.gap : 0, RU = HI ? AV.ru : 0, DH = HI ? AV.dh : .4, DU = AV.du;
   const RL = HI ? Math.round((rowsEnd + rowsSide) / 2) + AV.xl : 0, rEL = HI ? RL : rowsEnd, rSL = HI ? RL : rowsSide;
   const END0 = 14.4, SIDE0 = 11.2, endSpan = HI ? 2 * SIDE0 : 2 * (SIDE0 + rSL * stepD), endSpanU = 2 * (SIDE0 + (rSL + GAP + RU) * stepD);
   const hTopE = .5 + (rEL - 1) * DH, hTopS = .5 + (rSL - 1) * DH, concMat = new THREE.MeshLambertMaterial({ color: (typeof S3_PAL !== 'undefined' && S3_PAL[AV.pal || 0].conc) || 0x1a2438 });
   for (const s of [-1, 1]) {
     if (!HI) { addStand('z', s, rEL, END0, endSpan, 0, 0, DH); addStand('x', s, rSL, SIDE0, 2 * END0 - 1, 0, 0, DH); continue; }
-    addStand('z', s, RL, END0, 0, 0, 0, DH, 0, true); addStand('x', s, RL, SIDE0, 0, 0, 0, DH, 0, true);
+    if (!(OPEN && s < 0)) addStand('z', s, RL, END0, 0, 0, 0, DH, 0, true); addStand('x', s, RL, SIDE0, 0, 0, 0, DH, 0, true, OPEN);
     if (GAP) { const cz = new THREE.Mesh(new THREE.BoxGeometry(2 * (SIDE0 + (RL + GAP) * stepD), hTopE, GAP * stepD), concMat); cz.position.set(0, hTopE / 2, s * (END0 + RL * stepD + GAP * stepD / 2)); scene.add(cz);
     const cx = new THREE.Mesh(new THREE.BoxGeometry(GAP * stepD, hTopS, 2 * (END0 + (RL + GAP) * stepD)), concMat); cx.position.set(s * (SIDE0 + RL * stepD + GAP * stepD / 2), hTopS / 2, 0); scene.add(cx); }
     if (RU) { addStand('z', s, RU, END0 + (RL + GAP) * stepD, 0, 0, hTopE - .5 + 1.8, DU, RL, true);
@@ -163,11 +164,16 @@ function s3Build(M) {
   /* pareti visibili solo dall'interno: le camere larghe stanno oltre i gradoni e non devono vedere il retro */
   const wallMat = new THREE.MeshLambertMaterial({ color: new THREE.Color(TH.wall[1]).multiplyScalar(.8) });
   const zW = END0 + (rEL + GAP + RU) * stepD + 1, xW = SIDE0 + (rSL + GAP + RU) * stepD + 1; if (HI) S.camK = Math.max(1.5, (xW + 1.5) / 15);
+  /* tetto ad arco: sale da 24,6 m ai lati a 30 m al centro; il resto resta piatto a 24 m */
+  const WH = HI && AV.arch ? 36 : 26, rY = x => HI && AV.arch ? 24.6 + 5.4 * (1 - Math.pow(x / xW, 2)) : 23.6; S.roofY = rY;
+  if (OPEN) { const ct = s3Tex(512, 256, (c, w, h) => { c.fillStyle = Gx.dark(homeKit.main, .35); c.fillRect(0, 0, w, h); for (let x = 0; x < w; x += 16) { c.fillStyle = (x / 16) % 2 ? 'rgba(255,255,255,.05)' : 'rgba(0,0,0,.18)'; c.fillRect(x, 0, 16, h); } c.fillStyle = homeKit.main; c.fillRect(0, h * .30, w, h * .035); c.fillStyle = homeKit.trim; c.fillRect(0, h * .335, w, h * .012); }); ct.wrapS = THREE.RepeatWrapping; ct.repeat.set(5, 1); const cu = new THREE.Mesh(new THREE.PlaneGeometry(2 * xW, WH), new THREE.MeshLambertMaterial({ map: ct })); cu.position.set(0, WH / 2, -(END0 + 1.7)); scene.add(cu); }
   for (const s of [-1, 1]) {
-    const a = new THREE.Mesh(new THREE.PlaneGeometry(2 * xW + 4, 26), wallMat); a.position.set(0, 13, s * zW); a.rotation.y = s > 0 ? Math.PI : 0; scene.add(a);
-    const b = new THREE.Mesh(new THREE.PlaneGeometry(2 * zW, 26), wallMat); b.rotation.y = s > 0 ? -Math.PI / 2 : Math.PI / 2; b.position.set(s * xW, 13, 0); scene.add(b);
+    const a = new THREE.Mesh(new THREE.PlaneGeometry(2 * xW + 4, WH), wallMat); a.position.set(0, WH / 2, s * zW); a.rotation.y = s > 0 ? Math.PI : 0; scene.add(a);
+    const b = new THREE.Mesh(new THREE.PlaneGeometry(2 * zW, WH), wallMat); b.rotation.y = s > 0 ? -Math.PI / 2 : Math.PI / 2; b.position.set(s * xW, WH / 2, 0); scene.add(b);
   }
-  const roof = new THREE.Mesh(new THREE.PlaneGeometry(2 * xW, 2 * zW), new THREE.MeshLambertMaterial({ color: 0x080c16 })); roof.rotation.x = Math.PI / 2; roof.position.y = 24; scene.add(roof);
+  const roofG = new THREE.PlaneGeometry(2 * xW, 2 * zW, HI && AV.arch ? 40 : 1, 1);
+  if (HI && AV.arch) { const pa = roofG.attributes.position; for (let k = 0; k < pa.count; k++) pa.setZ(k, -(rY(pa.getX(k)) - 24)); roofG.computeVertexNormals(); }
+  const roof = new THREE.Mesh(roofG, new THREE.MeshLambertMaterial({ color: 0x080c16 })); roof.rotation.x = Math.PI / 2; roof.position.y = 24; scene.add(roof);
   /* luce: pozza calda sul campo e fasci conici dai fari (additivi, molto tenui) */
   const poolTex = s3Tex(256, 256, (c, w, h) => { const g = c.createRadialGradient(w / 2, h / 2, 4, w / 2, h / 2, w / 2); g.addColorStop(0, 'rgba(255,246,226,.20)'); g.addColorStop(.6, 'rgba(255,246,226,.07)'); g.addColorStop(1, 'rgba(255,246,226,0)'); c.fillStyle = g; c.fillRect(0, 0, w, h); });
   const pool = new THREE.Mesh(new THREE.PlaneGeometry(26, 34), new THREE.MeshBasicMaterial({ map: poolTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
@@ -176,7 +182,7 @@ function s3Build(M) {
   for (const bx of [-5, 0, 5]) for (const bz of [-7, 0, 7]) { const cn = new THREE.Mesh(new THREE.ConeGeometry(3.6, 23, 20, 1, true), beamMat); cn.position.set(bx, 12.4, bz); scene.add(cn); }
   const lampMat = new THREE.MeshBasicMaterial({ color: 0xf2f6ff });
   for (let i = -3; i <= 3; i++) for (let j = -2; j <= 2; j++) { const l = new THREE.Mesh(new THREE.BoxGeometry(1.4, .12, .6), lampMat); l.position.set(j * 4.4, 23.9, i * 4); scene.add(l); }
-  if (TH.beams) for (let i = -4; i <= 4; i++) { const b = new THREE.Mesh(new THREE.BoxGeometry(2 * xW, .5, .35), new THREE.MeshLambertMaterial({ color: 0x0d1424 })); b.position.set(0, 23.6, i * 3.3); scene.add(b); }
+  if (TH.beams && !(HI && AV.arch)) for (let i = -4; i <= 4; i++) { const b = new THREE.Mesh(new THREE.BoxGeometry(2 * xW, .5, .35), new THREE.MeshLambertMaterial({ color: 0x0d1424 })); b.position.set(0, 23.6, i * 3.3); scene.add(b); }
 
   /* spettatori */
   const N = spots.length, bodyG = new THREE.CylinderGeometry(.2, .22, .55, 7), headG = new THREE.SphereGeometry(.13, 8, 6);
@@ -212,7 +218,7 @@ function s3Build(M) {
       scene.remove(bodies); scene.remove(heads);
       S.crowd.rich = s3RichCrowd(S, scene, { spots, cc: cc_, sk: sk_, team, base });
       const bandTex = s3Tex(2048, 64, (c, w, h) => { c.fillStyle = homeKit.shade; c.fillRect(0, 0, w, h); const it = [(M.home.city || M.home.short).toUpperCase(), 'SERIE A FEMMINILE', M.home.short.toUpperCase(), 'VOLLEY MANAGER', 'FRECCIAROSSA', 'FINECO']; c.fillStyle = Gx.onColor(homeKit.shade); c.font = '700 38px "Barlow Condensed",Arial Narrow,sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; for (let k = 0; k < 12; k++) c.fillText(it[k % it.length], (k + .5) * w / 12, h / 2 + 2); });
-      s3RichArena(S, scene, { pal: (typeof S3_PAL !== 'undefined' && S3_PAL[AV.pal || 0]) || null, TH, kit: homeKit, xW, zW, END0, SIDE0, endSpan, endSpanU, stepD, seats: seatsL, rowsEnd: rEL, rowsSide: rSL, rEL, rSL, GAP, RU, DH, DU, hTopE, hTopS, topH: S.topH, bandTex, home: (M.home.city || M.home.short).toUpperCase() });
+      s3RichArena(S, scene, { open: OPEN, pal: (typeof S3_PAL !== 'undefined' && S3_PAL[AV.pal || 0]) || null, TH, kit: homeKit, xW, zW, END0, SIDE0, endSpan, endSpanU, stepD, seats: seatsL, rowsEnd: rEL, rowsSide: rSL, rEL, rSL, GAP, RU, DH, DU, hTopE, hTopS, topH: S.topH, bandTex, home: (M.home.city || M.home.short).toUpperCase() });
     } catch (e) { console.warn('palazzetto HD non disponibile', e); S.hi = false; S.crowd.rich = null; if (!bodies.parent) { scene.add(bodies); scene.add(heads); } }
   }
 
@@ -293,7 +299,7 @@ function s3Build(M) {
   { const bt = S.sbTex = s3Tex(512, 192, () => { }), bm = new THREE.MeshBasicMaterial({ map: bt });
     const body = new THREE.Mesh(new THREE.BoxGeometry(5.4, 2.1, 5.4), lam(0x0a0f1c)); body.position.set(0, 16.2, 0); scene.add(body);
     for (const [px, pz, ry] of [[2.71, 0, Math.PI / 2], [-2.71, 0, -Math.PI / 2], [0, 2.71, 0], [0, -2.71, Math.PI]]) { const f = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 1.95), bm); f.position.set(px, 16.2, pz); f.rotation.y = ry; scene.add(f); }
-    for (const [cx, cz] of [[-2.4, -2.4], [2.4, -2.4], [-2.4, 2.4], [2.4, 2.4]]) { const cb = new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, 7, 4), lam(0x303a52)); cb.position.set(cx, 20.4, cz); scene.add(cb); }
+    for (const [cx, cz] of [[-2.4, -2.4], [2.4, -2.4], [-2.4, 2.4], [2.4, 2.4]]) { const cb = new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, S.roofY(cx) - 16.9, 4), lam(0x303a52)); cb.position.set(cx, (S.roofY(cx) + 16.9) / 2, cz); scene.add(cb); }
     S.sbKey = ''; }
 
   /* palla */

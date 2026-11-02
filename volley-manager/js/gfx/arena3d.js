@@ -33,12 +33,16 @@ const S3_FORMS = [
   { name: 'Arena a due anelli', xl: 2, gap: 2, ru: 4, dh: .45, du: .55 },
   { name: 'Palasport a un anello', xl: 5, gap: 0, ru: 0, dh: .5, du: .5 },
   { name: 'Conca ripida', xl: 1, gap: 1, ru: 6, dh: .5, du: .7 },
-  { name: 'Doppio anello largo', xl: 3, gap: 3, ru: 3, dh: .4, du: .5 }
+  { name: 'Doppio anello largo', xl: 3, gap: 3, ru: 3, dh: .4, du: .5 },
+  { name: 'Palazzetto a staffa', xl: 5, gap: 0, ru: 0, dh: .5, du: .5, horse: true },
+  { name: 'Arena ad arco', xl: 2, gap: 2, ru: 4, dh: .45, du: .55, arch: true },
+  { name: 'Palasport ad arco', xl: 5, gap: 0, ru: 0, dh: .5, du: .5, arch: true },
+  { name: 'Staffa con tetto ad arco', xl: 5, gap: 0, ru: 0, dh: .5, du: .5, horse: true, arch: true }
 ];
 function s3ArenaVariant(M) {
   let rnd = false; try { rnd = localStorage.getItem('vm-arena') === 'rnd'; } catch (e) { }
   const q = new URLSearchParams(location.search).get('arena'), h = Gx.hash(String((M.home && M.home.id) || 'x') + 'forma');
-  const f = q !== null && S3_FORMS[+q % 4] ? +q % 4 : rnd ? Math.floor(Math.random() * 4) : h % 4, p = q !== null ? (+q >> 2) % 3 : rnd ? Math.floor(Math.random() * 3) : (h >> 3) % 3;
+  const NF = S3_FORMS.length, f = q !== null ? +q % NF : rnd ? Math.floor(Math.random() * NF) : h % NF, p = q !== null ? Math.floor(+q / NF) % 3 : rnd ? Math.floor(Math.random() * 3) : (h >> 4) % 3;
   return Object.assign({ pal: p }, S3_FORMS[f]);
 }
 const S3_JEANS = ['#1f2a44', '#26344f', '#141820', '#3a4a66', '#5a5040', '#d8d4c8', '#2c2c32'];
@@ -112,7 +116,7 @@ function s3RichArena(S, scene, c) {
   /* parapetti trasparenti davanti ai gradoni */
   const glass = new THREE.MeshLambertMaterial({ color: 0x9fc4e6, transparent: true, opacity: .16, depthWrite: false }), rail = new THREE.MeshLambertMaterial({ color: 0xcfd6e2 });
   for (const s of [-1, 1]) {
-    add(new THREE.BoxGeometry(endSpan, .8, .04), glass).position.set(0, .9, s * (END0 - .22)); add(new THREE.BoxGeometry(endSpan, .05, .09), rail).position.set(0, 1.32, s * (END0 - .22));
+    if (!(c.open && s < 0)) { add(new THREE.BoxGeometry(endSpan, .8, .04), glass).position.set(0, .9, s * (END0 - .22)); add(new THREE.BoxGeometry(endSpan, .05, .09), rail).position.set(0, 1.32, s * (END0 - .22)); }
     add(new THREE.BoxGeometry(.04, .8, 2 * END0 - 1), glass).position.set(s * (SIDE0 - .22), .9, 0); add(new THREE.BoxGeometry(.09, .05, 2 * END0 - 1), rail).position.set(s * (SIDE0 - .22), 1.32, 0);
   }
   /* anello superiore: parapetti e fascia luminosa al bordo di ogni settore */
@@ -144,15 +148,18 @@ function s3RichArena(S, scene, c) {
   for (const z of [-8, 0, 8]) for (const s of [-1, 1]) portal(s * (xW - .32), z, s > 0 ? -Math.PI / 2 : Math.PI / 2, keyX(s));
 
   /* capriate del tetto, arcarecci e colonne */
-  const tr = [], nT = 9, L = xW; for (let i = -4; i <= 4; i++) {
-    const z = i * 3.3; tr.push(beam(V(-L, 23.6, z), V(L, 23.6, z), .16), beam(V(-L, 22.7, z), V(L, 22.7, z), .12));
-    for (let x = -L, k = 0; x < L - .7; x += 1.4, k++) tr.push(beam(V(x, k % 2 ? 23.6 : 22.7, z), V(x + 1.4, k % 2 ? 22.7 : 23.6, z), .07));
+  const rY = S.roofY || (() => 23.6), tr = [], L = xW; for (let i = -4; i <= 4; i++) {
+    const z = i * 3.3, n = Math.ceil(2 * L / 1.4), dx = 2 * L / n;
+    for (let k = 0; k < n; k++) {
+      const x0 = -L + k * dx, x1 = x0 + dx, t0 = rY(x0), t1 = rY(x1);
+      tr.push(beam(V(x0, t0, z), V(x1, t1, z), .16), beam(V(x0, t0 - .9, z), V(x1, t1 - .9, z), .12), k % 2 ? beam(V(x0, t0, z), V(x1, t1 - .9, z), .07) : beam(V(x0, t0 - .9, z), V(x1, t1, z), .07));
+    }
   }
-  for (let x = -xW + 2; x <= xW - 2; x += 4.2) tr.push(beam(V(x, 23.85, -zW), V(x, 23.85, zW), .1));
+  for (let x = -xW + 2; x <= xW - 2; x += 4.2) tr.push(beam(V(x, rY(x) + .25, -zW), V(x, rY(x) + .25, zW), .1));
   add(s3Merge(tr), steel);
-  const cols = []; for (const x of [-xW + .6, xW - .6]) for (const z of [-zW + .6, zW - .6, 0]) cols.push([x > 0 && z > 0 ? 'cc' : z === 0 ? keyX(x) : x > 0 ? keyX(x) : keyZ(z), beam(V(x, 0, z), V(x, 23.6, z), .55)]);
+  const cols = []; for (const x of [-xW + .6, xW - .6]) for (const z of [-zW + .6, zW - .6, 0]) cols.push([x > 0 && z > 0 ? 'cc' : z === 0 ? keyX(x) : x > 0 ? keyX(x) : keyZ(z), beam(V(x, 0, z), V(x, rY(x), z), .55)]);
   grp(cols, steel);
-  const lite = []; for (let i = -4; i <= 4; i++) for (let x = -L + 2; x < L - 1; x += 4.4) lite.push({ g: BOX, m: s3M4(x, 22.45, i * 3.3, .5, .14, .28) });
+  const lite = []; for (let i = -4; i <= 4; i++) for (let x = -L + 2; x < L - 1; x += 4.4) lite.push({ g: BOX, m: s3M4(x, rY(x) - 1.15, i * 3.3, .5, .14, .28) });
   add(s3Merge(lite), new THREE.MeshBasicMaterial({ color: 0xfff1d6 }));
 
   /* telecamere TV e steward dietro i cartelloni */
