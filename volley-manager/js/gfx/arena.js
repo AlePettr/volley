@@ -7,7 +7,7 @@ function purpleFrame(c, F, v0 = -7.3) {
 function camSetup(W, H) {
   Cam.W = W; Cam.H = H; Cam.portrait = H > W * 0.95;
   const view = (typeof UI !== 'undefined' && UI.camView) || 'side';
-  const tv = view === 'tv', side = view === 'side';
+  const tv = view === 'tv', side = view === 'side' || view === 'sideh';
   Cam.tv = tv; Cam.side = side;
   if (side) {
     /* regia laterale: camera rialzata sul lato lungo, il campo scorre in orizzontale */

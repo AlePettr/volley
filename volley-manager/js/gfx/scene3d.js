@@ -543,29 +543,29 @@ function s3Frame(M, ents, dt) {
     }
   }
 
-  if (S.richWall) { const v2 = UI.camView || 'side'; for (const o of S.richWall.xp) o.visible = v2 !== 'side'; for (const o of S.richWall.zp) o.visible = v2 === 'side'; for (const o of S.richWall.cc) o.visible = false; }
-  { const vw = UI.camView || 'side'; for (const k in S.boards) { const hide = vw === 'side' ? (k === 's+') : (k[0] === 'e' && k[1] === '+'); for (const m of S.boards[k]) m.visible = !hide; } }
+  if (S.richWall) { const v2 = UI.camView || 'side', sl2 = v2 === 'side' || v2 === 'sideh'; for (const o of S.richWall.xp) o.visible = !sl2; for (const o of S.richWall.zp) o.visible = sl2; for (const o of S.richWall.cc) o.visible = false; }
+  { const vw = UI.camView || 'side'; for (const k in S.boards) { const hide = (vw === 'side' || vw === 'sideh') ? (k === 's+') : (k[0] === 'e' && k[1] === '+'); for (const m of S.boards[k]) m.visible = !hide; } }
   s3Camera(M, ents, dt);
-  S.ref.position.set(Cam.side || UI.camView === 'side' ? -6.1 : 6.1, 0, 0);
-  S.ref.rotation.y = (UI.camView === 'side') ? Math.PI / 2 : -Math.PI / 2;
+  S.ref.position.set(Cam.side || UI.camView === 'side' || UI.camView === 'sideh' ? -6.1 : 6.1, 0, 0);
+  S.ref.rotation.y = (UI.camView === 'side' || UI.camView === 'sideh') ? Math.PI / 2 : -Math.PI / 2;
   S.renderer.render(scene, cam);
   s3Overlay(M, ents);
 }
 
 function s3Camera(M, ents, dt) {
-  const S = M.s3, cam = S.camera, a = M.anim, t = a ? a.t : 0, view = UI.camView || 'side', V = THREE.Vector3;
-  cam.fov = view === 'side' ? 34 : 36;
+  const S = M.s3, cam = S.camera, a = M.anim, t = a ? a.t : 0, view = UI.camView || 'side', V = THREE.Vector3, sideLike = view === 'side' || view === 'sideh';
+  cam.fov = sideLike ? 34 : 36;
   const tf = Math.tan(cam.fov * Math.PI / 360), HK = S.hi ? (S.camK || 1.7) : 1;
   if (HK > 1) cam.fov = 2 * Math.atan(tf / HK) * 180 / Math.PI;   /* arena grande: camera piu' lontana con tele piu' stretto, stessa inquadratura */
   let look, pos;
-  if (view === 'side') { const D = Math.max(25, 12.5 / (tf * S.aspect)); look = new V(0, 1, 0); pos = new V(D, 8 + (D - 25) * .22 + (HK > 1 ? 2 : 0), 0); }
+  if (sideLike) { const D = Math.max(25, 12.5 / (tf * S.aspect)); look = new V(0, 1, 0); pos = view === 'sideh' ? new V(D * 1.3, 17 + (D - 25) * .3, 0) : new V(D, 8 + (D - 25) * .22 + (HK > 1 ? 2 : 0), 0); }
   else if (view === 'reg') { look = new V(0, 1, -1); pos = new V(0, 12.5, 30); }
   else { look = new V(0, 0, 0); pos = new V(0, 21, 33); }
   const dir = pos.clone().sub(look); if (HK > 1) dir.multiplyScalar(HK);
   const ball = a ? sampleBall(a.script.ball, t) : null, shot = camShot(M);
   let tg = look.clone(), zf = 1;
-  if (ball) { if (view === 'side') tg.z += ball.u * .35; else { tg.x += ball.v * .22; tg.z += ball.u * .2; } }
-  const clampZ = z => (view === 'side' ? Math.max(-4, Math.min(4, z)) : z);
+  if (ball) { if (sideLike) tg.z += ball.u * .35; else { tg.x += ball.v * .22; tg.z += ball.u * .2; } }
+  const clampZ = z => (sideLike ? Math.max(-4, Math.min(4, z)) : z);
   if (shot.cam === 'serve' && a && a.script.srvU !== undefined) { tg.set(a.script.srvV, 1.2, a.script.srvU); tg.lerp(look, .25); zf = .8; }
   else if (shot.cam === 'zoom' && a) { tg.set(shot.v, 1.6, shot.u); if (ball) tg.lerp(new V(ball.v, ball.z, ball.u), .45); zf = .6; }
   else if (shot.cam === 'react') { let sx = 0, sz = 0, n = 0; for (const e of ents) if (e.kind === 'p' && e.side === shot.side) { sx += e.v; sz += e.u; n++; } if (n) { tg.set(sx / n, 1.2, sz / n); zf = .76; } }
