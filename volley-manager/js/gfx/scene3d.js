@@ -4,7 +4,7 @@
    Il canvas 2D #cv resta sopra, trasparente, per cartellini nome ed effetti: Cam.p3 fa si' che proj() usi la camera 3D. */
 const S3_BUILD = 's';
 function s3Available() { return typeof THREE !== 'undefined'; }
-function s3Active(M) { return !!(M && M.s3 && UI.mode3d !== false); }
+function s3Active(M) { return !!(M && M.s3 && !M.s3.broken && UI.mode3d !== false); }
 
 const S3_FORWARD = new Set(['bump', 'receive', 'dig', 'dive', 'shake']);
 const S3_UP = s3Available() ? new THREE.Vector3(0, 1, 0) : null;
@@ -64,7 +64,13 @@ function s3Setup(M) {
       M.s3 = { cv, renderer, rigs: new Map(), crowd: null, last: 0, hi: typeof s3Hi === 'function' && s3Hi() };
       if (typeof skLoad === 'function') skLoad();
       s3Build(M);
-    } catch (e) { console.warn('3D non disponibile', e); UI.mode3d = false; M.s3 = null; const c = $("#cv3"); if (c) c.remove(); return; }
+    } catch (e) {
+      console.warn('3D non disponibile', e);
+      /* se l'alta definizione non riesce si riprova con il palazzetto standard, prima di rinunciare al 3D per questa partita */
+      let ok = false;
+      if (M.s3 && M.s3.hi) { M.s3.hi = false; try { s3Build(M); ok = true; } catch (e2) { console.warn('3D standard non disponibile', e2); } }
+      if (!ok) { M.s3 = null; const c = $("#cv3"); if (c) c.remove(); return; }
+    }
   }
   const S = M.s3, cv = $("#cv");
   S.cv.style.display = 'block';
@@ -606,4 +612,4 @@ document.addEventListener('click', e => {
   if (UI.mode3d) s3Setup(M); else if (M.s3) M.s3.cv.style.display = 'none';
   const c = $("#cv"); if (c) c.getContext('2d').clearRect(0, 0, c.width, c.height);
 });
-try { if (typeof UI !== 'undefined' && UI.mode3d === undefined) UI.mode3d = localStorage.getItem('vm-mode3d') !== '0'; } catch (x) { }
+try { if (typeof UI !== 'undefined') { UI.mode3d = true; localStorage.removeItem('vm-mode3d'); } } catch (x) { }   /* il 2D non e' piu' una scelta: resta solo come ripiego se WebGL manca */

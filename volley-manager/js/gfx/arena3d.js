@@ -41,7 +41,7 @@ const S3_FORMS = [
 ];
 function s3ArenaVariant(M) {
   let rnd = false; try { rnd = localStorage.getItem('vm-arena') === 'rnd'; } catch (e) { }
-  const q = new URLSearchParams(location.search).get('arena'), h = Gx.hash(String((M.home && M.home.id) || 'x') + 'forma');
+  const q = new URLSearchParams(location.search).get('arena'), h = Gx.hash(String((M.home && M.home.id) || 'x') + 'forma') >>> 0;
   const NF = S3_FORMS.length, f = q !== null ? +q % NF : rnd ? Math.floor(Math.random() * NF) : h % NF, p = q !== null ? Math.floor(+q / NF) % 3 : rnd ? Math.floor(Math.random() * 3) : (h >> 4) % 3;
   return Object.assign({ pal: p }, S3_FORMS[f]);
 }

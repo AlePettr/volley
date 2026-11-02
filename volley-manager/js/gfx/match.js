@@ -48,13 +48,12 @@ function renderMatch() {
   <div id="ctl" class="matchctl">
     <div class="seg" role="group" aria-label="Telecamera"><button data-act="camview" data-v="side" aria-pressed="${UI.camView === 'side'}">Laterale</button><button data-act="camview" data-v="reg" aria-pressed="${UI.camView === 'reg'}">Da fondo</button><button data-act="camview" data-v="tv" aria-pressed="${UI.camView === 'tv'}">Da fondo alta</button></div>
     <div class="seg" role="group" aria-label="Velocità"><button data-act="speed" data-v="1" aria-pressed="true">1×</button><button data-act="speed" data-v="2" aria-pressed="false">2×</button><button data-act="speed" data-v="4" aria-pressed="false">4×</button><button data-act="speed" data-v="8" aria-pressed="false">8×</button></div>
-    <button class="btn" data-act="pause" id="pausebtn">Pausa</button><button class="btn" data-act="mode3d" id="mode3dbtn" hidden>2D</button><button class="btn primary" data-act="submodal">Cambi</button><button class="btn" data-act="replay" id="replaybtn">Replay</button><span class="pill" id="vcpill" title="Check VAR rimasti: tuoi · avversari">VAR 2 · 2</span><button class="btn" data-act="skip">Salta alla fine</button>
+    <button class="btn" data-act="pause" id="pausebtn">Pausa</button><button class="btn primary" data-act="submodal">Cambi</button><button class="btn" data-act="replay" id="replaybtn">Replay</button><span class="pill" id="vcpill" title="Check VAR rimasti: tuoi · avversari">VAR 2 · 2</span><button class="btn" data-act="skip">Salta alla fine</button>
   </div>
   <div id="sum"></div>`;
   sizeCanvas();
   if (typeof Snd !== 'undefined') Snd.mount(M);
   if (typeof ledForHome === 'function') ledForHome(M.home.id);
-  { const b3 = $("#mode3dbtn"); if (b3 && typeof s3Available === 'function' && s3Available()) { b3.hidden = false; b3.textContent = UI.mode3d === false ? '3D' : '2D'; } }
   M.toLeft = { h: 2, a: 2 };
   { const ctl = $("#ctl"); if (ctl) { ctl.insertAdjacentHTML('beforeend', `<button class="btn" id="tobtn" title="Time-out: ferma il gioco, la tua squadra recupera e la serie avversaria si spezza">Time-out ${M.toLeft[M.userSide]}</button>`); $("#tobtn").onclick = () => callTimeout(M, M.userSide); } }
   /* entrata in campo: parte con un tocco (serve anche a sbloccare l'audio) */
@@ -304,7 +303,7 @@ function drawScene(M, dt) {
     });
   }
   if (a) { const b = sampleBall(a.script.ball, t); if (b) ents.push({ kind: 'b', u: b.u, v: b.v, z: b.z }); }
-  if (typeof s3Active === 'function' && s3Active(M)) { try { s3Frame(M, ents, dt || .016); return; } catch (err) { console.warn('3D non riuscito, torno al 2D', err); UI.mode3d = false; M.s3.cv.style.display = 'none'; const b3 = $("#mode3dbtn"); if (b3) b3.textContent = '3D'; } }
+  if (typeof s3Active === 'function' && s3Active(M)) { try { s3Frame(M, ents, dt || .016); return; } catch (err) { console.warn('3D: errore nel fotogramma', err); M.s3.bad = (M.s3.bad || 0) + 1; if (M.s3.bad > 40) { M.s3.broken = true; M.s3.cv.style.display = 'none'; } } }
   const cs = updateCam(M, ents, dt || .016);
   const sh = M.shake > .2 ? [(Math.random() - .5) * M.shake, (Math.random() - .5) * M.shake] : [0, 0];
   c.save(); c.translate(sh[0], sh[1]);
