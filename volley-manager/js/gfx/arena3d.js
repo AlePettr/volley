@@ -41,7 +41,7 @@ const S3_FORMS = [
 ];
 /* palazzetti con disegno proprio (id club) */
 const S3_CUSTOM = {
-  mel: { name: 'Melendugno', xl: 5, gap: 0, ru: 0, dh: .5, du: .5, horse: true, arch: true, openSign: 1, wall: '#b5121f', pal: 0 }
+  mel: { name: 'Melendugno', xl: 5, gap: 0, ru: 0, dh: .5, du: .5, horse: true, arch: true, openSign: 1, wall: '#5e0f20', windows: true, push: { xp: 1.4, zm: 1.4 }, pal: 0 }
 };
 function s3ArenaVariant(M) {
   if (M && M.home && S3_CUSTOM[M.home.id]) return Object.assign({}, S3_CUSTOM[M.home.id]);
@@ -106,7 +106,7 @@ function s3RichCrowdUpdate(cr, time, ex, lw) {
 
 /* ---------- struttura del palazzetto ---------- */
 function s3RichArena(S, scene, c) {
-  const { TH, kit, xW, zW, END0, SIDE0, endSpan, stepD, seats, rowsEnd, rowsSide } = c, R = Gx.rng(Gx.hash('rich-arena')), BOX = new THREE.BoxGeometry(1, 1, 1);
+  const OF = c.OFF || { xp: 0, xm: 0, zp: 0, zm: 0 }, { TH, kit, xW, zW, END0, SIDE0, endSpan, stepD, seats, rowsEnd, rowsSide } = c, R = Gx.rng(Gx.hash('rich-arena')), BOX = new THREE.BoxGeometry(1, 1, 1);
   const PAL = c.pal || S3_PAL[0], steel = new THREE.MeshLambertMaterial({ color: PAL.steel }), dark = new THREE.MeshLambertMaterial({ color: 0x0c1220 });
   const beam = (a, b, t) => { const d = b.clone().sub(a), len = d.length(), q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); return { g: BOX, m: new THREE.Matrix4().compose(a.clone().add(b).multiplyScalar(.5), q, new THREE.Vector3(t, len, t)) }; };
   const V = (x, y, z) => new THREE.Vector3(x, y, z), add = (g, m) => { const o = new THREE.Mesh(g, m); scene.add(o); return o; };
@@ -121,8 +121,8 @@ function s3RichArena(S, scene, c) {
   /* parapetti trasparenti davanti ai gradoni */
   const glass = new THREE.MeshLambertMaterial({ color: 0x9fc4e6, transparent: true, opacity: .16, depthWrite: false }), rail = new THREE.MeshLambertMaterial({ color: 0xcfd6e2 });
   for (const s of [-1, 1]) {
-    if (!(c.open && s === c.openSign)) { add(new THREE.BoxGeometry(endSpan, .8, .04), glass).position.set(0, .9, s * (END0 - .22)); add(new THREE.BoxGeometry(endSpan, .05, .09), rail).position.set(0, 1.32, s * (END0 - .22)); }
-    add(new THREE.BoxGeometry(.04, .8, 2 * END0 - 1), glass).position.set(s * (SIDE0 - .22), .9, 0); add(new THREE.BoxGeometry(.09, .05, 2 * END0 - 1), rail).position.set(s * (SIDE0 - .22), 1.32, 0);
+    if (!(c.open && s === c.openSign)) { add(new THREE.BoxGeometry(endSpan, .8, .04), glass).position.set(0, .9, s * (END0 + OF[s > 0 ? 'zp' : 'zm'] - .22)); add(new THREE.BoxGeometry(endSpan, .05, .09), rail).position.set(0, 1.32, s * (END0 + OF[s > 0 ? 'zp' : 'zm'] - .22)); }
+    add(new THREE.BoxGeometry(.04, .8, 2 * END0 - 1), glass).position.set(s * (SIDE0 + OF[s > 0 ? 'xp' : 'xm'] - .22), .9, 0); add(new THREE.BoxGeometry(.09, .05, 2 * END0 - 1), rail).position.set(s * (SIDE0 + OF[s > 0 ? 'xp' : 'xm'] - .22), 1.32, 0);
   }
   /* anello superiore: parapetti e fascia luminosa al bordo di ogni settore */
   if (c.RU) {
