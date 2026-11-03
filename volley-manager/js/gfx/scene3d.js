@@ -141,7 +141,7 @@ function s3Build(M) {
         if (axis === 'z') { let hi = SIDE0 + OFF.xp + k1, lo = -(SIDE0 + OFF.xm + k1); if (OPENX) { if (OPENX < 0) lo = -(SIDE0 + 1.4); else hi = SIDE0 + 1.4; } spanR = hi - lo; centre = (hi + lo) / 2; }
         else { let hi = END0 + OFF.zp + k1, lo = -(END0 + OFF.zm + k1); if (open) { if (open < 0) lo = -(END0 + 1.2); else hi = END0 + 1.2; } spanR = hi - lo; centre = (hi + lo) / 2; }   /* lato corto aperto: la gradinata arriva fino alla parete */
       }
-      if (HI && AV.trap && axis === 'x' && !mit) spanR = span + r * AV.trap * 2;   /* tribuna a trapezio: le file si allargano salendo */
+      if (HI && AV.trap && axis === 'x' && !mit) spanR = Math.max(6, span + r * AV.trap * 2);   /* tribuna a trapezio: le file si allargano salendo */
       const geo = axis === 'z' ? new THREE.BoxGeometry(spanR, h, stepD) : new THREE.BoxGeometry(stepD, h, spanR);
       const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: seat[(r + rr0) % 2] }));
       if (axis === 'z') m.position.set(centre, h / 2, sign * d); else m.position.set(sign * d, h / 2, centre);
@@ -201,7 +201,7 @@ function s3Build(M) {
   for (const s of RND ? [] : [-1, 1]) {
     if (!HI) { addStand('z', s, rEL, END0, endSpan, 0, 0, DH); addStand('x', s, rSL, SIDE0, 2 * END0 - 1, 0, 0, DH); continue; }
     const EZ = END0 + OFF[s > 0 ? 'zp' : 'zm'], EX = SIDE0 + OFF[s > 0 ? 'xp' : 'xm'];
-    if (SEP) { if (!NOEND) addStand('z', s, RZ, EZ, 2 * SIDE0 * SK, 0, AV.zRaise || 0, DH, 0, false); if (s !== OPENX) addStand('x', s, RL, EX, (2 * END0 - 1) * SK, 0, 0, DH, 0, false); }
+    if (SEP) { if (!NOEND && s !== OS) addStand('z', s, RZ, EZ, 2 * SIDE0 * SK, 0, AV.zRaise || 0, DH, 0, false); if (s !== OPENX) addStand('x', s, RL, EX, (2 * END0 - 1) * SK, 0, 0, DH, 0, false); }
     else if (NOEND) { if (s !== OPENX) addStand('x', s, RL, EX, 2 * END0 + 4, 0, 0, DH, 0, false); }
     else { if (s !== OS) { if (s === SE) addStand('z', s, RL, EZ, 2 * SIDE0 - 1.5, 0, 0, DH, 0, false); else addStand('z', s, RL, EZ, 0, 0, 0, DH, 0, true); } if (s !== OPENX) addStand('x', s, RL, EX, 0, 0, 0, DH, 0, true, OS || SE); }
     if (GAP && !NOEND && !SEP && !OPENX) { const cz = new THREE.Mesh(new THREE.BoxGeometry(2 * (SIDE0 + (RL + GAP) * stepD), hTopE, GAP * stepD), concMat); cz.position.set(0, hTopE / 2, s * (EZ + RL * stepD + GAP * stepD / 2)); scene.add(cz);
