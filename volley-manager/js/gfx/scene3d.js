@@ -157,13 +157,43 @@ function s3Build(M) {
     }
   };
   /* alta definizione: anello unico piu' profondo con corridoio e secondo anello, come in un'arena */
+  const A3 = typeof s3IsA3 === 'function' && s3IsA3(M.home && M.home.id); S.noAds = A3;   /* serie A3: niente sponsor ne' filmati della Lega */
   const HI = !!S.hi, AV = HI && typeof s3ArenaVariant === 'function' ? s3ArenaVariant(M) : { xl: 2, gap: 2, ru: 4, dh: .45, du: .55, pal: 0 }, OPEN = !!(HI && AV.horse), OS = OPEN ? (AV.openSign || -1) : 0;   /* OS: lato corto aperto (-1 = z-, +1 = z+; z+ e' a sinistra nella laterale) */
   const OFF = Object.assign({ xp: 0, xm: 0, zp: 0, zm: 0 }, HI ? AV.push : null);   /* spostamenti per lato delle gradinate */
   S.av = AV; const GAP = HI ? AV.gap : 0, RU = HI ? AV.ru : 0, DH = HI ? AV.dh : .4, DU = AV.du;
   const RL = HI ? Math.round((rowsEnd + rowsSide) / 2) + AV.xl : 0, rEL = HI ? RL : rowsEnd, rSL = HI ? RL : rowsSide;
   const END0 = 14.4, SIDE0 = 11.2, endSpan = HI ? 2 * SIDE0 : 2 * (SIDE0 + rSL * stepD), endSpanU = 2 * (SIDE0 + (rSL + GAP + RU) * stepD);
   const hTopE = .5 + (rEL - 1) * DH, hTopS = .5 + (rSL - 1) * DH, concMat = new THREE.MeshLambertMaterial({ color: (typeof S3_PAL !== 'undefined' && S3_PAL[AV.pal || 0].conc) || 0x1a2438 });
-  for (const s of [-1, 1]) {
+  /* tribune circolari: anello (superellisse) attorno al campo, a segmenti */
+  const RND = !!(HI && AV.round), RK = Math.pow(2, 1 / 2.4), RA = SIDE0 * RK, RB = END0 * RK;
+  const sx = (t, a, b) => { const c = Math.cos(t), sn = Math.sin(t); return [a * Math.sign(c) * Math.pow(Math.abs(c), 2 / 2.4), b * Math.sign(sn) * Math.pow(Math.abs(sn), 2 / 2.4)]; };
+  const ringBox = (off, w, h, mat, y0 = 0) => {   /* anello continuo: off = distanza dal bordo interno, w = larghezza */
+    const NS = 96, a = RA + off + w / 2, b = RB + off + w / 2; let p0 = sx(0, a, b);
+    for (let i = 1; i <= NS; i++) { const p1 = sx(i / NS * 2 * Math.PI, a, b), dx = p1[0] - p0[0], dz = p1[1] - p0[1], L = Math.hypot(dx, dz);
+      const m = new THREE.Mesh(new THREE.BoxGeometry(L * 1.07, h, w), mat); m.position.set((p0[0] + p1[0]) / 2, y0 + h / 2, (p0[1] + p1[1]) / 2); m.rotation.y = -Math.atan2(dz, dx); scene.add(m); p0 = p1; }
+  };
+  const addRound = (rows, start, h0, dh, rr0) => {
+    for (let r = 0; r < rows; r++) {
+      const h = .5 + h0 + r * dh, off = start + r * stepD, a = RA + off + stepD / 2, b = RB + off + stepD / 2;
+      ringBox(off, stepD, h, new THREE.MeshLambertMaterial({ color: seat[(r + rr0) % 2] }));
+      const NS = 120; let carry = 0, arc = 0, p0 = sx(0, a, b);
+      for (let i = 1; i <= NS; i++) {
+        const p1 = sx(i / NS * 2 * Math.PI, a, b), dx = p1[0] - p0[0], dz = p1[1] - p0[1], L = Math.hypot(dx, dz);
+        carry += L; while (carry >= .56) { carry -= .56; arc += .56; const f = 1 - carry / L, x = p0[0] + dx * f, z = p0[1] + dz * f, gx = x / (a * a), gz = z / (b * b), yawR = Math.atan2(-gx, -gz);
+          seatsL.push({ x, y: h, z, yaw: yawR, a: arc, r: r + rr0 });
+          if (R() > Math.min(1, TH.density * .95 + .1)) continue;
+          spots.push({ x: x + (R() - .5) * .1, y: h, z: z + (R() - .5) * .1, yaw: yawR }); }
+        p0 = p1;
+      }
+    }
+  };
+  if (RND) {
+    addRound(RL, 0, 0, DH, 0);
+    if (GAP) ringBox(RL * stepD, GAP * stepD, hTopE, concMat);
+    if (RU) addRound(RU, (RL + GAP) * stepD, hTopE - .5 + 1.8, DU, RL);
+    ringBox(-.24, .04, .8, new THREE.MeshLambertMaterial({ color: 0x9fc4e6, transparent: true, opacity: .16, depthWrite: false }), .5);
+  }
+  for (const s of RND ? [] : [-1, 1]) {
     if (!HI) { addStand('z', s, rEL, END0, endSpan, 0, 0, DH); addStand('x', s, rSL, SIDE0, 2 * END0 - 1, 0, 0, DH); continue; }
     const EZ = END0 + OFF[s > 0 ? 'zp' : 'zm'], EX = SIDE0 + OFF[s > 0 ? 'xp' : 'xm'];
     if (s !== OS) addStand('z', s, RL, EZ, 0, 0, 0, DH, 0, true); addStand('x', s, RL, EX, 0, 0, 0, DH, 0, true, OS);
@@ -176,7 +206,7 @@ function s3Build(M) {
   /* pareti scure dietro le gradinate e soffitto con fari */
   /* pareti visibili solo dall'interno: le camere larghe stanno oltre i gradoni e non devono vedere il retro */
   const wallMat = new THREE.MeshLambertMaterial({ color: new THREE.Color(TH.wall[1]).multiplyScalar(.8) });
-  const zW = END0 + Math.max(OFF.zp, OFF.zm) + (rEL + GAP + RU) * stepD + 1, xW = SIDE0 + Math.max(OFF.xp, OFF.xm) + (rSL + GAP + RU) * stepD + 1; if (HI) S.camK = Math.max(1.5, (xW + 1.5) / 15);
+  const zW = (RND ? RB : END0) + Math.max(OFF.zp, OFF.zm) + (rEL + GAP + RU) * stepD + 1, xW = (RND ? RA : SIDE0) + Math.max(OFF.xp, OFF.xm) + (rSL + GAP + RU) * stepD + 1; if (HI) S.camK = Math.max(1.5, (xW + 1.5) / 15);
   /* tetto ad arco: sale da 24,6 m ai lati a 30 m al centro; il resto resta piatto a 24 m */
   const WH = HI && AV.arch ? 36 : 26, rY = x => HI && AV.arch ? 24.6 + 5.4 * (1 - Math.pow(x / xW, 2)) : 23.6; S.roofY = rY;
   if (OPEN) { const wallC = AV.wall || null, ct = s3Tex(AV.windows ? 1024 : 512, AV.windows ? 512 : 256, (c, w, h) => { if (wallC) { c.fillStyle = wallC; c.fillRect(0, 0, w, h); for (let x = 0; x < w; x += 64) { c.fillStyle = 'rgba(0,0,0,.16)'; c.fillRect(x, 0, 3, h); c.fillStyle = 'rgba(255,255,255,.06)'; c.fillRect(x + 3, 0, 2, h); } const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, 'rgba(0,0,0,.45)'); g.addColorStop(.35, 'rgba(0,0,0,0)'); c.fillStyle = g; c.fillRect(0, 0, w, h);
@@ -232,8 +262,8 @@ function s3Build(M) {
     try {
       scene.remove(bodies); scene.remove(heads);
       S.crowd.rich = s3RichCrowd(S, scene, { spots, cc: cc_, sk: sk_, team, base });
-      const bandTex = s3Tex(2048, 64, (c, w, h) => { c.fillStyle = homeKit.shade; c.fillRect(0, 0, w, h); const it = [(M.home.city || M.home.short).toUpperCase(), 'SERIE A FEMMINILE', M.home.short.toUpperCase(), 'VOLLEY MANAGER', 'FRECCIAROSSA', 'FINECO']; c.fillStyle = Gx.onColor(homeKit.shade); c.font = '700 38px "Barlow Condensed",Arial Narrow,sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; for (let k = 0; k < 12; k++) c.fillText(it[k % it.length], (k + .5) * w / 12, h / 2 + 2); });
-      s3RichArena(S, scene, { OFF, open: OPEN, openSign: OS, pal: (typeof S3_PAL !== 'undefined' && S3_PAL[AV.pal || 0]) || null, TH, kit: homeKit, xW, zW, END0, SIDE0, endSpan, endSpanU, stepD, seats: seatsL, rowsEnd: rEL, rowsSide: rSL, rEL, rSL, GAP, RU, DH, DU, hTopE, hTopS, topH: S.topH, bandTex, home: (M.home.city || M.home.short).toUpperCase() });
+      const bandTex = s3Tex(2048, 64, (c, w, h) => { c.fillStyle = homeKit.shade; c.fillRect(0, 0, w, h); const it = A3 ? [(M.home.city || M.home.short).toUpperCase(), 'SERIE A3 FEMMINILE', M.home.short.toUpperCase(), 'VOLLEY MANAGER'] : [(M.home.city || M.home.short).toUpperCase(), 'SERIE A FEMMINILE', M.home.short.toUpperCase(), 'VOLLEY MANAGER', 'FRECCIAROSSA', 'FINECO']; c.fillStyle = Gx.onColor(homeKit.shade); c.font = '700 38px "Barlow Condensed",Arial Narrow,sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; for (let k = 0; k < 12; k++) c.fillText(it[k % it.length], (k + .5) * w / 12, h / 2 + 2); });
+      s3RichArena(S, scene, { round: RND, OFF, open: OPEN, openSign: OS, pal: (typeof S3_PAL !== 'undefined' && S3_PAL[AV.pal || 0]) || null, TH, kit: homeKit, xW, zW, END0, SIDE0, endSpan, endSpanU, stepD, seats: seatsL, rowsEnd: rEL, rowsSide: rSL, rEL, rSL, GAP, RU, DH, DU, hTopE, hTopS, topH: S.topH, bandTex, home: (M.home.city || M.home.short).toUpperCase() });
     } catch (e) { console.warn('palazzetto HD non disponibile', e); S.hi = false; S.crowd.rich = null; if (!bodies.parent) { scene.add(bodies); scene.add(heads); } }
   }
 
@@ -241,7 +271,7 @@ function s3Build(M) {
   S.panels = []; S.vtex = new Map();
   const fallback = s3Tex(1024, 64, (c, w, h) => {
     c.fillStyle = homeKit.shade; c.fillRect(0, 0, w, h);
-    const items = [(M.home.city || M.home.short).toUpperCase(), 'FINECO', M.away.short.toUpperCase(), 'FRECCIAROSSA', M.home.short.toUpperCase(), 'FIAT'];
+    const items = A3 ? [(M.home.city || M.home.short).toUpperCase(), M.home.short.toUpperCase(), M.away.short.toUpperCase(), (M.home.city || M.home.short).toUpperCase(), M.home.short.toUpperCase(), M.away.short.toUpperCase()] : [(M.home.city || M.home.short).toUpperCase(), 'FINECO', M.away.short.toUpperCase(), 'FRECCIAROSSA', M.home.short.toUpperCase(), 'FIAT'];
     c.fillStyle = Gx.onColor(homeKit.shade); c.font = '700 40px "Barlow Condensed",Arial Narrow,sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
     items.forEach((t, i) => { c.fillText(t, (i + .5) * w / items.length, h / 2 + 2, w / items.length - 20); });
   });
@@ -541,7 +571,7 @@ function s3Frame(M, ents, dt) {
   if (!cr.rich) { cr.bodies.instanceMatrix.needsUpdate = true; cr.heads.instanceMatrix.needsUpdate = true; }
 
   /* cartelloni LED con i video della Lega */
-  if (typeof LED !== 'undefined' && LED.vids.length) {
+  if (typeof LED !== 'undefined' && LED.vids.length && !S.noAds) {
     for (const k of [0, 1, 2]) { const v = LED.vids[LED.slots[k]]; if (v && v.paused && !v._bad && typeof ledPlay === 'function') ledPlay(v); }
     for (const pn of S.panels) {
       const v = typeof ledSlot === 'function' ? ledSlot(pn.slot) : null;

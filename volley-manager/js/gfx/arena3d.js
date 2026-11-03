@@ -48,10 +48,18 @@ const S3_SMALL = [
 ];
 function s3IsA3(id) { try { return ['A3A', 'A3B'].some(l => WORLD[l] && WORLD[l].some(t => t.id === id)); } catch (e) { return false; } }
 /* palazzetti con disegno proprio (id club) */
+const S3_ROUND = [
+  { name: 'Arena circolare', xl: 1, gap: 2, ru: 4, dh: .45, du: .55, round: true },
+  { name: 'Anfiteatro circolare', xl: 4, gap: 0, ru: 0, dh: .5, du: .5, round: true },
+  { name: 'Arena circolare ripida', xl: 0, gap: 1, ru: 6, dh: .5, du: .7, round: true }
+];
+const S3_ROUND_CLUB = { sca: [0, 1], mil: [2, 2], nov: [1, 0] };   /* club con tribune circolari: [forma, palette] */
 const S3_CUSTOM = {
   mel: { name: 'Melendugno', xl: 5, gap: 0, ru: 0, dh: .5, du: .5, horse: true, arch: true, openSign: 1, wall: '#5e0f20', windows: true, push: { xp: 1.4, zm: 1.4 }, pal: 0 }
 };
 function s3ArenaVariant(M) {
+  { const q0 = new URLSearchParams(location.search).get('round'); if (q0 !== null) return Object.assign({ pal: +q0 % 3 }, S3_ROUND[+q0 % S3_ROUND.length]); }
+  if (M && M.home && S3_ROUND_CLUB[M.home.id] !== undefined) return Object.assign({ pal: S3_ROUND_CLUB[M.home.id][1] }, S3_ROUND[S3_ROUND_CLUB[M.home.id][0]]);
   if (M && M.home && S3_CUSTOM[M.home.id]) return Object.assign({}, S3_CUSTOM[M.home.id]);
   let rnd = false; try { rnd = localStorage.getItem('vm-arena') === 'rnd'; } catch (e) { }
   const q = new URLSearchParams(location.search).get('arena'), h = Gx.hash(String((M.home && M.home.id) || 'x') + 'forma') >>> 0;
@@ -129,12 +137,12 @@ function s3RichArena(S, scene, c) {
 
   /* parapetti trasparenti davanti ai gradoni */
   const glass = new THREE.MeshLambertMaterial({ color: 0x9fc4e6, transparent: true, opacity: .16, depthWrite: false }), rail = new THREE.MeshLambertMaterial({ color: 0xcfd6e2 });
-  for (const s of [-1, 1]) {
+  for (const s of c.round ? [] : [-1, 1]) {
     if (!(c.open && s === c.openSign)) { add(new THREE.BoxGeometry(endSpan, .8, .04), glass).position.set(0, .9, s * (END0 + OF[s > 0 ? 'zp' : 'zm'] - .22)); add(new THREE.BoxGeometry(endSpan, .05, .09), rail).position.set(0, 1.32, s * (END0 + OF[s > 0 ? 'zp' : 'zm'] - .22)); }
     add(new THREE.BoxGeometry(.04, .8, 2 * END0 - 1), glass).position.set(s * (SIDE0 + OF[s > 0 ? 'xp' : 'xm'] - .22), .9, 0); add(new THREE.BoxGeometry(.09, .05, 2 * END0 - 1), rail).position.set(s * (SIDE0 + OF[s > 0 ? 'xp' : 'xm'] - .22), 1.32, 0);
   }
   /* anello superiore: parapetti e fascia luminosa al bordo di ogni settore */
-  if (c.RU) {
+  if (c.RU && !c.round) {
     const glow = new THREE.MeshBasicMaterial({ color: PAL.glow });
     for (const s of [-1, 1]) {
       const zl = END0 + c.rEL * stepD, zu = END0 + (c.rEL + c.GAP) * stepD, xl = SIDE0 + c.rSL * stepD, xu = SIDE0 + (c.rSL + c.GAP) * stepD, yu = c.hTopE + 1.8 + .5, ys = c.hTopS + 1.8 + .5;
