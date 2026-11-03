@@ -71,6 +71,8 @@ function s3WallTex(AV, kit) {
 }
 const S3_ROUND_CLUB = { chi: [0, 0], rom: [0, 2], sca: [0, 1], mil: [2, 2], nov: [1, 0] };   /* club con tribune circolari: [forma, palette] */
 const S3_CUSTOM = {
+  fas: { name: 'Fasano', rows: 8, xl: 0, gap: 0, ru: 0, dh: .5, du: .5, horse: true, openSign: 1, arch: true, wall: '#ebe7dc', parquet: true, boxCol: 0x1b1f2a, seatCols: ['#1f3f9a', '#f2f0e8', '#1f3f9a', '#f2f0e8', '#2a4fb0'], roofCol: 0x6b4426, pal: 1, palx: { steel: 0x8a5a34, pil: 0xcbbf9e, conc: 0x3a3a40, win: 0xd8d2c0 } },
+  alt: { name: 'Altamura', rows: 8, xl: 0, gap: 0, ru: 0, dh: .5, du: .5, ends: false, trap: .9, wall: '#e3d6a4', boxCol: 0x6b6f70, seatCols: ['#8d9293', '#9ca1a0', '#80868a', '#a5aaa8'], roofCol: 0xd9d2bc, arch: true, pal: 2, palx: { steel: 0x8a8a8a, pil: 0xcfc4a0, conc: 0x55575a, win: 0xe8e0c0 } },
   bre: { name: 'Brescia', rows: 5, xl: 0, gap: 1, ru: 4, dh: .45, du: .55, sep: true, zd: 2, zRaise: 1.5, uz: true, pal: 0 },
   cos: { name: 'Costa Volpino', rows: 9, xl: 0, gap: 1, ru: 5, dh: .5, du: .6, ends: false, openX: -1, wall: '#b9b5a8', roofCol: 0x2c2a2a, pal: 2, palx: { steel: 0x6a6a70, pil: 0x8a8678, conc: 0x4a4a50, win: 0x7a7668 } },
   con: { name: 'Conegliano', xl: 2, gap: 1, ru: 4, dh: .45, du: .55, boxCol: 0x1e4a34, seatCols: ['#2f9a52', '#3aa85c', '#27874a', '#4bb36a'], roofCol: 0x0c1612, pal: 0, palx: { steel: 0x2c5a40, pil: 0x1a2a22, conc: 0x24302a, win: 0x35503f } },
@@ -82,7 +84,7 @@ const S3_CUSTOM = {
   mac: { name: 'Macerata', xl: 0, gap: 1, ru: 3, dh: .5, du: .6, openX: -1, wall: '#c9c4ba', banners: true, roofCol: 0x2a1c14, pal: 1, palx: { steel: 0x7a4a2c, pil: 0x6a6258, conc: 0x3a342c, win: 0x6a5a48 } },
   tal: { name: 'Talmassons', rows: 9, xl: -1, gap: 0, ru: 0, dh: .5, du: .5, openX: -1, sep: true, wall: '#9b9b97', banners: true, roofCol: 0x3a2a28, pal: 2, palx: { steel: 0x8a2e26, pil: 0x7c7c78, conc: 0x55555a, win: 0x70706c } },
   mar: { name: 'Marignano', rows: 9, xl: -3, gap: 0, ru: 0, dh: .42, du: .5, ends: false, wall: '#d7c48e', stripe: '#2f6fb3', roofCol: 0x9a8a70, pal: 2, palx: { steel: 0xa8322a, pil: 0xb5a070, conc: 0x6a6a70, win: 0xc9b98a } },
-  mel: { name: 'Melendugno', drummer: { x: -12.65, y: 1.0, z: 8.2 }, xl: 5, gap: 0, ru: 0, dh: .5, du: .5, horse: true, arch: true, openSign: 1, wall: '#5e0f20', windows: true, push: { xp: 1.4, zm: 1.4 }, pal: 0 }
+  mel: { name: 'Melendugno', crew: [[10.7, 6.0, -Math.PI / 2], [10.8, 7.1, -Math.PI / 2 - .2]], drummer: { x: -12.65, y: 1.0, z: 8.2 }, xl: 5, gap: 0, ru: 0, dh: .5, du: .5, horse: true, arch: true, openSign: 1, wall: '#5e0f20', windows: true, push: { xp: 1.4, zm: 1.4 }, pal: 0 }
 };
 function s3ArenaVariant(M) {
   { const q0 = new URLSearchParams(location.search).get('round'); if (q0 !== null) return Object.assign({ pal: +q0 % 3 }, S3_ROUND[+q0 % S3_ROUND.length]); }
@@ -168,6 +170,18 @@ function s3Drummer(S, scene, d, kit) {
   S.crowd.drum = { arms, g, y0: d.y };
 }
 
+/* persona in felpa nera (staff a bordo campo) */
+function s3Person(scene, x, z, yaw, hood) {
+  const g = new THREE.Group(), L = c => new THREE.MeshLambertMaterial({ color: c }), B = new THREE.BoxGeometry(1, 1, 1);
+  const bx = (w, h, dd, px, py, pz, m) => { const o = new THREE.Mesh(B, m); o.scale.set(w, h, dd); o.position.set(px, py, pz); g.add(o); return o; };
+  const hd = L(hood || 0x121216);
+  bx(.14, .85, .16, -.1, .43, 0, L(0x1d2230)); bx(.14, .85, .16, .1, .43, 0, L(0x1d2230));
+  bx(.4, .6, .24, 0, 1.15, 0, hd); bx(.1, .56, .12, -.26, 1.12, 0, hd); bx(.1, .56, .12, .26, 1.12, 0, hd); bx(.3, .12, .2, 0, 1.5, -.1, hd);
+  const hh = new THREE.Mesh(new THREE.SphereGeometry(.12, 12, 10), L(0xe2b894)); hh.position.set(0, 1.62, .02); g.add(hh);
+  bx(.24, .1, .24, 0, 1.7, -.02, L(0x2a1d14));
+  g.position.set(x, 0, z); g.rotation.y = yaw; scene.add(g); return g;
+}
+
 /* ---------- struttura del palazzetto ---------- */
 function s3RichArena(S, scene, c) {
   const OF = c.OFF || { xp: 0, xm: 0, zp: 0, zm: 0 }, { TH, kit, xW, zW, END0, SIDE0, endSpan, stepD, seats, rowsEnd, rowsSide } = c, R = Gx.rng(Gx.hash('rich-arena')), BOX = new THREE.BoxGeometry(1, 1, 1);
@@ -233,9 +247,10 @@ function s3RichArena(S, scene, c) {
   add(s3Merge(lite), new THREE.MeshBasicMaterial({ color: 0xfff1d6 }));
 
   if (c.duct) { const d = new THREE.Mesh(new THREE.TorusGeometry(15, .9, 10, 48), new THREE.MeshLambertMaterial({ color: 0x2f9a5c })); d.rotation.x = Math.PI / 2; d.scale.set(1, 1.28, 1); d.position.y = 20.4; scene.add(d); }
+  if (c.crew) { for (const p of c.crew) s3Person(scene, p[0], p[1], p[2]); }
   /* telecamere TV e steward dietro i cartelloni */
   const camG = (x, z, ry) => { const g = new THREE.Group(), leg = new THREE.MeshLambertMaterial({ color: 0x141a28 }); for (const a of [0, 2.1, 4.2]) { const l = new THREE.Mesh(new THREE.CylinderGeometry(.015, .02, 1.3, 5), leg); l.position.set(Math.cos(a) * .22, .65, Math.sin(a) * .22); l.rotation.set(Math.sin(a) * .18, 0, -Math.cos(a) * .18); g.add(l); } const body = new THREE.Mesh(new THREE.BoxGeometry(.32, .28, .6), leg); body.position.set(0, 1.45, 0); const lens = new THREE.Mesh(new THREE.CylinderGeometry(.09, .1, .36, 10), new THREE.MeshLambertMaterial({ color: 0x0a0e18 })); lens.rotation.x = Math.PI / 2; lens.position.set(0, 1.45, .46); const lamp = new THREE.Mesh(new THREE.SphereGeometry(.03, 6, 4), new THREE.MeshBasicMaterial({ color: 0xff2a2a })); lamp.position.set(0, 1.62, -.2); g.add(body, lens, lamp); g.position.set(x, 0, z); g.rotation.y = ry; scene.add(g); };
-  camG(-3.2, 13.2, Math.PI); camG(3.4, -13.2, 0); camG(-10.7, 6, Math.PI / 2); camG(10.7, -4, -Math.PI / 2);
+  if (c.crew) camG(10.7, 9.6, -Math.PI / 2); camG(-3.2, 13.2, Math.PI); camG(3.4, -13.2, 0); camG(-10.7, 6, Math.PI / 2); camG(10.7, -4, -Math.PI / 2);
   S.richStewards = [[-8, 13.4], [0, 13.4], [8, 13.4], [-8, -13.4], [0, -13.4], [8, -13.4], [-10.9, -8], [-10.9, 8], [10.9, -8], [10.9, 8]];
 }
 

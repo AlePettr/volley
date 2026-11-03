@@ -121,6 +121,7 @@ function s3Build(M) {
   floorTex.anisotropy = Math.min(8, S.renderer.capabilities.getMaxAnisotropy());
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(FW, FL), new THREE.MeshBasicMaterial({ map: floorTex, color: 0xd4d4d4 }));
   floor.rotation.x = -Math.PI / 2; floor.position.y = .0; scene.add(floor);
+  if (S.hi && typeof s3ArenaVariant === 'function' && (() => { try { return s3ArenaVariant(M).parquet; } catch (e) { return false; } })()) { const pq = new THREE.Mesh(new THREE.PlaneGeometry(2 * 11.6, 2 * 14.8), new THREE.MeshLambertMaterial({ color: 0xc89c62 })); pq.rotation.x = -Math.PI / 2; pq.position.y = -.003; scene.add(pq); }
   const shadowPlane = new THREE.Mesh(new THREE.PlaneGeometry(FW, FL), new THREE.ShadowMaterial({ opacity: .34 }));
   shadowPlane.rotation.x = -Math.PI / 2; shadowPlane.position.y = .004; shadowPlane.receiveShadow = true; scene.add(shadowPlane);
   const outer = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshLambertMaterial({ color: 0x0e1422 }));
@@ -140,6 +141,7 @@ function s3Build(M) {
         if (axis === 'z') { let hi = SIDE0 + OFF.xp + k1, lo = -(SIDE0 + OFF.xm + k1); if (OPENX) { if (OPENX < 0) lo = -(SIDE0 + 1.4); else hi = SIDE0 + 1.4; } spanR = hi - lo; centre = (hi + lo) / 2; }
         else { let hi = END0 + OFF.zp + k1, lo = -(END0 + OFF.zm + k1); if (open) { if (open < 0) lo = -(END0 + 1.2); else hi = END0 + 1.2; } spanR = hi - lo; centre = (hi + lo) / 2; }   /* lato corto aperto: la gradinata arriva fino alla parete */
       }
+      if (HI && AV.trap && axis === 'x' && !mit) spanR = span + r * AV.trap * 2;   /* tribuna a trapezio: le file si allargano salendo */
       const geo = axis === 'z' ? new THREE.BoxGeometry(spanR, h, stepD) : new THREE.BoxGeometry(stepD, h, spanR);
       const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: seat[(r + rr0) % 2] }));
       if (axis === 'z') m.position.set(centre, h / 2, sign * d); else m.position.set(sign * d, h / 2, centre);
@@ -274,7 +276,7 @@ function s3Build(M) {
       scene.remove(bodies); scene.remove(heads);
       S.crowd.rich = s3RichCrowd(S, scene, { spots, cc: cc_, sk: sk_, team, base });
       const bandTex = s3Tex(2048, 64, (c, w, h) => { c.fillStyle = homeKit.shade; c.fillRect(0, 0, w, h); const it = A3 ? [(M.home.city || M.home.short).toUpperCase(), 'SERIE A3 FEMMINILE', M.home.short.toUpperCase(), 'VOLLEY MANAGER'] : [(M.home.city || M.home.short).toUpperCase(), 'SERIE A FEMMINILE', M.home.short.toUpperCase(), 'VOLLEY MANAGER', 'FRECCIAROSSA', 'FINECO']; c.fillStyle = Gx.onColor(homeKit.shade); c.font = '700 38px "Barlow Condensed",Arial Narrow,sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; for (let k = 0; k < 12; k++) c.fillText(it[k % it.length], (k + .5) * w / 12, h / 2 + 2); });
-      s3RichArena(S, scene, { drummer: AV.drummer, round: RND, OFF, open: OPEN, openSign: OS, pal: ((typeof S3_PAL !== 'undefined' && S3_PAL[AV.pal || 0]) ? Object.assign({}, S3_PAL[AV.pal || 0], AV.palx || {}) : null), noEnd: NOEND, openX: OPENX, seatCols: AV.seatCols, duct: AV.duct, TH, kit: homeKit, xW, zW, END0, SIDE0, endSpan, endSpanU, stepD, seats: seatsL, rowsEnd: rEL, rowsSide: rSL, rEL, rSL, GAP, RU, DH, DU, hTopE, hTopS, topH: S.topH, bandTex, home: (M.home.city || M.home.short).toUpperCase() });
+      s3RichArena(S, scene, { drummer: AV.drummer, crew: AV.crew, round: RND, OFF, open: OPEN, openSign: OS, pal: ((typeof S3_PAL !== 'undefined' && S3_PAL[AV.pal || 0]) ? Object.assign({}, S3_PAL[AV.pal || 0], AV.palx || {}) : null), noEnd: NOEND, openX: OPENX, seatCols: AV.seatCols, duct: AV.duct, TH, kit: homeKit, xW, zW, END0, SIDE0, endSpan, endSpanU, stepD, seats: seatsL, rowsEnd: rEL, rowsSide: rSL, rEL, rSL, GAP, RU, DH, DU, hTopE, hTopS, topH: S.topH, bandTex, home: (M.home.city || M.home.short).toUpperCase() });
     } catch (e) { console.warn('palazzetto HD non disponibile', e); S.hi = false; S.crowd.rich = null; if (!bodies.parent) { scene.add(bodies); scene.add(heads); } }
   }
 
