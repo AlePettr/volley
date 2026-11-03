@@ -104,7 +104,7 @@ function applyLiveSub(slotKey, newPid) {
 
 /* ===== Check VAR: 2 richieste per squadra a set ===== */
 function varName(M,side){return side==="h"?M.home.short:M.away.short;}
-function varPill(){const M=UI.match,el=$("#vcpill");if(!M||!el)return;const l=M.vcLeft||{h:2,a:2};el.textContent=`VAR ${l[M.userSide]} · ${l[M.userSide==="h"?"a":"h"]}`;}
+function varPill(){const M=UI.match,el=$("#vcpill");if(!M||!el)return;if(typeof G!=="undefined"&&G&&/^A3/.test(G.lid)){el.style.display="none";return;}const l=M.vcLeft||{h:2,a:2};el.textContent=`VAR ${l[M.userSide]} · ${l[M.userSide==="h"?"a":"h"]}`;}
 function varBanner(html,ms){const b=$("#banner");if(!b)return;b.innerHTML=html;b.hidden=false;b.className="banner show";if(ms)setTimeout(()=>{const bb=$("#banner");if(bb&&bb.dataset.v===String(b.dataset.v)){bb.hidden=true;bb.className="banner";}},ms);}
 function varMaybe(M,a){
   const ry=a.ry,vc=ry.vc;if(!vc||vc.done)return false;vc.done=true;
