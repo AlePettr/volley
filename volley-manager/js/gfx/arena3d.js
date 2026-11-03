@@ -55,7 +55,7 @@ const S3_ROUND = [
 ];
 const S3_ROUND_CLUB = { rom: [0, 2], sca: [0, 1], mil: [2, 2], nov: [1, 0] };   /* club con tribune circolari: [forma, palette] */
 const S3_CUSTOM = {
-  mel: { name: 'Melendugno', xl: 5, gap: 0, ru: 0, dh: .5, du: .5, horse: true, arch: true, openSign: 1, wall: '#5e0f20', windows: true, push: { xp: 1.4, zm: 1.4 }, pal: 0 }
+  mel: { name: 'Melendugno', drummer: { x: -12.65, y: 1.0, z: 8.2 }, xl: 5, gap: 0, ru: 0, dh: .5, du: .5, horse: true, arch: true, openSign: 1, wall: '#5e0f20', windows: true, push: { xp: 1.4, zm: 1.4 }, pal: 0 }
 };
 function s3ArenaVariant(M) {
   { const q0 = new URLSearchParams(location.search).get('round'); if (q0 !== null) return Object.assign({ pal: +q0 % 3 }, S3_ROUND[+q0 % S3_ROUND.length]); }
@@ -101,6 +101,7 @@ function s3RichCrowd(S, scene, o) {
   return { torso, head, hair, legs, armL, armR, yaw, armA: new Float32Array(N), phones, phl, NP, q: new THREE.Quaternion(), qa: new THREE.Quaternion(), zax: new THREE.Vector3(0, 0, 1), pv: new THREE.Vector3(), one, mtx: new THREE.Matrix4() };
 }
 function s3RichCrowdUpdate(cr, time, ex, lw) {
+  if (cr.drum) { const hit = 9 + ex * 3; cr.drum.arms.forEach((a, k) => { a.rotation.x = -1.15 + Math.sin(time * hit + k * Math.PI) * .38; }); cr.drum.g.position.y = cr.drum.y0 + Math.max(0, Math.sin(time * hit * .5)) * .015; }
   const R = cr.rich, ta = R.torso.instanceMatrix.array, ha = R.head.instanceMatrix.array, ka = R.hair.instanceMatrix.array, la = R.legs.instanceMatrix.array, al = R.armL.instanceMatrix.array, ar = R.armR.instanceMatrix.array;
   const sp = cr.spots, base = cr.base, ph = cr.ph, tm = cr.team, up = R.zax, q = R.q, qa = R.qa, pv = R.pv, one = R.one, mx = R.mtx;
   const Y = new THREE.Vector3(0, 1, 0);
@@ -121,6 +122,25 @@ function s3RichCrowdUpdate(cr, time, ex, lw) {
   for (const m of [R.torso, R.head, R.hair, R.legs, R.armL, R.armR, R.phones]) m.instanceMatrix.needsUpdate = true;
 }
 
+/* tifosa con il tamburo (anima le braccia ogni frame) */
+function s3Drummer(S, scene, d, kit) {
+  const g = new THREE.Group(), L = c => new THREE.MeshLambertMaterial({ color: c }), B = new THREE.BoxGeometry(1, 1, 1);
+  const bx = (w, h, dd, x, y, z, m, par) => { const o = new THREE.Mesh(B, m); o.scale.set(w, h, dd); o.position.set(x, y, z); (par || g).add(o); return o; };
+  bx(.13, .8, .15, -.1, .4, 0, L(0x1f2a44)); bx(.13, .8, .15, .1, .4, 0, L(0x1f2a44));
+  bx(.36, .55, .21, 0, 1.07, 0, L(kit)); bx(.2, .06, .2, 0, 1.38, 0, L(0xe8c3a4));
+  const head = new THREE.Mesh(new THREE.SphereGeometry(.12, 12, 10), L(0xe8c3a4)); head.position.set(0, 1.55, .01); g.add(head);
+  bx(.25, .17, .24, 0, 1.6, -.03, L(0x2a1a12)); bx(.07, .3, .07, 0, 1.42, -.17, L(0x2a1a12));
+  const drum = new THREE.Mesh(new THREE.CylinderGeometry(.25, .25, .3, 20), L(0xb3202e)); drum.position.set(0, .88, .3); drum.rotation.x = -.35; g.add(drum);
+  const skin = new THREE.Mesh(new THREE.CylinderGeometry(.235, .235, .02, 20), L(0xf4f4ee)); skin.position.set(0, .13, 0); drum.add(skin);
+  const arms = [];
+  for (const sg of [-1, 1]) {
+    const piv = new THREE.Group(); piv.position.set(sg * .22, 1.3, 0); g.add(piv);
+    bx(.09, .5, .09, 0, -.25, 0, L(0xe8c3a4), piv); bx(.02, .32, .02, 0, -.5, .1, L(0xf0e6c8), piv).rotation.x = .9; arms.push(piv);
+  }
+  g.position.set(d.x, d.y, d.z); g.rotation.y = Math.PI / 2; scene.add(g);
+  S.crowd.drum = { arms, g, y0: d.y };
+}
+
 /* ---------- struttura del palazzetto ---------- */
 function s3RichArena(S, scene, c) {
   const OF = c.OFF || { xp: 0, xm: 0, zp: 0, zm: 0 }, { TH, kit, xW, zW, END0, SIDE0, endSpan, stepD, seats, rowsEnd, rowsSide } = c, R = Gx.rng(Gx.hash('rich-arena')), BOX = new THREE.BoxGeometry(1, 1, 1);
@@ -128,6 +148,7 @@ function s3RichArena(S, scene, c) {
   const beam = (a, b, t) => { const d = b.clone().sub(a), len = d.length(), q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); return { g: BOX, m: new THREE.Matrix4().compose(a.clone().add(b).multiplyScalar(.5), q, new THREE.Vector3(t, len, t)) }; };
   const V = (x, y, z) => new THREE.Vector3(x, y, z), add = (g, m) => { const o = new THREE.Mesh(g, m); scene.add(o); return o; };
 
+  if (c.drummer) s3Drummer(S, scene, c.drummer, kit.main);
   /* seggiolini a istanze */
   const seatG = s3Merge([{ g: BOX, m: s3M4(0, .03, .02, .42, .06, .38) }, { g: BOX, m: s3M4(0, .3, -.19, .42, .5, .05) }]);
   const seatM = new THREE.InstancedMesh(seatG, new THREE.MeshLambertMaterial({ color: 0xffffff }), Math.max(1, seats.length)), mtx = new THREE.Matrix4(), q = new THREE.Quaternion(), up = V(0, 1, 0), col = new THREE.Color();
