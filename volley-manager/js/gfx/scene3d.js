@@ -203,10 +203,10 @@ function s3Build(M) {
     const EZ = END0 + OFF[s > 0 ? 'zp' : 'zm'], EX = SIDE0 + OFF[s > 0 ? 'xp' : 'xm'];
     if (SEP) { if (!NOEND && s !== OS) addStand('z', s, RZ, EZ, 2 * SIDE0 * SK, 0, AV.zRaise || 0, DH, 0, false); if (s !== OPENX) addStand('x', s, RL, EX, (2 * END0 - 1) * SK, 0, 0, DH, 0, false); }
     else if (NOEND) { if (s !== OPENX) addStand('x', s, RL, EX, 2 * END0 + 4, 0, 0, DH, 0, false); }
-    else { if (s !== OS) { if (s === SE) addStand('z', s, RL, EZ, 2 * SIDE0 - 1.5, 0, 0, DH, 0, false); else addStand('z', s, RL, EZ, 0, 0, 0, DH, 0, true); } if (s !== OPENX) addStand('x', s, RL, EX, 0, 0, 0, DH, 0, true, OS || SE); }
+    else { if (s !== OS) { if (s === SE) addStand('z', s, RL, EZ, (2 * SIDE0 - 1.5) * (AV.sepEndK || 1), 0, 0, DH, 0, false); else addStand('z', s, RL, EZ, 0, 0, 0, DH, 0, true); } if (s !== OPENX) addStand('x', s, RL, EX, 0, 0, 0, DH, 0, true, OS || SE); }
     if (GAP && !NOEND && !SEP && !OPENX) { const cz = new THREE.Mesh(new THREE.BoxGeometry(2 * (SIDE0 + (RL + GAP) * stepD), hTopE, GAP * stepD), concMat); cz.position.set(0, hTopE / 2, s * (EZ + RL * stepD + GAP * stepD / 2)); scene.add(cz);
     const cx = new THREE.Mesh(new THREE.BoxGeometry(GAP * stepD, hTopS, 2 * (END0 + (RL + GAP) * stepD)), concMat); cx.position.set(s * (EX + RL * stepD + GAP * stepD / 2), hTopS / 2, 0); scene.add(cx); }
-    if (RU) { if (!NOEND && (!AV.zd || AV.uz)) addStand('z', s, RU, EZ + (RZ + GAP) * stepD, SEP ? 2 * SIDE0 * SK : (s === SE ? 2 * SIDE0 - 1.5 : 0), 0, .5 + (RZ - 1) * DH + (AV.zRaise || 0) - .5 + 1.8, DU, RZ, !SEP && s !== SE);
+    if (RU) { if (!NOEND && (!AV.zd || AV.uz)) addStand('z', s, RU, EZ + (RZ + GAP) * stepD, SEP ? 2 * SIDE0 * SK : (s === SE ? (2 * SIDE0 - 1.5) * (AV.sepEndK || 1) : 0), 0, .5 + (RZ - 1) * DH + (AV.zRaise || 0) - .5 + 1.8, DU, RZ, !SEP && s !== SE);
     if (s !== OPENX && !AV.uz) addStand('x', s, RU, EX + (RL + GAP) * stepD, SEP ? (2 * END0 - 1) * SK : 0, 0, hTopS - .5 + 1.8, DU, RL, !SEP, SEP ? 0 : (OS || SE)); }
   }
   S.topH = Math.max(hTopE, hTopS) + (RU ? 1.8 + RU * DU : .6);
