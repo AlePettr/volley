@@ -53,8 +53,28 @@ const S3_ROUND = [
   { name: 'Anfiteatro circolare', xl: 4, gap: 0, ru: 0, dh: .5, du: .5, round: true },
   { name: 'Arena circolare ripida', xl: 0, gap: 1, ru: 6, dh: .5, du: .7, round: true }
 ];
+/* texture delle pareti piene: colore, pannelli pubblicitari generici, pilastri */
+function s3WallTex(AV, kit) {
+  const t = s3Tex(1024, 256, (c, w, h) => {
+    c.fillStyle = AV.wall || '#8a8a88'; c.fillRect(0, 0, w, h);
+    for (let x = 0; x < w; x += 64) { c.fillStyle = 'rgba(0,0,0,.13)'; c.fillRect(x, 0, 3, h); }
+    const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, 'rgba(0,0,0,.4)'); g.addColorStop(.4, 'rgba(0,0,0,0)'); c.fillStyle = g; c.fillRect(0, 0, w, h);
+    if (AV.banners) for (const [x0, k] of [[.1, 0], [.56, 1]]) {   /* due grandi pannelli blu: mare e montagna */
+      const bx = w * x0, bw = w * .34, by = h * .58, bh = h * .34, gr = c.createLinearGradient(0, by, 0, by + bh);
+      gr.addColorStop(0, k ? '#6fa6d8' : '#2f78b8'); gr.addColorStop(.6, k ? '#dfeaf5' : '#7ec0e0'); gr.addColorStop(1, k ? '#274a7a' : '#1b4f86');
+      c.fillStyle = gr; c.fillRect(bx, by, bw, bh); c.fillStyle = 'rgba(255,255,255,.85)'; c.beginPath(); c.moveTo(bx, by + bh * .75); c.lineTo(bx + bw * .35, by + bh * .38); c.lineTo(bx + bw * .6, by + bh * .62); c.lineTo(bx + bw * .8, by + bh * .45); c.lineTo(bx + bw, by + bh * .7); c.lineTo(bx + bw, by + bh); c.lineTo(bx, by + bh); c.fill();
+      c.strokeStyle = '#1a2a44'; c.lineWidth = 5; c.strokeRect(bx, by, bw, bh);
+    }
+    if (AV.stripe) { c.fillStyle = AV.stripe; c.fillRect(0, h * .9, w, h * .05); }
+  });
+  t.wrapS = THREE.RepeatWrapping; t.repeat.set(AV.banners ? 1 : 3, 1); return t;
+}
 const S3_ROUND_CLUB = { rom: [0, 2], sca: [0, 1], mil: [2, 2], nov: [1, 0] };   /* club con tribune circolari: [forma, palette] */
 const S3_CUSTOM = {
+  cun: { name: 'Cuneo', xl: 2, gap: 1, ru: 5, dh: .5, du: .6, round: true, duct: true, roofCol: 0x4a2e1e, pal: 1, palx: { steel: 0x7a4a2c, pil: 0x3a281c, conc: 0x2a2420, win: 0x5a4a38, glow: 0xffe2b0 } },
+  mac: { name: 'Macerata', xl: 0, gap: 1, ru: 3, dh: .5, du: .6, openX: -1, wall: '#c9c4ba', banners: true, roofCol: 0x2a1c14, pal: 1, palx: { steel: 0x7a4a2c, pil: 0x6a6258, conc: 0x3a342c, win: 0x6a5a48 } },
+  tal: { name: 'Talmassons', xl: -1, gap: 0, ru: 0, dh: .5, du: .5, openX: -1, sep: true, wall: '#9b9b97', banners: true, roofCol: 0x3a2a28, pal: 2, palx: { steel: 0x8a2e26, pil: 0x7c7c78, conc: 0x55555a, win: 0x70706c } },
+  mar: { name: 'Marignano', xl: -3, gap: 0, ru: 0, dh: .42, du: .5, ends: false, wall: '#d7c48e', stripe: '#2f6fb3', roofCol: 0x9a8a70, pal: 2, palx: { steel: 0xa8322a, pil: 0xb5a070, conc: 0x6a6a70, win: 0xc9b98a } },
   mel: { name: 'Melendugno', drummer: { x: -12.65, y: 1.0, z: 8.2 }, xl: 5, gap: 0, ru: 0, dh: .5, du: .5, horse: true, arch: true, openSign: 1, wall: '#5e0f20', windows: true, push: { xp: 1.4, zm: 1.4 }, pal: 0 }
 };
 function s3ArenaVariant(M) {
@@ -159,8 +179,8 @@ function s3RichArena(S, scene, c) {
   /* parapetti trasparenti davanti ai gradoni */
   const glass = new THREE.MeshLambertMaterial({ color: 0x9fc4e6, transparent: true, opacity: .16, depthWrite: false }), rail = new THREE.MeshLambertMaterial({ color: 0xcfd6e2 });
   for (const s of c.round ? [] : [-1, 1]) {
-    if (!(c.open && s === c.openSign)) { add(new THREE.BoxGeometry(endSpan, .8, .04), glass).position.set(0, .9, s * (END0 + OF[s > 0 ? 'zp' : 'zm'] - .22)); add(new THREE.BoxGeometry(endSpan, .05, .09), rail).position.set(0, 1.32, s * (END0 + OF[s > 0 ? 'zp' : 'zm'] - .22)); }
-    add(new THREE.BoxGeometry(.04, .8, 2 * END0 - 1), glass).position.set(s * (SIDE0 + OF[s > 0 ? 'xp' : 'xm'] - .22), .9, 0); add(new THREE.BoxGeometry(.09, .05, 2 * END0 - 1), rail).position.set(s * (SIDE0 + OF[s > 0 ? 'xp' : 'xm'] - .22), 1.32, 0);
+    if (!(c.open && s === c.openSign) && !c.noEnd) { add(new THREE.BoxGeometry(endSpan, .8, .04), glass).position.set(0, .9, s * (END0 + OF[s > 0 ? 'zp' : 'zm'] - .22)); add(new THREE.BoxGeometry(endSpan, .05, .09), rail).position.set(0, 1.32, s * (END0 + OF[s > 0 ? 'zp' : 'zm'] - .22)); }
+    if (c.openX !== s) { add(new THREE.BoxGeometry(.04, .8, 2 * END0 - 1), glass).position.set(s * (SIDE0 + OF[s > 0 ? 'xp' : 'xm'] - .22), .9, 0); add(new THREE.BoxGeometry(.09, .05, 2 * END0 - 1), rail).position.set(s * (SIDE0 + OF[s > 0 ? 'xp' : 'xm'] - .22), 1.32, 0); }
   }
   /* anello superiore: parapetti e fascia luminosa al bordo di ogni settore */
   if (c.RU && !c.round) {
@@ -205,6 +225,7 @@ function s3RichArena(S, scene, c) {
   const lite = []; for (let i = -4; i <= 4; i++) for (let x = -L + 2; x < L - 1; x += 4.4) lite.push({ g: BOX, m: s3M4(x, rY(x) - 1.15, i * 3.3, .5, .14, .28) });
   add(s3Merge(lite), new THREE.MeshBasicMaterial({ color: 0xfff1d6 }));
 
+  if (c.duct) { const d = new THREE.Mesh(new THREE.TorusGeometry(15, .9, 10, 48), new THREE.MeshLambertMaterial({ color: 0x2f9a5c })); d.rotation.x = Math.PI / 2; d.scale.set(1, 1.28, 1); d.position.y = 20.4; scene.add(d); }
   /* telecamere TV e steward dietro i cartelloni */
   const camG = (x, z, ry) => { const g = new THREE.Group(), leg = new THREE.MeshLambertMaterial({ color: 0x141a28 }); for (const a of [0, 2.1, 4.2]) { const l = new THREE.Mesh(new THREE.CylinderGeometry(.015, .02, 1.3, 5), leg); l.position.set(Math.cos(a) * .22, .65, Math.sin(a) * .22); l.rotation.set(Math.sin(a) * .18, 0, -Math.cos(a) * .18); g.add(l); } const body = new THREE.Mesh(new THREE.BoxGeometry(.32, .28, .6), leg); body.position.set(0, 1.45, 0); const lens = new THREE.Mesh(new THREE.CylinderGeometry(.09, .1, .36, 10), new THREE.MeshLambertMaterial({ color: 0x0a0e18 })); lens.rotation.x = Math.PI / 2; lens.position.set(0, 1.45, .46); const lamp = new THREE.Mesh(new THREE.SphereGeometry(.03, 6, 4), new THREE.MeshBasicMaterial({ color: 0xff2a2a })); lamp.position.set(0, 1.62, -.2); g.add(body, lens, lamp); g.position.set(x, 0, z); g.rotation.y = ry; scene.add(g); };
   camG(-3.2, 13.2, Math.PI); camG(3.4, -13.2, 0); camG(-10.7, 6, Math.PI / 2); camG(10.7, -4, -Math.PI / 2);
