@@ -53,7 +53,7 @@ const S3_ROUND = [
   { name: 'Anfiteatro circolare', xl: 4, gap: 0, ru: 0, dh: .5, du: .5, round: true },
   { name: 'Arena circolare ripida', xl: 0, gap: 1, ru: 6, dh: .5, du: .7, round: true }
 ];
-const S3_ROUND_CLUB = { sca: [0, 1], mil: [2, 2], nov: [1, 0] };   /* club con tribune circolari: [forma, palette] */
+const S3_ROUND_CLUB = { rom: [0, 2], sca: [0, 1], mil: [2, 2], nov: [1, 0] };   /* club con tribune circolari: [forma, palette] */
 const S3_CUSTOM = {
   mel: { name: 'Melendugno', xl: 5, gap: 0, ru: 0, dh: .5, du: .5, horse: true, arch: true, openSign: 1, wall: '#5e0f20', windows: true, push: { xp: 1.4, zm: 1.4 }, pal: 0 }
 };
