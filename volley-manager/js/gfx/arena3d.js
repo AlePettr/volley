@@ -75,6 +75,8 @@ const S3_CUSTOM = {
   alt: { name: 'Altamura', rows: 8, xl: 0, gap: 0, ru: 0, dh: .5, du: .5, ends: false, trap: -.9, wall: '#e3d6a4', boxCol: 0x6b6f70, seatCols: ['#8d9293', '#9ca1a0', '#80868a', '#a5aaa8'], roofCol: 0xd9d2bc, arch: true, pal: 2, palx: { steel: 0x8a8a8a, pil: 0xcfc4a0, conc: 0x55575a, win: 0xe8e0c0 } },
   bre: { name: 'Brescia', rows: 5, xl: 0, gap: 1, ru: 4, dh: .45, du: .55, sep: true, zd: 2, zRaise: 1.5, uz: true, pal: 0 },
   cos: { name: 'Costa Volpino', rows: 9, xl: 0, gap: 1, ru: 5, dh: .5, du: .6, ends: false, openX: -1, wall: '#b9b5a8', roofCol: 0x2c2a2a, pal: 2, palx: { steel: 0x6a6a70, pil: 0x8a8678, conc: 0x4a4a50, win: 0x7a7668 } },
+  pad: { name: 'Padova', rows: 9, xl: 0, gap: 1, ru: 5, dh: .5, du: .6, ends: false, openX: -1, wall: '#9fd3e6', roofCol: 0x2c2a2a, pal: 2, palx: { steel: 0x6a6a70, pil: 0x7fb8cc, conc: 0x4a4a50, win: 0x8fc4d8 } },
+  off: { name: 'Offanengo', rows: 5, xl: 0, gap: 0, ru: 0, dh: .5, du: .5, sep: true, sepK: .8, pal: 2 },
   con: { name: 'Conegliano', xl: 2, gap: 1, ru: 4, dh: .45, du: .55, boxCol: 0x1e4a34, seatCols: ['#2f9a52', '#3aa85c', '#27874a', '#4bb36a'], roofCol: 0x0c1612, pal: 0, palx: { steel: 0x2c5a40, pil: 0x1a2a22, conc: 0x24302a, win: 0x35503f } },
   bus: { name: 'Busto Arsizio', xl: 2, gap: 1, ru: 5, dh: .5, du: .6, horse: true, openSign: 1, wall: '#34343a', stripe: '#c4202e', boxCol: 0x4a1a1e, seatCols: ['#c4202e', '#d12a37', '#a8182a', '#e0453a', '#b01e2a'], roofCol: 0x3a2418, pal: 1, palx: { steel: 0x7a4a2c, pil: 0x3a2a2a, conc: 0x2a2024, win: 0x6a4a3a } },
   ber: { name: 'Bergamo', xl: 1, gap: 2, ru: 4, dh: .45, du: .55, sepEnd: 1, pal: 0 },
