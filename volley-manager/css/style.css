@@ -198,13 +198,13 @@ button.prow:hover{background:var(--panel2)}
 .arena{position:relative;border-radius:22px;overflow:hidden;background:#05080f;box-shadow:0 26px 50px -26px rgba(2,8,20,.9);border:1px solid rgba(255,255,255,.06)}
 .arena .cv3{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
 .arena .cv{position:relative;display:block;width:100%;height:auto;max-height:none;object-fit:fill;touch-action:manipulation}
-.scorebug{position:absolute;left:14px;top:14px;min-width:240px;max-width:60%;background:rgba(6,10,20,.88);backdrop-filter:blur(6px);color:#fff;border-radius:14px;overflow:hidden;font-family:var(--f-disp);box-shadow:0 10px 24px -8px rgba(0,0,0,.6)}
-.sb-ctx,.sb-set{font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:5px 12px;background:rgba(255,255,255,.07);color:#b4c3dc}
-.sb-row{display:flex;align-items:center;gap:9px;padding:7px 12px 7px 9px;border-left:6px solid var(--kit)}
+.scorebug{position:absolute;left:10px;top:10px;min-width:150px;max-width:44%;background:rgba(6,10,20,.82);backdrop-filter:blur(6px);color:#fff;border-radius:8px;overflow:hidden;font-family:var(--f-disp);box-shadow:0 10px 24px -8px rgba(0,0,0,.6)}
+.sb-ctx,.sb-set{font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:2px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:rgba(255,255,255,.07);color:#b4c3dc}
+.sb-row{display:flex;align-items:center;gap:6px;padding:3px 8px 3px 6px;border-left:4px solid var(--kit)}
 .sb-row+.sb-row{border-top:1px solid rgba(255,255,255,.07)}
-.sb-row .crest{--cs:30px}
-.sb-name{font-size:21px;flex:1;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.01em}
-.sb-pts{font-size:34px;line-height:1;min-width:40px;text-align:right}
+.sb-row .crest{--cs:20px}
+.sb-name{font-size:14px;flex:1;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.01em}
+.sb-pts{font-size:22px;line-height:1;min-width:26px;text-align:right}
 .pips{display:flex;gap:4px}.pips i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.18)}.pips i.on{background:#ffd24a}
 .srv{width:10px;height:10px;border-radius:50%;background:#ffd24a;flex:none;box-shadow:0 0 0 3px rgba(255,210,74,.25)}
 .caption{position:absolute;left:14px;right:14px;bottom:14px;background:rgba(6,10,20,.86);backdrop-filter:blur(6px);color:#fff;padding:11px 16px;border-radius:12px;font-weight:600;font-size:16px;border-left:5px solid var(--accent)}
@@ -228,7 +228,7 @@ button.prow:hover{background:var(--panel2)}
   .attrs{grid-template-columns:repeat(2,1fr)}
   .slot{grid-template-columns:96px 1fr}
   .vs .crest{--cs:64px}.vs .nm{font-size:21px}
-  .scorebug{min-width:0;left:8px;top:8px;max-width:78%}.sb-name{font-size:16px}.sb-pts{font-size:26px}
+  .scorebug{min-width:0;left:6px;top:6px;max-width:62%}.sb-name{font-size:12px}.sb-pts{font-size:18px}
   .caption{left:8px;right:8px;bottom:8px;font-size:14px;padding:8px 12px}
   .season-strip b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .season-strip>div{padding:8px 10px;min-width:0}

@@ -12,6 +12,7 @@ function roundedFee(x) { return Math.round(x / 500) * 500; }
 function pickBuyer(p) {
   const my = myTeam(), cands = [];
   for (const lid of ["A1", "A2", "A3A", "A3B"]) {
+    if (G.lid === "A1" && lid.indexOf("A3") === 0) continue;   /* le A3 non fanno offerte alle squadre di A1 */
     for (const club of (WORLD[lid] || [])) {
       if (club.id === my.id) continue;
       const same = club.players.filter(x => x.role === p.role);

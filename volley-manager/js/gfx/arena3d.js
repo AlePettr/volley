@@ -71,11 +71,13 @@ function s3WallTex(AV, kit) {
 }
 const S3_ROUND_CLUB = { chi: [0, 0], rom: [0, 2], sca: [0, 1], mil: [2, 2], nov: [1, 0] };   /* club con tribune circolari: [forma, palette] */
 const S3_CUSTOM = {
+  bre: { name: 'Brescia', rows: 5, xl: 0, gap: 1, ru: 4, dh: .45, du: .55, sep: true, zd: 2, zRaise: 1.5, uz: true, pal: 0 },
+  cos: { name: 'Costa Volpino', rows: 9, xl: 0, gap: 1, ru: 5, dh: .5, du: .6, ends: false, openX: -1, wall: '#b9b5a8', roofCol: 0x2c2a2a, pal: 2, palx: { steel: 0x6a6a70, pil: 0x8a8678, conc: 0x4a4a50, win: 0x7a7668 } },
   con: { name: 'Conegliano', xl: 2, gap: 1, ru: 4, dh: .45, du: .55, boxCol: 0x1e4a34, seatCols: ['#2f9a52', '#3aa85c', '#27874a', '#4bb36a'], roofCol: 0x0c1612, pal: 0, palx: { steel: 0x2c5a40, pil: 0x1a2a22, conc: 0x24302a, win: 0x35503f } },
   bus: { name: 'Busto Arsizio', xl: 2, gap: 1, ru: 5, dh: .5, du: .6, horse: true, openSign: 1, wall: '#34343a', stripe: '#c4202e', boxCol: 0x4a1a1e, seatCols: ['#c4202e', '#d12a37', '#a8182a', '#e0453a', '#b01e2a'], roofCol: 0x3a2418, pal: 1, palx: { steel: 0x7a4a2c, pil: 0x3a2a2a, conc: 0x2a2024, win: 0x6a4a3a } },
   ber: { name: 'Bergamo', xl: 1, gap: 2, ru: 4, dh: .45, du: .55, sepEnd: 1, pal: 0 },
   val: { name: 'Vallefoglia', rows: 8, xl: -3, gap: 0, ru: 0, dh: .45, du: .5, sep: true, sepK: .72, pal: 2 },
-  fir: { name: 'Firenze', xl: 3, gap: 1, ru: 3, dh: .5, du: .6, sep: true, zd: -5, boxCol: 0x262a30, seatCols: ['#e53935', '#1e88e5', '#43a047', '#fb8c00', '#8e24aa', '#fdd835', '#00acc1', '#ec407a'], roofCol: 0x2c2f35, pal: 2, palx: { steel: 0xa8aeb8, pil: 0x6a6e74, conc: 0x50545a, win: 0x70747a } },
+  fir: { name: 'Firenze', xl: 3, gap: 1, ru: 3, dh: .5, du: .6, sep: true, zd: -2, boxCol: 0x262a30, seatCols: ['#e53935', '#1e88e5', '#43a047', '#fb8c00', '#8e24aa', '#fdd835', '#00acc1', '#ec407a'], roofCol: 0x2c2f35, pal: 2, palx: { steel: 0xa8aeb8, pil: 0x6a6e74, conc: 0x50545a, win: 0x70747a } },
   cun: { name: 'Cuneo', xl: 2, gap: 1, ru: 5, dh: .5, du: .6, round: true, duct: true, roofCol: 0x4a2e1e, pal: 1, palx: { steel: 0x7a4a2c, pil: 0x3a281c, conc: 0x2a2420, win: 0x5a4a38, glow: 0xffe2b0 } },
   mac: { name: 'Macerata', xl: 0, gap: 1, ru: 3, dh: .5, du: .6, openX: -1, wall: '#c9c4ba', banners: true, roofCol: 0x2a1c14, pal: 1, palx: { steel: 0x7a4a2c, pil: 0x6a6258, conc: 0x3a342c, win: 0x6a5a48 } },
   tal: { name: 'Talmassons', rows: 9, xl: -1, gap: 0, ru: 0, dh: .5, du: .5, openX: -1, sep: true, wall: '#9b9b97', banners: true, roofCol: 0x3a2a28, pal: 2, palx: { steel: 0x8a2e26, pil: 0x7c7c78, conc: 0x55555a, win: 0x70706c } },

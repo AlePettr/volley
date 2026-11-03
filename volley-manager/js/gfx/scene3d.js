@@ -170,9 +170,10 @@ function s3Build(M) {
   const RND = !!(HI && AV.round), RK = Math.pow(2, 1 / 2.4), RA = SIDE0 * RK, RB = END0 * RK;
   const sx = (t, a, b) => { const c = Math.cos(t), sn = Math.sin(t); return [a * Math.sign(c) * Math.pow(Math.abs(c), 2 / 2.4), b * Math.sign(sn) * Math.pow(Math.abs(sn), 2 / 2.4)]; };
   const ringBox = (off, w, h, mat, y0 = 0) => {   /* anello continuo: off = distanza dal bordo interno, w = larghezza */
-    const NS = 96, a = RA + off + w / 2, b = RB + off + w / 2; let p0 = sx(0, a, b);
+    const NS = 96, a = RA + off + w / 2, b = RB + off + w / 2, parts = [], Q = new THREE.Quaternion(), YA = new THREE.Vector3(0, 1, 0), BG = new THREE.BoxGeometry(1, 1, 1); let p0 = sx(0, a, b);
     for (let i = 1; i <= NS; i++) { const p1 = sx(i / NS * 2 * Math.PI, a, b), dx = p1[0] - p0[0], dz = p1[1] - p0[1], L = Math.hypot(dx, dz);
-      const m = new THREE.Mesh(new THREE.BoxGeometry(L * 1.07, h, w), mat); m.position.set((p0[0] + p1[0]) / 2, y0 + h / 2, (p0[1] + p1[1]) / 2); m.rotation.y = -Math.atan2(dz, dx); scene.add(m); p0 = p1; }
+      Q.setFromAxisAngle(YA, -Math.atan2(dz, dx)); parts.push({ g: BG, m: new THREE.Matrix4().compose(new THREE.Vector3((p0[0] + p1[0]) / 2, y0 + h / 2, (p0[1] + p1[1]) / 2), Q, new THREE.Vector3(L * 1.07, h, w)) }); p0 = p1; }
+    scene.add(new THREE.Mesh(s3Merge(parts), mat));   /* un solo mesh per anello: pochi draw call anche su telefono */
   };
   const addRound = (rows, start, h0, dh, rr0) => {
     for (let r = 0; r < rows; r++) {
@@ -198,13 +199,13 @@ function s3Build(M) {
   for (const s of RND ? [] : [-1, 1]) {
     if (!HI) { addStand('z', s, rEL, END0, endSpan, 0, 0, DH); addStand('x', s, rSL, SIDE0, 2 * END0 - 1, 0, 0, DH); continue; }
     const EZ = END0 + OFF[s > 0 ? 'zp' : 'zm'], EX = SIDE0 + OFF[s > 0 ? 'xp' : 'xm'];
-    if (SEP) { if (!NOEND) addStand('z', s, RZ, EZ, 2 * SIDE0 * SK, 0, 0, DH, 0, false); if (s !== OPENX) addStand('x', s, RL, EX, (2 * END0 - 1) * SK, 0, 0, DH, 0, false); }
+    if (SEP) { if (!NOEND) addStand('z', s, RZ, EZ, 2 * SIDE0 * SK, 0, AV.zRaise || 0, DH, 0, false); if (s !== OPENX) addStand('x', s, RL, EX, (2 * END0 - 1) * SK, 0, 0, DH, 0, false); }
     else if (NOEND) { if (s !== OPENX) addStand('x', s, RL, EX, 2 * END0 + 4, 0, 0, DH, 0, false); }
     else { if (s !== OS) { if (s === SE) addStand('z', s, RL, EZ, 2 * SIDE0 - 1.5, 0, 0, DH, 0, false); else addStand('z', s, RL, EZ, 0, 0, 0, DH, 0, true); } if (s !== OPENX) addStand('x', s, RL, EX, 0, 0, 0, DH, 0, true, OS || SE); }
     if (GAP && !NOEND && !SEP && !OPENX) { const cz = new THREE.Mesh(new THREE.BoxGeometry(2 * (SIDE0 + (RL + GAP) * stepD), hTopE, GAP * stepD), concMat); cz.position.set(0, hTopE / 2, s * (EZ + RL * stepD + GAP * stepD / 2)); scene.add(cz);
     const cx = new THREE.Mesh(new THREE.BoxGeometry(GAP * stepD, hTopS, 2 * (END0 + (RL + GAP) * stepD)), concMat); cx.position.set(s * (EX + RL * stepD + GAP * stepD / 2), hTopS / 2, 0); scene.add(cx); }
-    if (RU) { if (!NOEND && !AV.zd) addStand('z', s, RU, EZ + (RL + GAP) * stepD, SEP ? 2 * SIDE0 * SK : (s === SE ? 2 * SIDE0 - 1.5 : 0), 0, hTopE - .5 + 1.8, DU, RL, !SEP && s !== SE);
-    if (s !== OPENX) addStand('x', s, RU, EX + (RL + GAP) * stepD, SEP ? (2 * END0 - 1) * SK : 0, 0, hTopS - .5 + 1.8, DU, RL, !SEP, SEP ? 0 : (OS || SE)); }
+    if (RU) { if (!NOEND && (!AV.zd || AV.uz)) addStand('z', s, RU, EZ + (RZ + GAP) * stepD, SEP ? 2 * SIDE0 * SK : (s === SE ? 2 * SIDE0 - 1.5 : 0), 0, .5 + (RZ - 1) * DH + (AV.zRaise || 0) - .5 + 1.8, DU, RZ, !SEP && s !== SE);
+    if (s !== OPENX && !AV.uz) addStand('x', s, RU, EX + (RL + GAP) * stepD, SEP ? (2 * END0 - 1) * SK : 0, 0, hTopS - .5 + 1.8, DU, RL, !SEP, SEP ? 0 : (OS || SE)); }
   }
   S.topH = Math.max(hTopE, hTopS) + (RU ? 1.8 + RU * DU : .6);
   /* pareti scure dietro le gradinate e soffitto con fari */
