@@ -39,6 +39,14 @@ const S3_FORMS = [
   { name: 'Palasport ad arco', xl: 5, gap: 0, ru: 0, dh: .5, du: .5, arch: true },
   { name: 'Staffa con tetto ad arco', xl: 5, gap: 0, ru: 0, dh: .5, du: .5, horse: true, arch: true }
 ];
+/* palazzetti piccoli (serie A3): poche file, senza secondo anello */
+const S3_SMALL = [
+  { name: 'Palazzetto piccolo', xl: -3, gap: 0, ru: 0, dh: .5, du: .5 },
+  { name: 'Palazzetto piccolo ad arco', xl: -3, gap: 0, ru: 0, dh: .5, du: .5, arch: true },
+  { name: 'Piccolo a staffa', xl: -2, gap: 0, ru: 0, dh: .5, du: .5, horse: true },
+  { name: 'Piccolo a staffa con arco', xl: -2, gap: 0, ru: 0, dh: .5, du: .5, horse: true, arch: true }
+];
+function s3IsA3(id) { try { return ['A3A', 'A3B'].some(l => WORLD[l] && WORLD[l].some(t => t.id === id)); } catch (e) { return false; } }
 /* palazzetti con disegno proprio (id club) */
 const S3_CUSTOM = {
   mel: { name: 'Melendugno', xl: 5, gap: 0, ru: 0, dh: .5, du: .5, horse: true, arch: true, openSign: 1, wall: '#5e0f20', windows: true, push: { xp: 1.4, zm: 1.4 }, pal: 0 }
@@ -47,8 +55,9 @@ function s3ArenaVariant(M) {
   if (M && M.home && S3_CUSTOM[M.home.id]) return Object.assign({}, S3_CUSTOM[M.home.id]);
   let rnd = false; try { rnd = localStorage.getItem('vm-arena') === 'rnd'; } catch (e) { }
   const q = new URLSearchParams(location.search).get('arena'), h = Gx.hash(String((M.home && M.home.id) || 'x') + 'forma') >>> 0;
-  const NF = S3_FORMS.length, f = q !== null ? +q % NF : rnd ? Math.floor(Math.random() * NF) : h % NF, p = q !== null ? Math.floor(+q / NF) % 3 : rnd ? Math.floor(Math.random() * 3) : (h >>> 4) % 3;
-  return Object.assign({ pal: p }, S3_FORMS[f]);
+  const FM = (!q && !rnd && M.home && s3IsA3(M.home.id)) ? S3_SMALL : S3_FORMS;
+  const NF = FM.length, f = q !== null ? +q % NF : rnd ? Math.floor(Math.random() * NF) : h % NF, p = q !== null ? Math.floor(+q / NF) % 3 : rnd ? Math.floor(Math.random() * 3) : (h >>> 4) % 3;
+  return Object.assign({ pal: p }, FM[f]);
 }
 const S3_JEANS = ['#1f2a44', '#26344f', '#141820', '#3a4a66', '#5a5040', '#d8d4c8', '#2c2c32'];
 
