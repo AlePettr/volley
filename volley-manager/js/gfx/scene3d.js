@@ -218,6 +218,18 @@ function s3Build(M) {
   if (HI && AV.balc) { const B = AV.balc; addStand.hollow = true; addStand('z', B.sign, B.rows, END0 + OFF[B.sign > 0 ? 'zp' : 'zm'] + .1, 2 * SIDE0 * (B.k || 1), B.cx || 0, B.h0, .5, 0, false); addStand.hollow = false;
     const cm = new THREE.MeshLambertMaterial({ color: 0x8a8d92 }), cw = 2 * SIDE0 * (B.k || 1); for (let k = 0; k <= 6; k++) { const col = new THREE.Mesh(new THREE.BoxGeometry(.5, B.h0 + .4, .5), cm); col.position.set((B.cx || 0) - cw / 2 + k * cw / 6, (B.h0 + .4) / 2, B.sign * (END0 + 1.0)); scene.add(col); }
     const bk = new THREE.Mesh(new THREE.PlaneGeometry(cw, B.h0 + .4), new THREE.MeshLambertMaterial({ color: 0x14171c })); bk.position.set(B.cx || 0, (B.h0 + .4) / 2, B.sign * (END0 + 3.1)); bk.rotation.y = B.sign > 0 ? Math.PI : 0; scene.add(bk); }
+  if (HI && AV.cornerWalk && SEP) {   /* angoli senza seggiolini: passaggio pedonale che collega le tribune dei due livelli */
+    const yT = .5 + (RL - 1) * DH, sx0 = SIDE0 * SK, ex0 = (END0 - .5) * SK, tw = (RL + GAP + RU) * stepD, cm = new THREE.MeshLambertMaterial({ color: 0x3a3d44 }), top = new THREE.MeshLambertMaterial({ color: 0x6a6e76 }), gl = new THREE.MeshLambertMaterial({ color: 0x9fc4e6, transparent: true, opacity: .22, depthWrite: false }), rl = new THREE.MeshLambertMaterial({ color: 0xd9dde0 });
+    for (const sgx of [-1, 1]) {
+      const EXs = SIDE0 + OFF[sgx > 0 ? 'xp' : 'xm'], EZm = END0 + OFF.zm, xa = sx0, xb = EXs + tw, za = ex0, zb = EZm + tw, w = xb - xa, d = zb - za, cx = sgx * (xa + xb) / 2, cz = -(za + zb) / 2;
+      const blk = new THREE.Mesh(new THREE.BoxGeometry(w, yT, d), cm); blk.position.set(cx, yT / 2, cz); scene.add(blk);
+      const sl = new THREE.Mesh(new THREE.BoxGeometry(w, .08, d), top); sl.position.set(cx, yT + .04, cz); scene.add(sl);
+      const g1 = new THREE.Mesh(new THREE.BoxGeometry(w, .8, .04), gl); g1.position.set(cx, yT + .5, -(za + .05)); scene.add(g1);
+      const g2 = new THREE.Mesh(new THREE.BoxGeometry(.04, .8, d), gl); g2.position.set(sgx * (xa + .05), yT + .5, cz); scene.add(g2);
+      const r1 = new THREE.Mesh(new THREE.BoxGeometry(w, .05, .08), rl); r1.position.set(cx, yT + .92, -(za + .05)); scene.add(r1);
+      const r2 = new THREE.Mesh(new THREE.BoxGeometry(.08, .05, d), rl); r2.position.set(sgx * (xa + .05), yT + .92, cz); scene.add(r2);
+    }
+  }
   if (HI && AV.bridge && SEP) {   /* passerelle agli angoli, all'altezza del balcone */
     const y = .5 + (AV.xpRaise || 0), EXp = SIDE0 + OFF.xp, EZm = END0 + OFF.zm, xe = SIDE0 * SK, lenB = (2 * END0 - 1) * SK / 2, z0 = -lenB, z1 = -EZm, xa = xe, xb = EXp + .1;
     const slab = new THREE.MeshLambertMaterial({ color: 0xcfd2d4 }), glass = new THREE.MeshLambertMaterial({ color: 0x9fc4e6, transparent: true, opacity: .25, depthWrite: false }), rail = new THREE.MeshLambertMaterial({ color: 0xd9dde0 }), pil = new THREE.MeshLambertMaterial({ color: 0x8a8d92 });
