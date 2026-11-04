@@ -68,7 +68,7 @@ function s3WallTex(AV, kit) {
     if (AV.gallery) {   /* due ordini di balconate con parapetto in vetro e parete scura */
       c.fillStyle = '#9ea1a6'; c.fillRect(0, 0, w, h);
       for (const [y0, y1] of [[.08, .36], [.46, .76]]) {
-        c.fillStyle = '#2b2f36'; c.fillRect(0, h * y0, w, h * (y1 - y0));
+        c.fillStyle = '#101216'; c.fillRect(0, h * y0, w, h * (y1 - y0));
         for (let x = 0; x < w; x += 128) { c.fillStyle = '#3a4048'; c.fillRect(x + 6, h * y0 + 6, 118, h * (y1 - y0) - 12); }
         c.fillStyle = 'rgba(180,215,230,.35)'; c.fillRect(0, h * (y1 - .07), w, h * .07);
         c.fillStyle = '#d9dde0'; c.fillRect(0, h * (y1 - .075), w, 4);
@@ -262,6 +262,22 @@ function s3RichArena(S, scene, c) {
   add(s3Merge(lite), new THREE.MeshBasicMaterial({ color: 0xfff1d6 }));
 
   if (c.duct) { const d = new THREE.Mesh(new THREE.TorusGeometry(15, .9, 10, 48), new THREE.MeshLambertMaterial({ color: 0x2f9a5c })); d.rotation.x = Math.PI / 2; d.scale.set(1, 1.28, 1); d.position.y = 20.4; scene.add(d); }
+  if (c.gallery) {   /* balconate che si affacciano sul campo: solette, parapetti in vetro, pilastri e retro scuro */
+    const sg = c.gallery, wx = sg * (SIDE0 + 2.6), len = 2 * END0 + 6, slabM = new THREE.MeshLambertMaterial({ color: 0xcfd2d4 }), pilM = new THREE.MeshLambertMaterial({ color: 0x8a8d92 }), backM = new THREE.MeshLambertMaterial({ color: 0x16191e }), floorM = new THREE.MeshLambertMaterial({ color: 0x4a4540 });
+    const D = 3.4, parts = [], gl = [], rl = [], pl = [], fl = [];
+    for (const y of [4.2, 8.4]) {
+      const cx = wx - sg * D / 2;
+      parts.push({ g: BOX, m: s3M4(cx, y, 0, D, .35, len) });                      /* soletta */
+      fl.push({ g: BOX, m: s3M4(cx, y + .19, 0, D - .2, .03, len - .4) });         /* pavimento corridoio */
+      gl.push({ g: BOX, m: s3M4(wx - sg * (D - .05), y + .75, 0, .04, 1.0, len) }); /* parapetto in vetro */
+      rl.push({ g: BOX, m: s3M4(wx - sg * (D - .05), y + 1.27, 0, .09, .06, len) });
+      for (let z = -len / 2 + 1; z <= len / 2 - .9; z += 3.6) pl.push({ g: BOX, m: s3M4(wx - sg * (D - .2), y - 2.1, z, .35, 4.2, .35) });
+      for (let z = -len / 2 + 1; z <= len / 2 - .9; z += 3.6) pl.push({ g: BOX, m: s3M4(wx - sg * .08, y + 2, z, .18, 3.8, .3) });
+    }
+    add(s3Merge(parts), slabM); add(s3Merge(fl), floorM); add(s3Merge(pl), pilM); add(s3Merge(rl), new THREE.MeshLambertMaterial({ color: 0xd9dde0 }));
+    add(s3Merge(gl), new THREE.MeshLambertMaterial({ color: 0x9fc4e6, transparent: true, opacity: .22, depthWrite: false }));
+    for (const y of [4.2, 8.4]) { const bk = new THREE.Mesh(new THREE.PlaneGeometry(len, 3.4), backM); bk.position.set(wx - sg * .05, y + 1.9, 0); bk.rotation.y = sg > 0 ? -Math.PI / 2 : Math.PI / 2; scene.add(bk); }
+  }
   if (c.crew) { for (const p of c.crew) s3Person(scene, p[0], p[1], p[2]); }
   /* telecamere TV e steward dietro i cartelloni */
   const camG = (x, z, ry) => { const g = new THREE.Group(), leg = new THREE.MeshLambertMaterial({ color: 0x141a28 }); for (const a of [0, 2.1, 4.2]) { const l = new THREE.Mesh(new THREE.CylinderGeometry(.015, .02, 1.3, 5), leg); l.position.set(Math.cos(a) * .22, .65, Math.sin(a) * .22); l.rotation.set(Math.sin(a) * .18, 0, -Math.cos(a) * .18); g.add(l); } const body = new THREE.Mesh(new THREE.BoxGeometry(.32, .28, .6), leg); body.position.set(0, 1.45, 0); const lens = new THREE.Mesh(new THREE.CylinderGeometry(.09, .1, .36, 10), new THREE.MeshLambertMaterial({ color: 0x0a0e18 })); lens.rotation.x = Math.PI / 2; lens.position.set(0, 1.45, .46); const lamp = new THREE.Mesh(new THREE.SphereGeometry(.03, 6, 4), new THREE.MeshBasicMaterial({ color: 0xff2a2a })); lamp.position.set(0, 1.62, -.2); g.add(body, lens, lamp); g.position.set(x, 0, z); g.rotation.y = ry; scene.add(g); };
