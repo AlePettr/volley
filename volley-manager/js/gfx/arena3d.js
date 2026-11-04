@@ -82,7 +82,7 @@ function s3WallTex(AV, kit) {
 }
 const S3_ROUND_CLUB = { chi: [0, 0], rom: [0, 2], sca: [0, 1], mil: [2, 2], nov: [1, 0] };   /* club con tribune circolari: [forma, palette] */
 const S3_CUSTOM = {
-  tre: { name: 'Trentino', rows: 9, xl: 0, gap: 0, ru: 0, dh: .5, du: .5, ends: false, openX: -1, wall: '#7d8087', gallery: true, boxCol: 0x4a4e58, seatCols: ['#5a5f6a', '#646a76', '#50555f', '#6c727e'], arch: true, roofCol: 0x5a3018, pal: 2, palx: { steel: 0x9a5a2c, pil: 0x8a8c90, conc: 0x3a3d44, win: 0x8fb4c8 } },
+  tre: { name: 'Trentino', rows: 9, xl: 0, gap: 0, ru: 0, dh: .5, du: .5, ends: false, openX: -1, wall: '#7d8087', gallery: true, balc: { sign: -1, rows: 3, h0: 3.6, k: .8 }, boxCol: 0x4a4e58, seatCols: ['#5a5f6a', '#646a76', '#50555f', '#6c727e'], arch: true, roofCol: 0x5a3018, pal: 2, palx: { steel: 0x9a5a2c, pil: 0x8a8c90, conc: 0x3a3d44, win: 0x8fb4c8 } },
   fas: { name: 'Fasano', rows: 8, xl: 0, gap: 0, ru: 0, dh: .5, du: .5, sep: true, horse: true, openSign: 1, arch: true, wall: '#ebe7dc', parquet: true, boxCol: 0x1b1f2a, seatCols: ['#1f3f9a', '#f2f0e8', '#1f3f9a', '#f2f0e8', '#2a4fb0'], roofCol: 0x6b4426, pal: 1, palx: { steel: 0x8a5a34, pil: 0xcbbf9e, conc: 0x3a3a40, win: 0xd8d2c0 } },
   alt: { name: 'Altamura', rows: 8, xl: 0, gap: 0, ru: 0, dh: .5, du: .5, ends: false, trap: -.9, wall: '#e3d6a4', boxCol: 0x6b6f70, seatCols: ['#8d9293', '#9ca1a0', '#80868a', '#a5aaa8'], roofCol: 0xd9d2bc, arch: true, pal: 2, palx: { steel: 0x8a8a8a, pil: 0xcfc4a0, conc: 0x55575a, win: 0xe8e0c0 } },
   bre: { name: 'Brescia', rows: 5, xl: 0, gap: 1, ru: 4, dh: .45, du: .55, sep: true, zd: 2, zRaise: 1.5, uz: true, pal: 0 },

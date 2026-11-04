@@ -209,6 +209,7 @@ function s3Build(M) {
     if (RU) { if (!NOEND && (!AV.zd || AV.uz)) addStand('z', s, RU, EZ + (RZ + GAP) * stepD, SEP ? 2 * SIDE0 * SK : (s === SE ? (2 * SIDE0 - 1.5) * (AV.sepEndK || 1) : 0), 0, .5 + (RZ - 1) * DH + (AV.zRaise || 0) - .5 + 1.8, DU, RZ, !SEP && s !== SE);
     if (s !== OPENX && !AV.uz) addStand('x', s, RU, EX + (RL + GAP) * stepD, SEP ? (2 * END0 - 1) * SK : 0, 0, hTopS - .5 + 1.8, DU, RL, !SEP, SEP ? 0 : (OS || SE)); }
   }
+  if (HI && AV.balc) { const B = AV.balc; addStand('z', B.sign, B.rows, END0 + OFF[B.sign > 0 ? 'zp' : 'zm'] + .1, 2 * SIDE0 * (B.k || 1), B.cx || 0, B.h0, .5, 0, false); }
   S.topH = Math.max(hTopE, hTopS) + (RU ? 1.8 + RU * DU : .6);
   /* pareti scure dietro le gradinate e soffitto con fari */
   /* pareti visibili solo dall'interno: le camere larghe stanno oltre i gradoni e non devono vedere il retro */
