@@ -149,9 +149,9 @@ function s3Build(M) {
       scene.add(m);
       const n = Math.floor(spanR / .56);
       const yawS = axis === 'z' ? (sign > 0 ? Math.PI : 0) : (sign > 0 ? -Math.PI / 2 : Math.PI / 2);
-      if (HI && AV.stairs) { const st = AV.stairs, aw = 1.3, k0 = Math.round((spanR - aw) / st.every); for (let q = 0; q <= k0; q++) { const aa = centre - spanR / 2 + aw / 2 + (k0 ? q * (spanR - aw) / k0 : 0), sg = new THREE.BoxGeometry(axis === 'z' ? aw : stepD * .98, h + .03, axis === 'z' ? stepD * .98 : aw), sm = new THREE.Mesh(sg, new THREE.MeshLambertMaterial({ color: st.color })); if (axis === 'z') sm.position.set(aa, (h + .03) / 2, sign * d); else sm.position.set(sign * d, (h + .03) / 2, aa); scene.add(sm); } }
+      if (STAIRS) { const st = STAIRS, aw = 1.3, k0 = Math.round((spanR - aw) / st.every); for (let q = 0; q <= k0; q++) { const aa = centre - spanR / 2 + aw / 2 + (k0 ? q * (spanR - aw) / k0 : 0), sg = new THREE.BoxGeometry(axis === 'z' ? aw : stepD * .98, h + .03, axis === 'z' ? stepD * .98 : aw), sm = new THREE.Mesh(sg, new THREE.MeshLambertMaterial({ color: st.color })); if (axis === 'z') sm.position.set(aa, (h + .03) / 2, sign * d); else sm.position.set(sign * d, (h + .03) / 2, aa); scene.add(sm); } }
       for (let i = 0; i < n; i++) {
-        if (HI && AV.stairs) { const a1 = centre - spanR / 2 + (i + .5) * spanR / n, st = AV.stairs, aw = 1.3, k0 = Math.round((spanR - aw) / st.every); let hit = false; for (let q = 0; q <= k0; q++) { const aa = centre - spanR / 2 + aw / 2 + (k0 ? q * (spanR - aw) / k0 : 0); if (Math.abs(a1 - aa) < aw / 2 + .2) hit = true; } if (hit) continue; }
+        if (STAIRS) { const a1 = centre - spanR / 2 + (i + .5) * spanR / n, st = STAIRS, aw = 1.3, k0 = Math.round((spanR - aw) / st.every); let hit = false; for (let q = 0; q <= k0; q++) { const aa = centre - spanR / 2 + aw / 2 + (k0 ? q * (spanR - aw) / k0 : 0); if (Math.abs(a1 - aa) < aw / 2 + .2) hit = true; } if (hit) continue; }
         if (axis === 'x' && sign > 0 && AV.xpGap && i % AV.xpGap === AV.xpGap - 1) continue;
         const a0 = centre - spanR / 2 + (i + .5) * spanR / n;
         if (mit && !(open && axis === 'x' && a0 * open > 0) && !(OPENX && axis === 'z' && a0 * OPENX > 0)) { const cross = Math.abs(a0) - (axis === 'z' ? SIDE0 + OFF[a0 > 0 ? 'xp' : 'xm'] : END0 + OFF[a0 > 0 ? 'zp' : 'zm']), own = d - oe; if (axis === 'z' ? !(cross < own) : !(cross <= own)) continue; }
@@ -168,6 +168,7 @@ function s3Build(M) {
   const OFF = Object.assign({ xp: 0, xm: 0, zp: 0, zm: 0 }, HI ? AV.push : null);   /* spostamenti per lato delle gradinate */
   const NOEND = !!(HI && AV.ends === false), OPENX = HI ? (AV.openX || 0) : 0, SEP = !!(HI && AV.sep), SE = HI ? (AV.sepEnd || 0) : 0, SK = (HI && AV.sepK) || 1;
   if (HI && AV.boxCol) { seat[0] = AV.boxCol; seat[1] = AV.boxCol; }
+  const SCOL = [0x5a6678, 0x8a7a66, 0x9aa0aa][(AV.pal || 0) % 3], STAIRS = HI && AV.stairs !== false ? (AV.stairs || { every: 9, color: (AV.palx && AV.palx.pil) || SCOL }) : null;   /* rampe di scale tra i settori */
   S.av = AV; const GAP = HI ? AV.gap : 0, RU = HI ? AV.ru : 0, DH = HI ? AV.dh : .4, DU = AV.du;
   const RL = HI ? (AV.rows || Math.round((rowsEnd + rowsSide) / 2) + AV.xl) : 0, RZ = HI && AV.zd ? Math.max(2, RL + AV.zd) : RL, rEL = HI ? RL : rowsEnd, rSL = HI ? RL : rowsSide;
   const END0 = 14.4, SIDE0 = 11.2, endSpan = HI ? 2 * SIDE0 : 2 * (SIDE0 + rSL * stepD), endSpanU = 2 * (SIDE0 + (rSL + GAP + RU) * stepD);
