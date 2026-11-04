@@ -206,7 +206,7 @@ function s3Build(M) {
   for (const s of RND ? [] : [-1, 1]) {
     if (!HI) { addStand('z', s, rEL, END0, endSpan, 0, 0, DH); addStand('x', s, rSL, SIDE0, 2 * END0 - 1, 0, 0, DH); continue; }
     const EZ = END0 + OFF[s > 0 ? 'zp' : 'zm'], EX = SIDE0 + OFF[s > 0 ? 'xp' : 'xm'];
-    if (SEP) { if (!NOEND && s !== OS) addStand('z', s, RZ, EZ, 2 * SIDE0 * SK, 0, AV.zRaise || 0, DH, 0, false); if (s !== OPENX && !(AV.xpUpper && s > 0)) { const bal = s > 0 && AV.xpRows, rw = bal ? AV.xpRows : RL; if (bal) addStand.hollow = true; addStand('x', s, rw, EX, (2 * END0 - 1) * SK, 0, bal ? (AV.xpRaise || 0) : 0, DH, 0, false); addStand.hollow = false;
+    if (SEP) { if (!NOEND && s !== OS) addStand('z', s, RZ, EZ, 2 * SIDE0 * SK, 0, AV.zRaise || 0, DH, 0, false); if (s !== OPENX && !(AV.xpUpper && s > 0)) { const bal = s > 0 && AV.xpRows, rw = bal ? AV.xpRows : RL; if (bal) addStand.hollow = true; if (AV.split && s < 0) { const L0 = (2 * END0 - 1) * SK, hw = (L0 - AV.split) / 2; for (const q of [-1, 1]) addStand('x', s, rw, EX, hw, q * (AV.split / 2 + hw / 2), 0, DH, 0, false); } else addStand('x', s, rw, EX, (2 * END0 - 1) * SK, 0, bal ? (AV.xpRaise || 0) : 0, DH, 0, false); addStand.hollow = false;
         if (bal) { const cm = new THREE.MeshLambertMaterial({ color: 0x8a8d92 }), hh = .5 + (AV.xpRaise || 0), len = (2 * END0 - 1) * SK; for (let k = 0; k <= 7; k++) { const col = new THREE.Mesh(new THREE.BoxGeometry(.4, hh, .4), cm); col.position.set(EX + .5, hh / 2, -len / 2 + k * len / 7); scene.add(col); col.position.x = s * (EX + .5); } const bk = new THREE.Mesh(new THREE.PlaneGeometry(len, hh), new THREE.MeshLambertMaterial({ color: 0x14171c })); bk.position.set(s * (EX + 2.2), hh / 2, 0); bk.rotation.y = -Math.PI / 2; scene.add(bk); } } }
     else if (NOEND) { if (s !== OPENX) addStand('x', s, RL, EX, 2 * END0 + 4, 0, 0, DH, 0, false); }
     else { if (s !== OS) { if (s === SE) addStand('z', s, RL, EZ, (2 * SIDE0 - 1.5) * (AV.sepEndK || 1), 0, 0, DH, 0, false); else addStand('z', s, RL, EZ, 0, 0, 0, DH, 0, true); } if (s !== OPENX) addStand('x', s, RL, EX, 0, 0, s > 0 ? (AV.xpRaise || 0) : 0, DH, 0, true, OS || SE); }
@@ -216,11 +216,24 @@ function s3Build(M) {
     if (AV.xpUpper && s > 0) { const R2 = AV.xpUpper, h2 = .5 + (AV.xpRaise || 0), len = (2 * END0 - 1) * SK; addStand.hollow = true; addStand('x', s, R2, EX, len, 0, AV.xpRaise || 0, DH, 0, false); addStand.hollow = false;
       const cm = new THREE.MeshLambertMaterial({ color: 0x2a2d34 }), dm = new THREE.MeshLambertMaterial({ color: 0x1a1c22 }); const blk = new THREE.Mesh(new THREE.BoxGeometry(R2 * stepD + 1, h2 - .2, len), cm); blk.position.set(EX + (R2 * stepD + 1) / 2 - .5, (h2 - .2) / 2, 0); scene.add(blk);
       for (let z = -len / 2 + 3; z < len / 2 - 2; z += 4.2) { const dr = new THREE.Mesh(new THREE.BoxGeometry(.05, 2.2, 1.4), dm); dr.position.set(EX - .52, 1.1, z); scene.add(dr); } }
+    else if (AV.split && s < 0 && SEP && RU) { const L0 = (2 * END0 - 1) * SK, hw = (L0 - AV.split) / 2; for (const q of [-1, 1]) addStand('x', s, RU, EX + (RL + GAP) * stepD, hw, q * (AV.split / 2 + hw / 2), hTopS - .5 + 1.8, DU, RL, false); }
     else if (s !== OPENX && !AV.uz) addStand('x', s, RU, EX + (RL + GAP) * stepD, SEP ? (2 * END0 - 1) * SK : 0, 0, hTopS - .5 + 1.8, DU, RL, !SEP, SEP ? 0 : (OS || SE)); }
   }
   if (HI && AV.balc) { const B = AV.balc; addStand.hollow = true; addStand('z', B.sign, B.rows, END0 + OFF[B.sign > 0 ? 'zp' : 'zm'] + .1, 2 * SIDE0 * (B.k || 1), B.cx || 0, B.h0, .5, 0, false); addStand.hollow = false;
     const cm = new THREE.MeshLambertMaterial({ color: 0x8a8d92 }), cw = 2 * SIDE0 * (B.k || 1); for (let k = 0; k <= 6; k++) { const col = new THREE.Mesh(new THREE.BoxGeometry(.5, B.h0 + .4, .5), cm); col.position.set((B.cx || 0) - cw / 2 + k * cw / 6, (B.h0 + .4) / 2, B.sign * (END0 + 1.0)); scene.add(col); }
     const bk = new THREE.Mesh(new THREE.PlaneGeometry(cw, B.h0 + .4), new THREE.MeshLambertMaterial({ color: 0x14171c })); bk.position.set(B.cx || 0, (B.h0 + .4) / 2, B.sign * (END0 + 3.1)); bk.rotation.y = B.sign > 0 ? Math.PI : 0; scene.add(bk); }
+  if (HI && AV.split && SEP) {   /* ingresso al centro della tribuna lunga di fronte, con balconcino sopra che collega le due meta' */
+    const EXm = SIDE0 + OFF.xm, yT = .5 + (RL - 1) * DH, dX = RL * stepD, wS = AV.split, xc = -(EXm + dX / 2);
+    const dm = new THREE.MeshLambertMaterial({ color: 0x07090d }), fr = new THREE.MeshLambertMaterial({ color: 0x8a8d92 }), sl = new THREE.MeshLambertMaterial({ color: 0xcfd2d4 }), gl = new THREE.MeshLambertMaterial({ color: 0x9fc4e6, transparent: true, opacity: .25, depthWrite: false });
+    const bx = (w, h, d, px, py, pz, m) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(px, py, pz); scene.add(o); return o; };
+    const hP = 2.6; bx(dX, .08, wS, xc, .02, 0, new THREE.MeshLambertMaterial({ color: 0x3a3d44 }));   /* corridoio d'ingresso */
+    bx(.12, hP, wS - .6, -(EXm + .05), hP / 2, 0, dm); bx(.14, hP, .25, -(EXm + .05), hP / 2, wS / 2 - .1, fr); bx(.14, hP, .25, -(EXm + .05), hP / 2, -wS / 2 + .1, fr); bx(.14, .25, wS, -(EXm + .05), hP, 0, fr);
+    const bx0 = -(EXm + (RL - 2) * stepD), bw = 4 * stepD + GAP * stepD;
+    bx(bw, .25, wS + .6, bx0 - bw / 2 + .2, yT - .1, 0, sl);   /* balconcino sopra l'ingresso */
+    bx(bw, .8, .04, bx0 - bw / 2 + .2, yT + .4, wS / 2 + .3, gl); bx(bw, .8, .04, bx0 - bw / 2 + .2, yT + .4, -wS / 2 - .3, gl);
+    bx(bw, .05, .08, bx0 - bw / 2 + .2, yT + .82, wS / 2 + .3, fr); bx(bw, .05, .08, bx0 - bw / 2 + .2, yT + .82, -wS / 2 - .3, fr);
+    for (const z of [-wS / 2 - .2, wS / 2 + .2]) bx(.35, yT - .1, .35, bx0 - bw + .5, (yT - .1) / 2, z, fr);
+  }
   if (HI && AV.cornerWalk && SEP) {   /* angoli senza seggiolini: passaggio pedonale che collega le tribune dei due livelli */
     const yT = .5 + (RL - 1) * DH, sx0 = SIDE0 * SK, ex0 = (END0 - .5) * SK, tw = (RL + GAP + RU) * stepD, cm = new THREE.MeshLambertMaterial({ color: 0x3a3d44 }), top = new THREE.MeshLambertMaterial({ color: 0x6a6e76 }), gl = new THREE.MeshLambertMaterial({ color: 0x9fc4e6, transparent: true, opacity: .22, depthWrite: false }), rl = new THREE.MeshLambertMaterial({ color: 0xd9dde0 });
     for (const sgx of [-1, 1]) {
