@@ -84,6 +84,10 @@ const S3_ROUND_CLUB = { chi: [0, 0], rom: [0, 2], sca: [0, 1], mil: [2, 2], nov:
 const S3_CUSTOM = {
   mar2: { name: 'Marsala', rows: 10, xl: 0, gap: 0, ru: 0, dh: .5, du: .5, ends: false, openX: 1, wall: '#cfc7b0', stripe: '#2a6fb0', boxCol: 0x5a5f66, seatCols: ['#2a6fb0', '#e8e8e4', '#2a6fb0', '#1c4f8a'], arch: true, roofCol: 0xb8b2a0, pal: 2, palx: { steel: 0x8a8a8a, pil: 0xb8ae94, conc: 0x4a4d52, win: 0xd8d0b0 } },
   tre: { name: 'Trentino', rows: 9, xl: 0, gap: 0, ru: 0, dh: .5, du: .5, ends: false, openX: -1, wall: '#7d8087', gallery: true, balc: { sign: -1, rows: 3, h0: 3.6, k: .8 }, boxCol: 0x4a4e58, seatCols: ['#5a5f6a', '#646a76', '#50555f', '#6c727e'], arch: true, roofCol: 0x5a3018, pal: 2, palx: { steel: 0x9a5a2c, pil: 0x8a8c90, conc: 0x3a3d44, win: 0x8fb4c8 } },
+  imo: { name: 'Imola', rows: 8, xl: 0, gap: 0, ru: 0, dh: .5, du: .5, sep: true, horse: true, openSign: 1, arch: true, wall: '#ebe7dc', parquet: true, boxCol: 0x2a1a14, seatCols: ['#e8761a', '#f2f0e8', '#e8761a', '#2a2a2e', '#f08a2c'], roofCol: 0x6b4426, pal: 1, palx: { steel: 0x8a5a34, pil: 0xcbbf9e, conc: 0x3a3a40, win: 0xd8d2c0 } },
+  cas: { name: 'Casalmaggiore', rows: 8, xl: 0, gap: 0, ru: 0, dh: .5, du: .5, sep: true, horse: true, openSign: 1, arch: true, arches: true, wall: '#d9d2bf', parquet: true, boxCol: 0x14281a, seatCols: ['#2f8f4a', '#f2f0e8', '#2f8f4a', '#1f6a38', '#4aa862'], roofCol: 0x6b4426, pal: 1, palx: { steel: 0x8a5a34, pil: 0xcbbf9e, conc: 0x3a3a40, win: 0xd8d2c0 } },
+  mes: { name: 'Messina', rows: 10, xl: 3, gap: 1, ru: 5, dh: .5, du: .6, boxCol: 0x2a5a36, seatCols: ['#2f9a4e', '#3aa85c', '#27874a', '#46b466', '#e0742a'], roofCol: 0x6a7076, pal: 2, palx: { steel: 0x9aa0a8, pil: 0xb8b0a0, conc: 0x7a7e84, win: 0xe8e8e8, glow: 0xffffff } },
+  mon: { name: 'Monviso', rows: 7, xl: 0, gap: 0, ru: 0, dh: .5, du: .5, sep: true, wall: '#9aa4ac', windows: false, boxCol: 0x1f3f8a, seatCols: ['#f2d21a', '#e8c010', '#f5dc3a', '#d94a2a', '#f2d21a', '#2a52b0'], roofCol: 0x8a5a2c, arch: true, pal: 2, palx: { steel: 0xb07a3c, pil: 0xd8d8d4, conc: 0x44484e, win: 0xe8f0ff } },
   fas: { name: 'Fasano', rows: 8, xl: 0, gap: 0, ru: 0, dh: .5, du: .5, sep: true, horse: true, openSign: 1, arch: true, wall: '#ebe7dc', parquet: true, boxCol: 0x1b1f2a, seatCols: ['#1f3f9a', '#f2f0e8', '#1f3f9a', '#f2f0e8', '#2a4fb0'], roofCol: 0x6b4426, pal: 1, palx: { steel: 0x8a5a34, pil: 0xcbbf9e, conc: 0x3a3a40, win: 0xd8d2c0 } },
   alt: { name: 'Altamura', rows: 8, xl: 0, gap: 0, ru: 0, dh: .5, du: .5, ends: false, trap: -.9, wall: '#e3d6a4', boxCol: 0x6b6f70, seatCols: ['#8d9293', '#9ca1a0', '#80868a', '#a5aaa8'], roofCol: 0xd9d2bc, arch: true, pal: 2, palx: { steel: 0x8a8a8a, pil: 0xcfc4a0, conc: 0x55575a, win: 0xe8e0c0 } },
   bre: { name: 'Brescia', rows: 5, xl: 0, gap: 1, ru: 4, dh: .45, du: .55, sep: true, zd: 2, zRaise: 1.5, uz: true, pal: 0 },
@@ -263,6 +267,12 @@ function s3RichArena(S, scene, c) {
   add(s3Merge(lite), new THREE.MeshBasicMaterial({ color: 0xfff1d6 }));
 
   if (c.duct) { const d = new THREE.Mesh(new THREE.TorusGeometry(15, .9, 10, 48), new THREE.MeshLambertMaterial({ color: 0x2f9a5c })); d.rotation.x = Math.PI / 2; d.scale.set(1, 1.28, 1); d.position.y = 20.4; scene.add(d); }
+  if (c.arches) {   /* corridoio dietro gli archi: parete scura, pavimento chiaro e luci calde */
+    const sg = c.arches, zc = sg * (END0 + 1.7 + 4.5), bk = new THREE.Mesh(new THREE.PlaneGeometry(2 * xW, 14), new THREE.MeshLambertMaterial({ color: 0x1a1618 }));
+    bk.position.set(0, 7, zc); bk.rotation.y = sg > 0 ? Math.PI : 0; scene.add(bk);
+    const fl = new THREE.Mesh(new THREE.PlaneGeometry(2 * xW, 4.6), new THREE.MeshLambertMaterial({ color: 0x6a5a48 })); fl.rotation.x = -Math.PI / 2; fl.position.set(0, .02, sg * (END0 + 1.7 + 2.3)); scene.add(fl);
+    const lm = new THREE.MeshBasicMaterial({ color: 0xffd9a0 }); for (let x = -xW + 3; x < xW - 2; x += 5.5) { const l = new THREE.Mesh(new THREE.BoxGeometry(.5, .5, .2), lm); l.position.set(x, 6.6, sg * (END0 + 1.7 + 4.3)); scene.add(l); }
+  }
   if (c.gallery) {   /* balconate che si affacciano sul campo: solette, parapetti in vetro, pilastri e retro scuro */
     const sg = c.gallery, wx = sg * (SIDE0 + 2.6), len = 2 * END0 + 6, slabM = new THREE.MeshLambertMaterial({ color: 0xcfd2d4 }), pilM = new THREE.MeshLambertMaterial({ color: 0x8a8d92 }), backM = new THREE.MeshLambertMaterial({ color: 0x16191e }), floorM = new THREE.MeshLambertMaterial({ color: 0x4a4540 });
     const D = 3.4, parts = [], gl = [], rl = [], pl = [], fl = [];
