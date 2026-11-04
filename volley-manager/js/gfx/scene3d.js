@@ -218,6 +218,16 @@ function s3Build(M) {
   if (HI && AV.balc) { const B = AV.balc; addStand.hollow = true; addStand('z', B.sign, B.rows, END0 + OFF[B.sign > 0 ? 'zp' : 'zm'] + .1, 2 * SIDE0 * (B.k || 1), B.cx || 0, B.h0, .5, 0, false); addStand.hollow = false;
     const cm = new THREE.MeshLambertMaterial({ color: 0x8a8d92 }), cw = 2 * SIDE0 * (B.k || 1); for (let k = 0; k <= 6; k++) { const col = new THREE.Mesh(new THREE.BoxGeometry(.5, B.h0 + .4, .5), cm); col.position.set((B.cx || 0) - cw / 2 + k * cw / 6, (B.h0 + .4) / 2, B.sign * (END0 + 1.0)); scene.add(col); }
     const bk = new THREE.Mesh(new THREE.PlaneGeometry(cw, B.h0 + .4), new THREE.MeshLambertMaterial({ color: 0x14171c })); bk.position.set(B.cx || 0, (B.h0 + .4) / 2, B.sign * (END0 + 3.1)); bk.rotation.y = B.sign > 0 ? Math.PI : 0; scene.add(bk); }
+  if (HI && AV.bridge && SEP) {   /* passerelle agli angoli, all'altezza del balcone */
+    const y = .5 + (AV.xpRaise || 0), EXp = SIDE0 + OFF.xp, EZm = END0 + OFF.zm, xe = SIDE0 * SK, lenB = (2 * END0 - 1) * SK / 2, z0 = -lenB, z1 = -EZm, xa = xe, xb = EXp + .1;
+    const slab = new THREE.MeshLambertMaterial({ color: 0xcfd2d4 }), glass = new THREE.MeshLambertMaterial({ color: 0x9fc4e6, transparent: true, opacity: .25, depthWrite: false }), rail = new THREE.MeshLambertMaterial({ color: 0xd9dde0 }), pil = new THREE.MeshLambertMaterial({ color: 0x8a8d92 });
+    const bx = (w, h, d, px, py, pz, m) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(px, py, pz); scene.add(o); return o; };
+    for (const sgx of [1]) { const cx = (xa + xb) / 2, wz = Math.abs(z1 - z0), cz = (z0 + z1) / 2;
+      bx(xb - xa, .22, wz, cx, y - .11, cz, slab);
+      bx(xb - xa, .8, .04, cx, y + .4, z1 - .02, glass); bx(xb - xa, .05, .08, cx, y + .82, z1 - .02, rail);
+      bx(xb - xa, .8, .04, cx, y + .4, z0 + .02, glass); bx(xb - xa, .05, .08, cx, y + .82, z0 + .02, rail);
+      for (const px of [xa + .3, xb - .3]) for (const pz of [z0 + .3, z1 - .3]) bx(.3, y, .3, px, y / 2, pz, pil); }
+  }
   S.topH = Math.max(hTopE, hTopS) + (RU ? 1.8 + RU * DU : .6);
   /* pareti scure dietro le gradinate e soffitto con fari */
   /* pareti visibili solo dall'interno: le camere larghe stanno oltre i gradoni e non devono vedere il retro */

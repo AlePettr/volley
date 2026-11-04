@@ -107,7 +107,7 @@ const S3_CUSTOM = {
   mac: { name: 'Macerata', xl: 0, gap: 1, ru: 3, dh: .5, du: .6, openX: -1, wall: '#c9c4ba', banners: true, roofCol: 0x2a1c14, pal: 1, palx: { steel: 0x7a4a2c, pil: 0x6a6258, conc: 0x3a342c, win: 0x6a5a48 } },
   tal: { name: 'Talmassons', rows: 9, xl: -1, gap: 0, ru: 0, dh: .5, du: .5, openX: -1, sep: true, wall: '#9b9b97', banners: true, roofCol: 0x3a2a28, pal: 2, palx: { steel: 0x8a2e26, pil: 0x7c7c78, conc: 0x55555a, win: 0x70706c } },
   mar: { name: 'Marignano', rows: 9, xl: -3, gap: 0, ru: 0, dh: .42, du: .5, ends: false, wall: '#d7c48e', stripe: '#2f6fb3', roofCol: 0x9a8a70, pal: 2, palx: { steel: 0xa8322a, pil: 0xb5a070, conc: 0x6a6a70, win: 0xc9b98a } },
-  mel: { name: 'Melendugno', sep: true, sepK: .9, zd: 3, xpRows: 5, xpRaise: 3.0, boxCol: 0x16224a, seatCols: ['#2a5fd0', '#3a72e0', '#1f4cb0', '#4a84ee', '#2a5fd0'], crew: [[10.7, 6.0, -Math.PI / 2], [10.8, 7.1, -Math.PI / 2 - .2]], drummer: { x: -12.65, y: 1.0, z: 8.2 }, xl: 5, gap: 0, ru: 0, dh: .5, du: .5, horse: true, arch: true, openSign: 1, wall: '#5e0f20', windows: true, push: { xp: 2.3, zm: 1.4 }, pal: 0 }
+  mel: { name: 'Melendugno', bridge: true, sep: true, sepK: .9, zd: 3, xpRows: 5, xpRaise: 3.0, boxCol: 0x16224a, seatCols: ['#2a5fd0', '#3a72e0', '#1f4cb0', '#4a84ee', '#2a5fd0'], crew: [[10.7, 6.0, -Math.PI / 2], [10.8, 7.1, -Math.PI / 2 - .2]], drummer: { x: -12.65, y: 1.0, z: 8.2 }, xl: 5, gap: 0, ru: 0, dh: .5, du: .5, horse: true, arch: true, openSign: 1, wall: '#5e0f20', windows: true, push: { xp: 2.3, zm: 1.4 }, pal: 0 }
 };
 function s3ArenaVariant(M) {
   { const q0 = new URLSearchParams(location.search).get('round'); if (q0 !== null) return Object.assign({ pal: +q0 % 3 }, S3_ROUND[+q0 % S3_ROUND.length]); }
