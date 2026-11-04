@@ -65,12 +65,24 @@ function s3WallTex(AV, kit) {
       c.fillStyle = gr; c.fillRect(bx, by, bw, bh); c.fillStyle = 'rgba(255,255,255,.85)'; c.beginPath(); c.moveTo(bx, by + bh * .75); c.lineTo(bx + bw * .35, by + bh * .38); c.lineTo(bx + bw * .6, by + bh * .62); c.lineTo(bx + bw * .8, by + bh * .45); c.lineTo(bx + bw, by + bh * .7); c.lineTo(bx + bw, by + bh); c.lineTo(bx, by + bh); c.fill();
       c.strokeStyle = '#1a2a44'; c.lineWidth = 5; c.strokeRect(bx, by, bw, bh);
     }
+    if (AV.gallery) {   /* due ordini di balconate con parapetto in vetro e parete scura */
+      c.fillStyle = '#9ea1a6'; c.fillRect(0, 0, w, h);
+      for (const [y0, y1] of [[.08, .36], [.46, .76]]) {
+        c.fillStyle = '#2b2f36'; c.fillRect(0, h * y0, w, h * (y1 - y0));
+        for (let x = 0; x < w; x += 128) { c.fillStyle = '#3a4048'; c.fillRect(x + 6, h * y0 + 6, 118, h * (y1 - y0) - 12); }
+        c.fillStyle = 'rgba(180,215,230,.35)'; c.fillRect(0, h * (y1 - .07), w, h * .07);
+        c.fillStyle = '#d9dde0'; c.fillRect(0, h * (y1 - .075), w, 4);
+        for (let x = 0; x < w; x += 64) { c.fillStyle = '#3c4148'; c.fillRect(x, h * (y1 - .07), 3, h * .07); }
+      }
+      c.fillStyle = '#c9a050'; c.fillRect(0, h * .78, w, h * .04);
+    }
     if (AV.stripe) { c.fillStyle = AV.stripe; c.fillRect(0, h * .9, w, h * .05); }
   });
   t.wrapS = THREE.RepeatWrapping; t.repeat.set(AV.banners ? 1 : 3, 1); return t;
 }
 const S3_ROUND_CLUB = { chi: [0, 0], rom: [0, 2], sca: [0, 1], mil: [2, 2], nov: [1, 0] };   /* club con tribune circolari: [forma, palette] */
 const S3_CUSTOM = {
+  tre: { name: 'Trentino', rows: 9, xl: 0, gap: 0, ru: 0, dh: .5, du: .5, ends: false, openX: -1, wall: '#7d8087', gallery: true, boxCol: 0x4a4e58, seatCols: ['#5a5f6a', '#646a76', '#50555f', '#6c727e'], arch: true, roofCol: 0x5a3018, pal: 2, palx: { steel: 0x9a5a2c, pil: 0x8a8c90, conc: 0x3a3d44, win: 0x8fb4c8 } },
   fas: { name: 'Fasano', rows: 8, xl: 0, gap: 0, ru: 0, dh: .5, du: .5, sep: true, horse: true, openSign: 1, arch: true, wall: '#ebe7dc', parquet: true, boxCol: 0x1b1f2a, seatCols: ['#1f3f9a', '#f2f0e8', '#1f3f9a', '#f2f0e8', '#2a4fb0'], roofCol: 0x6b4426, pal: 1, palx: { steel: 0x8a5a34, pil: 0xcbbf9e, conc: 0x3a3a40, win: 0xd8d2c0 } },
   alt: { name: 'Altamura', rows: 8, xl: 0, gap: 0, ru: 0, dh: .5, du: .5, ends: false, trap: -.9, wall: '#e3d6a4', boxCol: 0x6b6f70, seatCols: ['#8d9293', '#9ca1a0', '#80868a', '#a5aaa8'], roofCol: 0xd9d2bc, arch: true, pal: 2, palx: { steel: 0x8a8a8a, pil: 0xcfc4a0, conc: 0x55575a, win: 0xe8e0c0 } },
   bre: { name: 'Brescia', rows: 5, xl: 0, gap: 1, ru: 4, dh: .45, du: .55, sep: true, zd: 2, zRaise: 1.5, uz: true, pal: 0 },
