@@ -82,6 +82,7 @@ function s3WallTex(AV, kit) {
 }
 const S3_ROUND_CLUB = { chi: [0, 0], rom: [0, 2], sca: [0, 1], mil: [2, 2], nov: [1, 0] };   /* club con tribune circolari: [forma, palette] */
 const S3_CUSTOM = {
+  mar2: { name: 'Marsala', rows: 10, xl: 0, gap: 0, ru: 0, dh: .5, du: .5, ends: false, openX: 1, wall: '#cfc7b0', stripe: '#2a6fb0', boxCol: 0x5a5f66, seatCols: ['#2a6fb0', '#e8e8e4', '#2a6fb0', '#1c4f8a'], arch: true, roofCol: 0xb8b2a0, pal: 2, palx: { steel: 0x8a8a8a, pil: 0xb8ae94, conc: 0x4a4d52, win: 0xd8d0b0 } },
   tre: { name: 'Trentino', rows: 9, xl: 0, gap: 0, ru: 0, dh: .5, du: .5, ends: false, openX: -1, wall: '#7d8087', gallery: true, balc: { sign: -1, rows: 3, h0: 3.6, k: .8 }, boxCol: 0x4a4e58, seatCols: ['#5a5f6a', '#646a76', '#50555f', '#6c727e'], arch: true, roofCol: 0x5a3018, pal: 2, palx: { steel: 0x9a5a2c, pil: 0x8a8c90, conc: 0x3a3d44, win: 0x8fb4c8 } },
   fas: { name: 'Fasano', rows: 8, xl: 0, gap: 0, ru: 0, dh: .5, du: .5, sep: true, horse: true, openSign: 1, arch: true, wall: '#ebe7dc', parquet: true, boxCol: 0x1b1f2a, seatCols: ['#1f3f9a', '#f2f0e8', '#1f3f9a', '#f2f0e8', '#2a4fb0'], roofCol: 0x6b4426, pal: 1, palx: { steel: 0x8a5a34, pil: 0xcbbf9e, conc: 0x3a3a40, win: 0xd8d2c0 } },
   alt: { name: 'Altamura', rows: 8, xl: 0, gap: 0, ru: 0, dh: .5, du: .5, ends: false, trap: -.9, wall: '#e3d6a4', boxCol: 0x6b6f70, seatCols: ['#8d9293', '#9ca1a0', '#80868a', '#a5aaa8'], roofCol: 0xd9d2bc, arch: true, pal: 2, palx: { steel: 0x8a8a8a, pil: 0xcfc4a0, conc: 0x55575a, win: 0xe8e0c0 } },
@@ -99,7 +100,7 @@ const S3_CUSTOM = {
   mac: { name: 'Macerata', xl: 0, gap: 1, ru: 3, dh: .5, du: .6, openX: -1, wall: '#c9c4ba', banners: true, roofCol: 0x2a1c14, pal: 1, palx: { steel: 0x7a4a2c, pil: 0x6a6258, conc: 0x3a342c, win: 0x6a5a48 } },
   tal: { name: 'Talmassons', rows: 9, xl: -1, gap: 0, ru: 0, dh: .5, du: .5, openX: -1, sep: true, wall: '#9b9b97', banners: true, roofCol: 0x3a2a28, pal: 2, palx: { steel: 0x8a2e26, pil: 0x7c7c78, conc: 0x55555a, win: 0x70706c } },
   mar: { name: 'Marignano', rows: 9, xl: -3, gap: 0, ru: 0, dh: .42, du: .5, ends: false, wall: '#d7c48e', stripe: '#2f6fb3', roofCol: 0x9a8a70, pal: 2, palx: { steel: 0xa8322a, pil: 0xb5a070, conc: 0x6a6a70, win: 0xc9b98a } },
-  mel: { name: 'Melendugno', crew: [[10.7, 6.0, -Math.PI / 2], [10.8, 7.1, -Math.PI / 2 - .2]], drummer: { x: -12.65, y: 1.0, z: 8.2 }, xl: 5, gap: 0, ru: 0, dh: .5, du: .5, horse: true, arch: true, openSign: 1, wall: '#5e0f20', windows: true, push: { xp: 1.4, zm: 1.4 }, pal: 0 }
+  mel: { name: 'Melendugno', xpGap: 4, xpRaise: 1.0, crew: [[10.7, 6.0, -Math.PI / 2], [10.8, 7.1, -Math.PI / 2 - .2]], drummer: { x: -12.65, y: 1.0, z: 8.2 }, xl: 5, gap: 0, ru: 0, dh: .5, du: .5, horse: true, arch: true, openSign: 1, wall: '#5e0f20', windows: true, push: { xp: 2.3, zm: 1.4 }, pal: 0 }
 };
 function s3ArenaVariant(M) {
   { const q0 = new URLSearchParams(location.search).get('round'); if (q0 !== null) return Object.assign({ pal: +q0 % 3 }, S3_ROUND[+q0 % S3_ROUND.length]); }

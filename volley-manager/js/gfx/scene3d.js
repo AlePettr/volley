@@ -142,13 +142,15 @@ function s3Build(M) {
         else { let hi = END0 + OFF.zp + k1, lo = -(END0 + OFF.zm + k1); if (open) { if (open < 0) lo = -(END0 + 1.2); else hi = END0 + 1.2; } spanR = hi - lo; centre = (hi + lo) / 2; }   /* lato corto aperto: la gradinata arriva fino alla parete */
       }
       if (HI && AV.trap && axis === 'x' && !mit) spanR = Math.max(6, span + r * AV.trap * 2);   /* tribuna a trapezio: le file si allargano salendo */
-      const geo = axis === 'z' ? new THREE.BoxGeometry(spanR, h, stepD) : new THREE.BoxGeometry(stepD, h, spanR);
+      const HOL = !!addStand.hollow, hb = HOL ? Math.min(h, .45) : h;
+      const geo = axis === 'z' ? new THREE.BoxGeometry(spanR, hb, stepD) : new THREE.BoxGeometry(stepD, hb, spanR);
       const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: seat[(r + rr0) % 2] }));
-      if (axis === 'z') m.position.set(centre, h / 2, sign * d); else m.position.set(sign * d, h / 2, centre);
+      if (axis === 'z') m.position.set(centre, h - hb / 2, sign * d); else m.position.set(sign * d, h - hb / 2, centre);
       scene.add(m);
       const n = Math.floor(spanR / .56);
       const yawS = axis === 'z' ? (sign > 0 ? Math.PI : 0) : (sign > 0 ? -Math.PI / 2 : Math.PI / 2);
       for (let i = 0; i < n; i++) {
+        if (axis === 'x' && sign > 0 && AV.xpGap && i % AV.xpGap === AV.xpGap - 1) continue;
         const a0 = centre - spanR / 2 + (i + .5) * spanR / n;
         if (mit && !(open && axis === 'x' && a0 * open > 0) && !(OPENX && axis === 'z' && a0 * OPENX > 0)) { const cross = Math.abs(a0) - (axis === 'z' ? SIDE0 + OFF[a0 > 0 ? 'xp' : 'xm'] : END0 + OFF[a0 > 0 ? 'zp' : 'zm']), own = d - oe; if (axis === 'z' ? !(cross < own) : !(cross <= own)) continue; }
         seatsL.push(axis === 'z' ? { x: a0, y: h, z: sign * d, yaw: yawS, a: a0 + 20, r: r + rr0 } : { x: sign * d, y: h, z: a0, yaw: yawS, a: a0 + 20, r: r + rr0 });
@@ -203,13 +205,15 @@ function s3Build(M) {
     const EZ = END0 + OFF[s > 0 ? 'zp' : 'zm'], EX = SIDE0 + OFF[s > 0 ? 'xp' : 'xm'];
     if (SEP) { if (!NOEND && s !== OS) addStand('z', s, RZ, EZ, 2 * SIDE0 * SK, 0, AV.zRaise || 0, DH, 0, false); if (s !== OPENX) addStand('x', s, RL, EX, (2 * END0 - 1) * SK, 0, 0, DH, 0, false); }
     else if (NOEND) { if (s !== OPENX) addStand('x', s, RL, EX, 2 * END0 + 4, 0, 0, DH, 0, false); }
-    else { if (s !== OS) { if (s === SE) addStand('z', s, RL, EZ, (2 * SIDE0 - 1.5) * (AV.sepEndK || 1), 0, 0, DH, 0, false); else addStand('z', s, RL, EZ, 0, 0, 0, DH, 0, true); } if (s !== OPENX) addStand('x', s, RL, EX, 0, 0, 0, DH, 0, true, OS || SE); }
+    else { if (s !== OS) { if (s === SE) addStand('z', s, RL, EZ, (2 * SIDE0 - 1.5) * (AV.sepEndK || 1), 0, 0, DH, 0, false); else addStand('z', s, RL, EZ, 0, 0, 0, DH, 0, true); } if (s !== OPENX) addStand('x', s, RL, EX, 0, 0, s > 0 ? (AV.xpRaise || 0) : 0, DH, 0, true, OS || SE); }
     if (GAP && !NOEND && !SEP && !OPENX) { const cz = new THREE.Mesh(new THREE.BoxGeometry(2 * (SIDE0 + (RL + GAP) * stepD), hTopE, GAP * stepD), concMat); cz.position.set(0, hTopE / 2, s * (EZ + RL * stepD + GAP * stepD / 2)); scene.add(cz);
     const cx = new THREE.Mesh(new THREE.BoxGeometry(GAP * stepD, hTopS, 2 * (END0 + (RL + GAP) * stepD)), concMat); cx.position.set(s * (EX + RL * stepD + GAP * stepD / 2), hTopS / 2, 0); scene.add(cx); }
     if (RU) { if (!NOEND && (!AV.zd || AV.uz)) addStand('z', s, RU, EZ + (RZ + GAP) * stepD, SEP ? 2 * SIDE0 * SK : (s === SE ? (2 * SIDE0 - 1.5) * (AV.sepEndK || 1) : 0), 0, .5 + (RZ - 1) * DH + (AV.zRaise || 0) - .5 + 1.8, DU, RZ, !SEP && s !== SE);
     if (s !== OPENX && !AV.uz) addStand('x', s, RU, EX + (RL + GAP) * stepD, SEP ? (2 * END0 - 1) * SK : 0, 0, hTopS - .5 + 1.8, DU, RL, !SEP, SEP ? 0 : (OS || SE)); }
   }
-  if (HI && AV.balc) { const B = AV.balc; addStand('z', B.sign, B.rows, END0 + OFF[B.sign > 0 ? 'zp' : 'zm'] + .1, 2 * SIDE0 * (B.k || 1), B.cx || 0, B.h0, .5, 0, false); }
+  if (HI && AV.balc) { const B = AV.balc; addStand.hollow = true; addStand('z', B.sign, B.rows, END0 + OFF[B.sign > 0 ? 'zp' : 'zm'] + .1, 2 * SIDE0 * (B.k || 1), B.cx || 0, B.h0, .5, 0, false); addStand.hollow = false;
+    const cm = new THREE.MeshLambertMaterial({ color: 0x8a8d92 }), cw = 2 * SIDE0 * (B.k || 1); for (let k = 0; k <= 6; k++) { const col = new THREE.Mesh(new THREE.BoxGeometry(.5, B.h0 + .4, .5), cm); col.position.set((B.cx || 0) - cw / 2 + k * cw / 6, (B.h0 + .4) / 2, B.sign * (END0 + 1.0)); scene.add(col); }
+    const bk = new THREE.Mesh(new THREE.PlaneGeometry(cw, B.h0 + .4), new THREE.MeshLambertMaterial({ color: 0x14171c })); bk.position.set(B.cx || 0, (B.h0 + .4) / 2, B.sign * (END0 + 3.1)); bk.rotation.y = B.sign > 0 ? Math.PI : 0; scene.add(bk); }
   S.topH = Math.max(hTopE, hTopS) + (RU ? 1.8 + RU * DU : .6);
   /* pareti scure dietro le gradinate e soffitto con fari */
   /* pareti visibili solo dall'interno: le camere larghe stanno oltre i gradoni e non devono vedere il retro */
