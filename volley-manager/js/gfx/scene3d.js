@@ -206,7 +206,7 @@ function s3Build(M) {
   for (const s of RND ? [] : [-1, 1]) {
     if (!HI) { addStand('z', s, rEL, END0, endSpan, 0, 0, DH); addStand('x', s, rSL, SIDE0, 2 * END0 - 1, 0, 0, DH); continue; }
     const EZ = END0 + OFF[s > 0 ? 'zp' : 'zm'], EX = SIDE0 + OFF[s > 0 ? 'xp' : 'xm'];
-    if (SEP) { if (!NOEND && s !== OS) addStand('z', s, RZ, EZ, 2 * SIDE0 * SK, 0, AV.zRaise || 0, DH, 0, false); if (s !== OPENX && !(AV.xpUpper && s > 0)) { const bal = s > 0 && AV.xpRows, rw = bal ? AV.xpRows : RL; if (bal) addStand.hollow = true; if (AV.split && s < 0) { const L0 = (2 * END0 - 1) * SK, hw = (L0 - AV.split) / 2; for (const q of [-1, 1]) addStand('x', s, rw, EX, hw, q * (AV.split / 2 + hw / 2), 0, DH, 0, false); } else addStand('x', s, rw, EX, (2 * END0 - 1) * SK, 0, bal ? (AV.xpRaise || 0) : 0, DH, 0, false); addStand.hollow = false;
+    if (SEP) { if (!NOEND && s !== OS) addStand('z', s, RZ, EZ, 2 * SIDE0 * SK, 0, AV.zRaise || 0, DH, 0, false); if (s !== OPENX && !(AV.xpUpper && s > 0)) { const bal = s > 0 && AV.xpRows, rw = bal ? AV.xpRows : RL; if (bal) addStand.hollow = true; if (AV.split && s < 0) { const L0 = (2 * END0 - 1) * SK, hw = (L0 - AV.split) / 2; for (const q of [-1, 1]) addStand('x', s, AV.xmRows || rw, EX, hw, q * (AV.split / 2 + hw / 2), 0, DH, 0, false); } else addStand('x', s, rw, EX, (2 * END0 - 1) * SK, 0, bal ? (AV.xpRaise || 0) : 0, DH, 0, false); addStand.hollow = false;
         if (bal) { const cm = new THREE.MeshLambertMaterial({ color: 0x8a8d92 }), hh = .5 + (AV.xpRaise || 0), len = (2 * END0 - 1) * SK; for (let k = 0; k <= 7; k++) { const col = new THREE.Mesh(new THREE.BoxGeometry(.4, hh, .4), cm); col.position.set(EX + .5, hh / 2, -len / 2 + k * len / 7); scene.add(col); col.position.x = s * (EX + .5); } const bk = new THREE.Mesh(new THREE.PlaneGeometry(len, hh), new THREE.MeshLambertMaterial({ color: 0x14171c })); bk.position.set(s * (EX + 2.2), hh / 2, 0); bk.rotation.y = -Math.PI / 2; scene.add(bk); } } }
     else if (NOEND) { if (s !== OPENX) addStand('x', s, RL, EX, 2 * END0 + 4, 0, 0, DH, 0, false); }
     else { if (s !== OS) { if (s === SE) addStand('z', s, RL, EZ, (2 * SIDE0 - 1.5) * (AV.sepEndK || 1), 0, 0, DH, 0, false); else addStand('z', s, RL, EZ, 0, 0, 0, DH, 0, true); } if (s !== OPENX) addStand('x', s, RL, EX, 0, 0, s > 0 ? (AV.xpRaise || 0) : 0, DH, 0, true, OS || SE); }
@@ -223,7 +223,7 @@ function s3Build(M) {
     const cm = new THREE.MeshLambertMaterial({ color: 0x8a8d92 }), cw = 2 * SIDE0 * (B.k || 1); for (let k = 0; k <= 6; k++) { const col = new THREE.Mesh(new THREE.BoxGeometry(.5, B.h0 + .4, .5), cm); col.position.set((B.cx || 0) - cw / 2 + k * cw / 6, (B.h0 + .4) / 2, B.sign * (END0 + 1.0)); scene.add(col); }
     const bk = new THREE.Mesh(new THREE.PlaneGeometry(cw, B.h0 + .4), new THREE.MeshLambertMaterial({ color: 0x14171c })); bk.position.set(B.cx || 0, (B.h0 + .4) / 2, B.sign * (END0 + 3.1)); bk.rotation.y = B.sign > 0 ? Math.PI : 0; scene.add(bk); }
   if (HI && AV.split && SEP) {   /* ingresso al centro della tribuna lunga di fronte, con balconcino sopra che collega le due meta' */
-    const EXm = SIDE0 + OFF.xm, yT = .5 + (RL - 1) * DH, dX = RL * stepD, wS = AV.split, xc = -(EXm + dX / 2);
+    const EXm = SIDE0 + OFF.xm, yT = .5 + (RL - 1) * DH, dX = (AV.xmRows || RL) * stepD, wS = AV.split, xc = -(EXm + dX / 2);
     const dm = new THREE.MeshLambertMaterial({ color: 0x07090d }), fr = new THREE.MeshLambertMaterial({ color: 0x8a8d92 }), sl = new THREE.MeshLambertMaterial({ color: 0xcfd2d4 }), gl = new THREE.MeshLambertMaterial({ color: 0x9fc4e6, transparent: true, opacity: .25, depthWrite: false });
     const bx = (w, h, d, px, py, pz, m) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(px, py, pz); scene.add(o); return o; };
     const hP = 2.6; bx(dX, .08, wS, xc, .02, 0, new THREE.MeshLambertMaterial({ color: 0x3a3d44 }));   /* corridoio d'ingresso */
@@ -387,18 +387,18 @@ function s3Build(M) {
     else { for (const dx of [-.07, .07]) { const lg = new THREE.Mesh(new THREE.CylinderGeometry(.06, .05, .95, 6), lam(shorts)); lg.position.set(dx, .48, 0); g.add(lg); } }
     g.position.set(x, 0, z); g.rotation.y = ry; scene.add(g); S.extras.push({ g, tm, ph, y0: 0 }); return g;
   };
-  const BX = -7.7, benchMat = lam(0x2a3347);
+  const BS = (S.hi && AV.benchPlus) ? 1 : -1, BX = BS * 7.7, benchMat = lam(0x2a3347);
   for (const [tm, sgn] of [[1, hs], [2, -hs]]) {
     const kit = tm === 1 ? kh : ka, zc = sgn * 5.6;
     const bench = new THREE.Mesh(new THREE.BoxGeometry(.5, .45, 4.2), benchMat); bench.position.set(BX, .22, zc); scene.add(bench);
-    const back = new THREE.Mesh(new THREE.BoxGeometry(.06, .5, 4.2), lam(kit.main)); back.position.set(BX - .3, .7, zc); scene.add(back);
-    for (let i = 0; i < 6; i++) person(BX, zc - 1.7 + i * .68, Math.PI / 2, i < 5 ? kit.main : '#16213a', i < 5 ? kit.shorts : '#16213a', true, tm, i * 1.3);
-    person(BX + .9, zc + (sgn > 0 ? -2.6 : 2.6), sgn > 0 ? Math.PI * .85 : Math.PI * .15, '#1c2538', '#1c2538', false, tm, 0);   /* allenatore in piedi */
+    const back = new THREE.Mesh(new THREE.BoxGeometry(.06, .5, 4.2), lam(kit.main)); back.position.set(BX + BS * .3, .7, zc); scene.add(back);
+    for (let i = 0; i < 6; i++) person(BX, zc - 1.7 + i * .68, -BS * Math.PI / 2, i < 5 ? kit.main : '#16213a', i < 5 ? kit.shorts : '#16213a', true, tm, i * 1.3);
+    person(BX - BS * .9, zc + (sgn > 0 ? -2.6 : 2.6), sgn > 0 ? Math.PI * .85 : Math.PI * .15, '#1c2538', '#1c2538', false, tm, 0);   /* allenatore in piedi */
   }
   { /* tavolo del segnapunti dietro l'arbitro */
-    const tb = new THREE.Mesh(new THREE.BoxGeometry(.8, .75, 4.2), lam(0x39425a)); tb.position.set(BX - .9, .38, 0); scene.add(tb);
-    const top = new THREE.Mesh(new THREE.BoxGeometry(.9, .05, 4.3), lam(0xe9edf5)); top.position.set(BX - .9, .77, 0); scene.add(top);
-    for (let i = 0; i < 3; i++) person(BX - 1.55, -1.2 + i * 1.2, Math.PI / 2, '#233a63', '#1c2538', true, 0, 0);
+    const tb = new THREE.Mesh(new THREE.BoxGeometry(.8, .75, 4.2), lam(0x39425a)); tb.position.set(BX + BS * .9, .38, 0); scene.add(tb);
+    const top = new THREE.Mesh(new THREE.BoxGeometry(.9, .05, 4.3), lam(0xe9edf5)); top.position.set(BX + BS * .9, .77, 0); scene.add(top);
+    for (let i = 0; i < 3; i++) person(BX + BS * 1.55, -1.2 + i * 1.2, -BS * Math.PI / 2, '#233a63', '#1c2538', true, 0, 0);
   }
   /* raccattapalle ai quattro angoli e segnalinee con bandierina */
   for (const [x, z] of [[-8, -10.4], [8, -10.4], [-8, 10.4], [8, 10.4]]) person(x, z, Math.atan2(-x, -z), '#f2f4f8', '#243153', true, 0, 0).scale.setScalar(.8);
