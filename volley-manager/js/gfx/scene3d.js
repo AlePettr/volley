@@ -124,6 +124,8 @@ function s3Build(M) {
   if (S.hi && typeof s3ArenaVariant === 'function' && (() => { try { return s3ArenaVariant(M).parquet; } catch (e) { return false; } })()) { const pq = new THREE.Mesh(new THREE.PlaneGeometry(2 * 11.6, 2 * 14.8), new THREE.MeshLambertMaterial({ color: 0xc89c62 })); pq.rotation.x = -Math.PI / 2; pq.position.y = -.003; scene.add(pq); }
   const shadowPlane = new THREE.Mesh(new THREE.PlaneGeometry(FW, FL), new THREE.ShadowMaterial({ opacity: .34 }));
   shadowPlane.rotation.x = -Math.PI / 2; shadowPlane.position.y = .004; shadowPlane.receiveShadow = true; scene.add(shadowPlane);
+  if (typeof s3SoftShadows === 'function') s3SoftShadows(S, scene, sun, shadowPlane);
+  if (typeof s3ShineSetup === 'function') s3ShineSetup(S, scene, FW, FL);
   const outer = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshLambertMaterial({ color: 0x0e1422 }));
   outer.rotation.x = -Math.PI / 2; outer.position.y = -.4; scene.add(outer);
 
@@ -651,7 +653,9 @@ function s3Frame(M, ents, dt) {
   s3Camera(M, ents, dt);
   S.ref.position.set(Cam.side || UI.camView === 'side' || UI.camView === 'sideh' ? -6.1 : 6.1, 0, 0);
   S.ref.rotation.y = (UI.camView === 'side' || UI.camView === 'sideh') ? Math.PI / 2 : -Math.PI / 2;
+  if (typeof s3ShineUpdate === 'function') s3ShineUpdate(S, scene, cam);
   S.renderer.render(scene, cam);
+  if (typeof s3ShineAfter === 'function') s3ShineAfter(S);
   s3Overlay(M, ents);
 }
 

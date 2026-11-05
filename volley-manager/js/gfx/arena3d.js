@@ -303,6 +303,8 @@ function s3RichArena(S, scene, c) {
 document.addEventListener('click', e => {
   const el2 = e.target.closest('[data-arena]');
   if (el2) { let r = false; try { r = localStorage.getItem('vm-arena') === 'rnd'; localStorage.setItem('vm-arena', r ? 'club' : 'rnd'); } catch (x) { } if (typeof toast === 'function') toast(r ? 'Ogni club avra\' il proprio palazzetto.' : 'Palazzetto casuale a ogni partita.'); if (typeof render === 'function') render(); return; }
+  const elx = e.target.closest('[data-fx]');
+  if (elx) { let on = true; try { on = localStorage.getItem('vm-fx') !== 'off'; localStorage.setItem('vm-fx', on ? 'off' : 'on'); } catch (x) { } if (typeof toast === 'function') toast(on ? 'Riflessi e ombre morbide spenti: dalla prossima partita.' : 'Riflessi e ombre morbide accesi: dalla prossima partita.'); if (typeof render === 'function') render(); return; }
   const el = e.target.closest('[data-gfx]'); if (!el) return;
   let hi = s3Hi(); try { localStorage.setItem('vm-gfx', hi ? 'lo' : 'hi'); } catch (x) { }
   if (typeof toast === 'function') toast(hi ? 'Palazzetto standard: dalla prossima partita.' : 'Palazzetto ad alto dettaglio: dalla prossima partita.');
@@ -310,5 +312,5 @@ document.addEventListener('click', e => {
 });
 (function () {
   const _h = homeHTML;
-  homeHTML = function () { const h = _h.apply(this, arguments); return h + `<p style="text-align:center;margin:10px 0 0"><button class="btn" data-gfx="1">Palazzetto 3D: ${s3Hi() ? 'Alta definizione' : 'Standard'}</button>${s3Hi() ? ` <button class="btn" data-arena="1">Forma: ${s3Rnd() ? 'casuale' : 'per club'}</button>` : ''}</p>`; };
+  homeHTML = function () { const h = _h.apply(this, arguments); return h + `<p style="text-align:center;margin:10px 0 0"><button class="btn" data-gfx="1">Palazzetto 3D: ${s3Hi() ? 'Alta definizione' : 'Standard'}</button>${s3Hi() ? ` <button class="btn" data-arena="1">Forma: ${s3Rnd() ? 'casuale' : 'per club'}</button>` : ''}${s3Hi() && typeof s3Fx === 'function' ? ` <button class="btn" data-fx="1">Riflessi: ${s3Fx() ? 'acceso' : 'spento'}</button>` : ''}</p>`; };
 })();
