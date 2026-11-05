@@ -286,10 +286,10 @@ function s3Build(M) {
   const roof = new THREE.Mesh(roofG, new THREE.MeshLambertMaterial({ color: AV.roofCol || 0x080c16 })); roof.rotation.x = Math.PI / 2; roof.position.y = 24; scene.add(roof);
   /* luce: pozza calda sul campo e fasci conici dai fari (additivi, molto tenui) */
   const poolTex = s3Tex(256, 256, (c, w, h) => { const g = c.createRadialGradient(w / 2, h / 2, 4, w / 2, h / 2, w / 2); g.addColorStop(0, 'rgba(255,246,226,.20)'); g.addColorStop(.6, 'rgba(255,246,226,.07)'); g.addColorStop(1, 'rgba(255,246,226,0)'); c.fillStyle = g; c.fillRect(0, 0, w, h); });
-  const pool = new THREE.Mesh(new THREE.PlaneGeometry(26, 34), new THREE.MeshBasicMaterial({ map: poolTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+  const pool = new THREE.Mesh(new THREE.PlaneGeometry(40, 52), new THREE.MeshBasicMaterial({ opacity: .6, map: poolTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
   pool.rotation.x = -Math.PI / 2; pool.position.y = .006; scene.add(pool);
   const beamMat = new THREE.MeshBasicMaterial({ color: 0xcfdcff, transparent: true, opacity: .025, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
-  for (const bx of [-5, 0, 5]) for (const bz of [-7, 0, 7]) { const cn = new THREE.Mesh(new THREE.ConeGeometry(3.6, 23, 20, 1, true), beamMat); cn.position.set(bx, 12.4, bz); scene.add(cn); }
+  /* niente coni di luce: l'illuminazione sul campo resta omogenea */
   const lampMat = new THREE.MeshBasicMaterial({ color: 0xf2f6ff });
   for (let i = -3; i <= 3; i++) for (let j = -2; j <= 2; j++) { const l = new THREE.Mesh(new THREE.BoxGeometry(1.4, .12, .6), lampMat); l.position.set(j * 4.4, 23.9, i * 4); scene.add(l); }
   if (TH.beams && !(HI && AV.arch)) for (let i = -4; i <= 4; i++) { const b = new THREE.Mesh(new THREE.BoxGeometry(2 * xW, .5, .35), new THREE.MeshLambertMaterial({ color: 0x0d1424 })); b.position.set(0, 23.6, i * 3.3); scene.add(b); }
