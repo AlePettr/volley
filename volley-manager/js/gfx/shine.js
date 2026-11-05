@@ -31,13 +31,13 @@ function s3ShineSetup(S, scene, FW, FL) {
   const rt = new THREE.WebGLRenderTarget(256, 256, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, depthBuffer: true });
   const vc = new THREE.PerspectiveCamera(), texM = new THREE.Matrix4();
   const mat = new THREE.ShaderMaterial({
-    uniforms: { tRef: { value: rt.texture }, textureMatrix: { value: texM }, uK: { value: 9 }, uTexel: { value: new THREE.Vector2(1 / 256, 1 / 256) } },
+    uniforms: { tRef: { value: rt.texture }, textureMatrix: { value: texM }, uK: { value: 4 }, uTexel: { value: new THREE.Vector2(1 / 256, 1 / 256) } },
     vertexShader: 'uniform mat4 textureMatrix; varying vec4 vUv; varying vec3 vW; void main(){ vec4 wp = modelMatrix * vec4(position,1.0); vW = wp.xyz; vUv = textureMatrix * wp; gl_Position = projectionMatrix * viewMatrix * wp; }',
     fragmentShader: `uniform sampler2D tRef; uniform float uK; uniform vec2 uTexel; varying vec4 vUv; varying vec3 vW;
       void main(){
         vec3 V = normalize(cameraPosition - vW); float c = clamp(V.y, 0.0, 1.0);
         float f = 0.05 + 0.95 * pow(1.0 - c, 5.0);
-        float k = min(0.55, f * uK);
+        float k = min(0.32, f * uK);
         vec2 uv = vUv.xy / vUv.w; float d = length(cameraPosition - vW);
         vec2 r = uTexel * (1.2 + d * 0.10);
         vec3 a = texture2D(tRef, uv).rgb * 0.24;
