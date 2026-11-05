@@ -89,6 +89,32 @@ function skPose(rig, J) {
   }
 }
 
+/* rifiniture della divisa disegnate sul colore pieno: bordi di maglia, righe laterali e trama del tessuto (usano la posizione del modello, non una texture) */
+function skTrim(m, K, kind) {
+  const base = new THREE.Color(K.main), trim = new THREE.Color(K.trim || (Gx.lum(K.main) > .5 ? Gx.dark(K.main, .55) : '#ffffff'));
+  if (kind === 'shorts') { base.set(K.shorts); if (Gx.dist(K.shorts, K.trim || '#ffffff') < 90) trim.set(Gx.lum(K.shorts) > .5 ? Gx.dark(K.shorts, .5) : Gx.light(K.shorts, .55)); }
+  else if (Gx.dist(K.main, K.trim || '#ffffff') < 90) trim.set(Gx.lum(K.main) > .5 ? Gx.dark(K.main, .55) : Gx.light(K.main, .6));
+  const top = kind === 'top';
+  m.onBeforeCompile = sh => {
+    sh.uniforms.trimC = { value: trim };
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vOP;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvOP = position;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vOP;\nuniform vec3 trimC;').replace('#include <color_fragment>', `#include <color_fragment>
+      { float ax = abs(vOP.x), y = vOP.y; float t = 0.0;
+        ${top ? `t = max(t, step(ax, 0.24) * 0.0);
+        t = max(t, smoothstep(0.205, 0.215, ax) * step(y, 1.40));           /* bordo delle maniche */
+        t = max(t, 1.0 - smoothstep(1.025, 1.04, y));                       /* fondo della maglia */
+        t = max(t, step(0.150, ax) * step(ax, 0.176) * step(y, 1.30) * step(1.06, y));   /* riga laterale */
+        t = max(t, step(1.425, y) * step(ax, 0.075) * smoothstep(1.425 + ax * 0.9, 1.425 + ax * 0.9 + 0.004, y + 0.0));   /* colletto */` : `t = max(t, step(0.185, ax) * step(ax, 0.205) * step(y, 1.02));   /* riga laterale */
+        t = max(t, step(y, 0.80) * step(0.74, y));                          /* orlo */`}
+        diffuseColor.rgb = mix(diffuseColor.rgb, trimC, clamp(t, 0.0, 1.0));
+        float w = clamp(1.0 / (fwidth(vOP.x) * 260.0 + 1e-4), 0.0, 1.0);
+        float weave = (sin(vOP.x * 420.0) * sin(vOP.y * 420.0)) * 0.5 + 0.5;
+        diffuseColor.rgb *= 1.0 - 0.07 * weave * w;
+      }`);
+  };
+  m.needsUpdate = true;
+}
+
 /* acconciature: cut = quota sotto la quale il caschetto del modello viene tagliato; poi codini, crocchia, treccia o lunghi, attaccati alla testa */
 const SK_HAIR = [
   { cut: 1.585, parts: [{ c: [0, 1.56, -.125], s: [.034, .095, .034] }] },                          // coda bassa
@@ -102,12 +128,14 @@ function skHairStyle(rig) { return SK_HAIR[((rig.look && rig.look.style) || 0) %
 /* materiali per atleta: divisa di squadra (maglia, pantaloncini corti, scarpe), pelle e capelli */
 function skMat(base, rig) {
   const m = base.clone(), K = rig.K, look = rig.look, hh = rig.hh, n = base.name, flat = c => { m.map = null; m.metalnessMap = null; m.roughnessMap = null; m.metalness = 0; m.roughness = .85; m.color.set(c); };
-  if (n === 'Wolf3D_Outfit_Top') flat(K.main);
+  if (n === 'Wolf3D_Outfit_Top') { flat(K.main); skTrim(m, K, 'top'); }
   else if (n === 'Wolf3D_Outfit_Bottom') {
-    flat(K.shorts); m.normalMap = null;
+    flat(K.shorts); m.normalMap = null; skTrim(m, K, 'shorts');
     /* il modello ha i leggings lunghi: sotto la coscia il tessuto diventa del colore della pelle, cosi' restano pantaloncini corti */
     const skinC = new THREE.Color(look.skin);
+    const trimFx = m.onBeforeCompile;
     m.onBeforeCompile = sh => {
+      if (trimFx) trimFx(sh);
       sh.uniforms.skinC = { value: skinC };
       sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying float vBY;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvBY = position.y;');
       sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vBY;\nuniform vec3 skinC;').replace('#include <color_fragment>', '#include <color_fragment>\n if (vBY < .74) diffuseColor.rgb = skinC;');
