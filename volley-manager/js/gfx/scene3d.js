@@ -97,6 +97,7 @@ function s3Build(M) {
   /* ombre reali: il sole proietta giocatrici, rete, pali e palla sul campo (piano che riceve solo l'ombra) */
   sun.castShadow = true; { const q = Math.min(innerWidth, innerHeight) < 600 ? 1024 : 2048; sun.shadow.mapSize.set(q, q); } sun.shadow.bias = -.0004; sun.shadow.normalBias = .03; sun.shadow.radius = 3;
   Object.assign(sun.shadow.camera, { left: -13, right: 13, top: 13, bottom: -13, near: 8, far: 50 }); sun.shadow.camera.updateProjectionMatrix();
+  const AV0 = (S.hi && typeof s3ArenaVariant === 'function') ? (() => { try { return s3ArenaVariant(M); } catch (e) { return {}; } })() : {};
   const isA1 = ((M.home && M.home.lid) || (typeof G !== 'undefined' && G && G.lid) || 'A1') !== 'A2';
 
   /* pavimento: zona libera viola + campo in parquet (texture disegnata una volta) */
@@ -126,7 +127,7 @@ function s3Build(M) {
   shadowPlane.rotation.x = -Math.PI / 2; shadowPlane.position.y = .004; shadowPlane.receiveShadow = true; scene.add(shadowPlane);
   if (typeof s3SoftShadows === 'function') s3SoftShadows(S, scene, sun, shadowPlane);
   if (typeof s3ShineSetup === 'function') s3ShineSetup(S, scene, FW, FL);
-  const outer = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshLambertMaterial({ color: 0x0e1422 }));
+  const outer = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshLambertMaterial({ color: AV0.groundCol || 0x0e1422 }));
   outer.rotation.x = -Math.PI / 2; outer.position.y = -.4; scene.add(outer);
 
   /* tribune a gradoni nei colori del club di casa + pubblico a istanze */
@@ -336,9 +337,9 @@ function s3Build(M) {
   /* cartelloni LED: filmati della Lega se disponibili, altrimenti nomi di squadre e sponsor */
   S.panels = []; S.vtex = new Map();
   const fallback = s3Tex(1024, 64, (c, w, h) => {
-    c.fillStyle = homeKit.shade; c.fillRect(0, 0, w, h);
+    c.fillStyle = AV0.boardCol || homeKit.shade; c.fillRect(0, 0, w, h);
     const items = A3 ? [(M.home.city || M.home.short).toUpperCase(), M.home.short.toUpperCase(), M.away.short.toUpperCase(), (M.home.city || M.home.short).toUpperCase(), M.home.short.toUpperCase(), M.away.short.toUpperCase()] : [(M.home.city || M.home.short).toUpperCase(), 'FINECO', M.away.short.toUpperCase(), 'FRECCIAROSSA', M.home.short.toUpperCase(), 'FIAT'];
-    c.fillStyle = Gx.onColor(homeKit.shade); c.font = '700 40px "Barlow Condensed",Arial Narrow,sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillStyle = Gx.onColor(AV0.boardCol || homeKit.shade); c.font = '700 40px "Barlow Condensed",Arial Narrow,sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
     items.forEach((t, i) => { c.fillText(t, (i + .5) * w / items.length, h / 2 + 2, w / items.length - 20); });
   });
   const dark = new THREE.MeshLambertMaterial({ color: 0x05080f });
