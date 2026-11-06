@@ -501,12 +501,13 @@ function s3Pose(rig, P, name, face, time) {
   const cr = P.cr, ln = P.ln + .1 * run0, lf = P.lf;
   const idle = !name, sw = idle ? Math.sin(time * 1.7 + rig.ph) : 0, ox = sw * .02;
   const hipH = .90 - cr * .30, hipY = lf + hipH, lean = ln * .9, tl = .52 * (1 - .2 * ln);
-  const hipC = v(ox * .5, hipY, 0), shC = v(ox, hipY + tl * Math.cos(lean), tl * Math.sin(lean));
+  const bob = Math.abs(Math.sin(rig.sph || 0)) * .035 * run0, vl = (rig.vl || 0) * .018 * run0, vf = (rig.vf || 0) * .014 * run0;   /* rimbalzo del passo, spostamento del peso */
+  const hipC = v(ox * .5 + vl * .5, hipY - bob, 0), shC = v(ox + vl, hipY - bob + tl * Math.cos(lean), tl * Math.sin(lean) + vf);
   /* gambe: coscia, stinco, calzettone, ginocchiera, scarpa */
   const J = { hipC, shC, hd: null, legs: [], arms: [] };
   for (const [s, sx] of [['L', -1], ['R', 1]]) {
     const run = ((!name || name === 'shake') && rig.run) || 0, ph = (rig.sph || 0) + (sx < 0 ? 0 : Math.PI);
-    const hp = v(sx * .09 + ox * .5, hipY, 0), ft = v(sx * (.11 + cr * .07), lf + .06 + Math.max(0, Math.cos(ph)) * .09 * run, (sx < 0 ? cr * .10 : -cr * .05) + Math.sin(ph) * .2 * run);
+    const hp = v(sx * .09 + ox * .5 + vl * .5, hipY - bob, 0), ft = v(sx * (.11 + cr * .07), lf + .06 + Math.max(0, Math.cos(ph)) * .09 * run, (sx < 0 ? cr * .10 : -cr * .05) + Math.sin(ph) * .2 * run);
     const mid = hp.clone().add(ft).multiplyScalar(.5), dist = hp.distanceTo(ft), d = Math.sqrt(Math.max(0, .46 * .46 - (dist / 2) * (dist / 2)));
     const kn = mid.clone().add(v(sx * .02, 0, d * .9));
     J.legs.push({ sx, hp, kn, ft });
@@ -517,7 +518,7 @@ function s3Pose(rig, P, name, face, time) {
     p['shoe' + s].position.set(ft.x, lf + .042, ft.z + .05); p['shoe' + s].scale.set(.088, .075, .215);
     p['sole' + s].position.set(ft.x, lf + .011, ft.z + .055); p['sole' + s].scale.set(.098, .02, .25);
   }
-  p.shorts.position.set(hipC.x, hipY + .01, 0); p.shorts.scale.set(.2, .25, .145);
+  p.shorts.position.set(hipC.x, hipY - bob + .01, 0); p.shorts.scale.set(.2, .25, .145);
   /* busto rastremato + bordo maglia, collo e strisce laterali */
   const tb = hipC.clone().add(v(0, .09, 0));
   s3Seg(p.torso, tb, shC, .185); p.torso.scale.x = .185; p.torso.scale.z = .128; p.torso.scale.y = tb.distanceTo(shC) + .03;
@@ -590,6 +591,9 @@ function s3Frame(M, ents, dt) {
     if (rig.lu === undefined) { rig.lu = e.u; rig.lv = e.v; rig.sp = 0; rig.sph = 0; }
     const spd = dt > 0 ? Math.hypot(e.u - rig.lu, e.v - rig.lv) / dt : 0; rig.lu = e.u; rig.lv = e.v;
     rig.sp += (Math.min(7, spd) - rig.sp) * Math.min(1, dt * 9); rig.sph += rig.sp * dt * 3.4; rig.run = Math.min(1, rig.sp / 3);
+    /* velocita' nel sistema del corpo (avanti/laterale) per inclinazione e passo */
+    { const dx = dt > 0 ? (e.v - (rig.pv === undefined ? e.v : rig.pv)) / dt : 0, dz = dt > 0 ? (e.u - (rig.pu === undefined ? e.u : rig.pu)) / dt : 0; rig.pv = e.v; rig.pu = e.u;
+      const cs = Math.cos(face), sn = Math.sin(face), fw = dx * sn + dz * cs, lt = dx * cs - dz * sn; rig.vf = (rig.vf || 0) + (Math.max(-5, Math.min(5, fw)) - (rig.vf || 0)) * Math.min(1, dt * 8); rig.vl = (rig.vl || 0) + (Math.max(-5, Math.min(5, lt)) - (rig.vl || 0)) * Math.min(1, dt * 8); }
     const breath = e.pose === POSE.ready ? Math.sin(time * 3 + e.u * 2 + e.v) * .012 : 0;
     let P = breath ? { ...e.pose, cr: e.pose.cr + breath } : e.pose;
     if (e.pose === POSE.cheer || e.pose === POSE.cheerUp) P = { ...P, lf: P.lf + Math.abs(Math.sin(time * 7 + e.u * 1.3)) * .14 };
@@ -598,6 +602,9 @@ function s3Frame(M, ents, dt) {
     rig.air = Math.max(P.lf, rig.air - dt * 1.6); if (rig.air > .3 && P.lf < .08) { rig.land = 1; rig.air = 0; }
     rig.land = Math.max(0, rig.land - dt * 2.8);
     if (rig.land > .01) P = { ...P, cr: P.cr + .34 * rig.land, ln: P.ln + .1 * rig.land };
+    /* morbidezza: busto e braccia inseguono la posa con una piccola inerzia (non i salti, per non spostare il contatto) */
+    if (!rig.sm) rig.sm = { cr: P.cr, ln: P.ln, L: P.L.slice(), R: P.R.slice() };
+    { const k = Math.min(1, dt * (P.lf > .08 ? 30 : 16)), q = rig.sm; q.cr += (P.cr - q.cr) * k; q.ln += (P.ln - q.ln) * k; for (let i = 0; i < 2; i++) { q.L[i] += (P.L[i] - q.L[i]) * k; q.R[i] += (P.R[i] - q.R[i]) * k; } P = { ...P, cr: q.cr, ln: q.ln, L: q.L.slice(), R: q.R.slice() }; }
     rig.g.position.set(e.v, 0, e.u);
     s3Pose(rig, P, e.name, face, time);
     const sh = Math.max(.35, 1 - P.lf * .45); rig.shadow.position.set(e.v + .14 * (1 + P.lf), .012, e.u - .08 * (1 + P.lf)); rig.shadow.scale.set(.5 * sh, .5 * sh, .5 * sh);
