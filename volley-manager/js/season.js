@@ -38,7 +38,7 @@ function endSeason() {
   const departures = [], retained = []; ensureContracts(club, G.lid);
   club.players.forEach(p => {
     if (p.contractStatus === 'renewed') { p.contractYears = 1; p.contractStatus = 'signed'; retained.push(p.name); }
-    else { const chance = p.age >= 31 ? .60 : .40; if (Math.random() < chance && club.players.length - departures.length > 7) { p.teamId = null; p.lid = null; p.contractYears = 0; p.contractStatus = 'free'; G.freeAgents.push(p); departures.push(p.name); } else { p.contractYears = 1; p.contractStatus = 'signed'; retained.push(p.name); } }
+    else { const chance = Math.min(.95, (p.age >= 31 ? .60 : .40) + (p.mood < 0 ? .2 * -p.mood : 0)); if (Math.random() < chance && club.players.length - departures.length > 7) { p.teamId = null; p.lid = null; p.contractYears = 0; p.contractStatus = 'free'; G.freeAgents.push(p); departures.push(p.name); } else { p.contractYears = 1; p.contractStatus = 'signed'; retained.push(p.name); } }
   });
   club.players = club.players.filter(p => !departures.includes(p.name));
   if (departures.length) marketNews('Fine stagione: atlete partite per il mercato: ' + departures.join(', ') + '.');
@@ -135,5 +135,5 @@ function mwHTML() {
 }
 
 const _homeHTML4 = homeHTML;
-const APP_BUILD = '1028r';
+const APP_BUILD = '1028s';
 homeHTML = function () { return (G && G.mw ? mwHTML() + hallHTML(true) : _homeHTML4() + hallHTML(false)) + `<p class="muted small" style="text-align:center;font-size:11px;margin:10px 0 0">versione ${APP_BUILD}</p>`; };
