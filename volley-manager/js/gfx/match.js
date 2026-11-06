@@ -46,7 +46,7 @@ function renderMatch() {
   </div>
   <div class="setline" id="setline"></div>
   <div id="ctl" class="matchctl">
-    <div class="seg" role="group" aria-label="Telecamera"><button data-act="camview" data-v="side" aria-pressed="${UI.camView === 'side'}">Laterale</button><button data-act="camview" data-v="sideh" aria-pressed="${UI.camView === 'sideh'}">Laterale alta</button><button data-act="camview" data-v="reg" aria-pressed="${UI.camView === 'reg'}">Da fondo</button><button data-act="camview" data-v="tv" aria-pressed="${UI.camView === 'tv'}">Da fondo alta</button></div>
+    <div class="seg" role="group" aria-label="Telecamera"><button data-act="camview" data-v="side" aria-pressed="${UI.camView === 'side'}">Laterale</button><button data-act="camview" data-v="sideh" aria-pressed="${UI.camView === 'sideh'}">Laterale alta</button><button data-act="camview" data-v="reg" aria-pressed="${UI.camView === 'reg'}">Da fondo</button><button data-act="camview" data-v="tv" aria-pressed="${UI.camView === 'tv'}">Da fondo alta</button></div><div class="seg" role="group" aria-label="Zoom"><button data-act="zoomstep" data-d="-1" aria-label="Allontana">−</button><button data-act="zoomstep" data-d="1" aria-label="Avvicina">＋</button></div>
     <div class="seg" role="group" aria-label="Velocità"><button data-act="speed" data-v="1" aria-pressed="true">1×</button><button data-act="speed" data-v="2" aria-pressed="false">2×</button><button data-act="speed" data-v="4" aria-pressed="false">4×</button><button data-act="speed" data-v="8" aria-pressed="false">8×</button></div>
     <button class="btn" data-act="pause" id="pausebtn">Pausa</button><button class="btn primary" data-act="submodal">Cambi</button><button class="btn" data-act="replay" id="replaybtn">Replay</button><span class="pill" id="vcpill" title="Check VAR rimasti: tuoi · avversari">VAR 2 · 2</span><button class="btn" data-act="skip">Salta alla fine</button>
   </div>
@@ -388,6 +388,17 @@ document.addEventListener('click', e => {
   $("#feed").textContent = 'REPLAY · ' + M.feedKeep; M.paused = false;
   M.anim = { ry: l.ry, script: l.script, t: l.script.finalHit ? Math.max(0, l.script.finalHit.t - 2.2) : Math.max(0, l.script.point - 2.5), scored: true, setEnd: false, fired: new Set(), replay: true }; { const rb = $('#rbadge'); if (rb) rb.hidden = false; }
 });
+
+/* zoom: pulsanti, rotella del mouse e pizzico a due dita */
+function setCamZoom(z) { UI.camZoom = Math.max(1, Math.min(3.4, z)); try { localStorage.setItem('vm-camzoom', String(UI.camZoom)); } catch (x) { } }
+try { UI.camZoom = Math.max(1, Math.min(3.4, +localStorage.getItem('vm-camzoom') || 1)); } catch (x) { UI.camZoom = 1; }
+document.addEventListener('click', e => { const el = e.target.closest('[data-act="zoomstep"]'); if (el) setCamZoom((UI.camZoom || 1) * (el.dataset.d === '1' ? 1.3 : 1 / 1.3)); });
+const isMatchCv = t => !!(UI.match && UI.match.s3 && UI.match.s3.cv && (t === UI.match.s3.cv || UI.match.s3.cv.contains(t)));
+document.addEventListener('wheel', e => { if (!isMatchCv(e.target)) return; e.preventDefault(); setCamZoom((UI.camZoom || 1) * Math.exp(-e.deltaY * .0015)); }, { passive: false });
+{ let d0 = 0, z0 = 1; const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  document.addEventListener('touchstart', e => { if (e.touches.length === 2 && isMatchCv(e.target)) { d0 = dist(e.touches); z0 = UI.camZoom || 1; } }, { passive: true });
+  document.addEventListener('touchmove', e => { if (e.touches.length === 2 && d0 && isMatchCv(e.target)) { e.preventDefault(); setCamZoom(z0 * dist(e.touches) / d0); } }, { passive: false });
+  document.addEventListener('touchend', e => { if (e.touches.length < 2) d0 = 0; }, { passive: true }); }
 
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act="camview"]'); if (!el || !UI.match) return;

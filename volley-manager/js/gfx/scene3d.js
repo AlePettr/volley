@@ -384,12 +384,23 @@ function s3Build(M) {
   const mats = {}, lam = c => mats[c] || (mats[c] = new THREE.MeshLambertMaterial({ color: c }));
   const skinC = ['#e0b08a', '#c68a62', '#8d5a3a', '#f0c9a6'];
   const person = (x, z, ry, shirt, shorts, sit, tm, ph) => {
-    const g = new THREE.Group(), k = skinC[Math.floor(R() * skinC.length)], H = sit ? 0 : .45;
-    const torso = new THREE.Mesh(new THREE.CylinderGeometry(.17, .15, .52, 8), lam(shirt)); torso.position.y = .72 + H + (sit ? 0 : .25); g.add(torso);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(.105, 8, 6), lam(k)); head.position.y = 1.15 + H + (sit ? 0 : .25); g.add(head);
-    const hair = new THREE.Mesh(new THREE.SphereGeometry(.108, 8, 6, 0, 6.3, 0, 1.6), lam(['#1c1410', '#3a2a1c', '#6b4a2a', '#caa05a'][Math.floor(R() * 4)])); hair.position.y = 1.17 + H + (sit ? 0 : .25); g.add(hair);
-    if (sit) { for (const dx of [-.08, .08]) { const th = new THREE.Mesh(new THREE.BoxGeometry(.1, .1, .42), lam(shorts)); th.position.set(dx, .48, .2); g.add(th); const sh = new THREE.Mesh(new THREE.CylinderGeometry(.05, .045, .45, 6), lam(k)); sh.position.set(dx, .24, .4); g.add(sh); } }
-    else { for (const dx of [-.07, .07]) { const lg = new THREE.Mesh(new THREE.CylinderGeometry(.06, .05, .95, 6), lam(shorts)); lg.position.set(dx, .48, 0); g.add(lg); } }
+    const g = new THREE.Group(), k = skinC[Math.floor(R() * skinC.length)], hairC = ['#1c1410', '#3a2a1c', '#6b4a2a', '#caa05a'][Math.floor(R() * 4)];
+    const add = (geo, m, px, py, pz, sx, sy, sz, rx) => { const o = new THREE.Mesh(geo, m); o.position.set(px, py, pz); if (sx !== undefined) o.scale.set(sx, sy, sz); if (rx) o.rotation.x = rx; g.add(o); return o; };
+    const SPH = new THREE.SphereGeometry(1, 10, 8), CYL = new THREE.CylinderGeometry(1, 1, 1, 8), BOXG = new THREE.BoxGeometry(1, 1, 1);
+    const hy = sit ? .5 : .95;   /* altezza del bacino */
+    /* sedia o sgabello: i seduti non galleggiano piu' */
+    if (sit) { const sm = lam(0x232b3d); add(BOXG, sm, 0, .43, .08, .42, .045, .42); add(BOXG, sm, 0, .62, -.13, .42, .38, .04); for (const dx of [-.17, .17]) for (const dz of [-.1, .26]) add(CYL, sm, dx, .2, dz, .018, .4, .018); }
+    /* busto: vita, spalle arrotondate, collo */
+    add(CYL, lam(shirt), 0, hy + .26, 0, .17, .5, .11);
+    add(SPH, lam(shirt), 0, hy + .5, 0, .21, .09, .12);
+    add(CYL, lam(k), 0, hy + .62, 0, .045, .1, .045);
+    add(SPH, lam(k), 0, hy + .76, 0, .1, .115, .105);
+    add(SPH, lam(hairC), 0, hy + .8, -.012, .108, .105, .11);
+    /* braccia */
+    for (const dx of [-1, 1]) { add(CYL, lam(shirt), dx * .225, hy + .36, sit ? .04 : 0, .045, .3, .045, sit ? -.5 : 0); add(CYL, lam(k), dx * .225, hy + (sit ? .17 : .12), sit ? .18 : 0, .036, .22, .036, sit ? -1.2 : 0); }
+    /* gambe */
+    if (sit) { for (const dx of [-.09, .09]) { add(CYL, lam(shorts), dx, hy - .02, .2, .065, .4, .065, Math.PI / 2); add(CYL, lam(k), dx, hy - .26, .4, .05, .42, .05); add(BOXG, lam(0xf2f4f8), dx, .03, .46, .09, .06, .2); } }
+    else { for (const dx of [-.085, .085]) { add(CYL, lam(shorts), dx, hy - .2, 0, .07, .42, .07); add(CYL, lam(k), dx, hy - .66, 0, .05, .48, .05); add(BOXG, lam(0xf2f4f8), dx, .03, .06, .09, .06, .22); } }
     g.position.set(x, 0, z); g.rotation.y = ry; scene.add(g); S.extras.push({ g, tm, ph, y0: 0 }); return g;
   };
   const BS = (S.hi && AV.benchPlus) ? 1 : -1, BX = BS * 7.7, benchMat = lam(0x2a3347);
@@ -694,6 +705,7 @@ function s3Camera(M, ents, dt) {
   else if (shot.cam === 'react') { let sx = 0, sz = 0, n = 0; for (const e of ents) if (e.kind === 'p' && e.side === shot.side) { sx += e.v; sz += e.u; n++; } if (n) { tg.set(sx / n, 1.2, sz / n); zf = .76; } }
   tg.z = clampZ(tg.z);
   zf *= 1 - .06 * Math.min(1, M.zoom || 0);
+  zf /= (UI.camZoom || 1);
   if (!S.cur) S.cur = { look: tg.clone(), zf, id: null, fast: 0 };
   const c = S.cur, id = shot.cam + (shot.t || 0);
   if (c.id !== id) { c.id = id; c.fast = .4; }
