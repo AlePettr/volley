@@ -600,9 +600,12 @@ function s3Frame(M, ents, dt) {
     if (e.pose === POSE.cheer || e.pose === POSE.cheerUp) P = { ...P, lf: P.lf + Math.abs(Math.sin(time * 7 + e.u * 1.3)) * .14 };
     /* atterraggio: dopo un salto le ginocchia ammortizzano */
     if (rig.air === undefined) { rig.air = 0; rig.land = 0; }
-    rig.air = Math.max(P.lf, rig.air - dt * 1.6); if (rig.air > .3 && P.lf < .08) { rig.land = 1; rig.air = 0; }
-    rig.land = Math.max(0, rig.land - dt * 2.8);
-    if (rig.land > .01) P = { ...P, cr: P.cr + .34 * rig.land, ln: P.ln + .1 * rig.land };
+    rig.air = Math.max(P.lf, rig.air - dt * 1.6); if (rig.air > .3 && P.lf < .08) { rig.land = 1; rig.landK = Math.min(1.25, .6 + rig.air * .7); rig.air = 0; }
+    rig.land = Math.max(0, rig.land - dt * 2.2);
+    /* in aria: schiacciata = schiena inarcata e busto che si carica; muro = spalle avanti sopra la rete */
+    if (P.lf > .3) { const sp = /spike|attack|hit/i.test(e.name || ''), w = Math.min(1, (P.lf - .3) / .3); P = { ...P, ln: P.ln + (sp ? -.14 : .08) * w, cr: P.cr + (sp ? .06 : 0) * w }; }
+    /* atterraggio: ammortizza di piu' dopo un salto alto, poi si rialza con una piccola molla */
+    if (rig.land > .01) { const L0 = rig.land, spring = Math.sin(L0 * Math.PI) * .5 + L0 * .5; P = { ...P, cr: P.cr + .3 * (rig.landK || 1) * spring, ln: P.ln + .12 * L0 }; }
     /* morbidezza: busto e braccia inseguono la posa con una piccola inerzia (non i salti, per non spostare il contatto) */
     if (!rig.sm) rig.sm = { cr: P.cr, ln: P.ln, L: P.L.slice(), R: P.R.slice() };
     { const k = Math.min(1, dt * (P.lf > .08 ? 30 : 16)), q = rig.sm; q.cr += (P.cr - q.cr) * k; q.ln += (P.ln - q.ln) * k; for (let i = 0; i < 2; i++) { q.L[i] += (P.L[i] - q.L[i]) * k; q.R[i] += (P.R[i] - q.R[i]) * k; } P = { ...P, cr: q.cr, ln: q.ln, L: q.L.slice(), R: q.R.slice() }; }
