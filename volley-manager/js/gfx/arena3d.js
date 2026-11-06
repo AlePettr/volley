@@ -159,9 +159,10 @@ function s3RichCrowdUpdate(cr, time, ex, lw) {
   const Y = new THREE.Vector3(0, 1, 0);
   for (let i = 0; i < cr.N; i++) {
     const win = (tm[i] === 1 && lw === 'h') || (tm[i] === 2 && lw === 'a');
-    const y = base[i] + ex * (win ? .22 : .02) + Math.max(0, Math.sin(time * (win ? 4 : 2.4) + ph[i])) * (.012 + ex * (win ? .12 : .03));
+    const wv = ex > .5 ? Math.pow(Math.max(0, Math.sin(time * 3 - (sp[i].x + sp[i].z) * .35)), 3) * Math.min(1, (ex - .5) * 2) : 0;   /* ola nei momenti caldi */
+    const y = base[i] + ex * (win ? .22 : .02) + Math.max(0, Math.sin(time * (win ? 4 : 2.4) + ph[i])) * (.012 + ex * (win ? .12 : .03)) + wv * .2;
     ta[i * 16 + 13] = y; ha[i * 16 + 13] = y; ka[i * 16 + 13] = y; la[i * 16 + 13] = y;
-    const target = win ? ex * (1.9 + Math.sin(time * 8 + ph[i]) * .5) : 0; let a = R.armA[i]; a += (target - a) * .22; if (target === 0 && Math.abs(a) < .03) a = 0;
+    const target = Math.max(win ? ex * (1.9 + Math.sin(time * 8 + ph[i]) * .5) : 0, wv * 2.4); let a = R.armA[i]; a += (target - a) * .22; if (target === 0 && Math.abs(a) < .03) a = 0;
     if (a !== 0 || R.armA[i] !== 0) {
       const yw = R.yaw[i], c = Math.cos(yw), s = Math.sin(yw), p = sp[i]; q.setFromAxisAngle(Y, yw);
       qa.setFromAxisAngle(up, a); qa.premultiply(q); mx.compose(pv.set(p.x + .2 * c, y + .22, p.z - .2 * s), qa, one); R.armL.setMatrixAt(i, mx);
