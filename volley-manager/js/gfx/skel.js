@@ -51,6 +51,9 @@ function skAttach(rig) {
       if (hh2 % 4 === 0 && rig.K) { const tm = new THREE.MeshStandardMaterial({ color: rig.K.trim || '#ffffff', roughness: .8 }), o = new THREE.Mesh(SK.bandGeo || (SK.bandGeo = new THREE.TorusGeometry(1, .11, 6, 22)), tm); o.position.set(0, 1.672, .03).applyMatrix4(inv); o.quaternion.copy(qi); o.rotateX(Math.PI / 2 - .12); o.scale.set(.118, .124, .118); head.add(o); }
       rig.sk_tails = tails; } }
   /* numeri di maglia attaccati al busto (ossa della schiena): seguono la rotazione e stanno sulla superficie della maglia */
+  /* i numeri seguono la curvatura del busto (un piano piatto si stacca ai lati della maglia) */
+  const curved = (w, a, b) => { const g = new THREE.PlaneGeometry(w, w, 14, 1), P = g.attributes.position; for (let i = 0; i < P.count; i++) { const r = Math.min(.98, Math.abs(P.getX(i)) / a); P.setZ(i, -b * (1 - Math.sqrt(1 - r * r))); } g.computeVertexNormals(); return g; };
+  if (rig.parts.num && !rig.parts.num.userData.curved) { rig.parts.num.geometry = SK.numGeo || (SK.numGeo = curved(.31, .19, .11)); rig.parts.numF.geometry = SK.numFGeo || (SK.numFGeo = curved(.12, .19, .1)); rig.parts.num.userData.curved = 1; }
   const ch = skBones(root).Spine2; if (ch && rig.parts.num) { ch.add(rig.parts.num, rig.parts.numF); rig.parts.num.position.set(0, -.09, -.102); rig.parts.num.rotation.set(0, Math.PI, 0); rig.parts.numF.position.set(-.075, -.05, .153); rig.parts.numF.rotation.set(0, 0, 0);
     /* stemma della squadra sul petto, a destra guardando la giocatrice di fronte */
     if (rig.team) { const cm = new THREE.Mesh(SK.crestGeo || (SK.crestGeo = new THREE.PlaneGeometry(.12, .12)), new THREE.MeshBasicMaterial({ map: skCrestTex(rig.team), transparent: true })); cm.position.set(.08, -.035, .154); ch.add(cm); } }
@@ -119,12 +122,12 @@ function skTrim(m, K, kind) {
         t = max(t, smoothstep(0.205, 0.215, ax) * step(y, 1.40));           /* bordo delle maniche */
         t = max(t, 1.0 - smoothstep(1.025, 1.04, y));                       /* fondo della maglia */
         t = max(t, step(0.150, ax) * step(ax, 0.176) * step(y, 1.30) * step(1.06, y));   /* riga laterale */
-        t = max(t, step(1.425, y) * step(ax, 0.075) * smoothstep(1.425 + ax * 0.9, 1.425 + ax * 0.9 + 0.004, y + 0.0));   /* colletto */` : `t = max(t, step(0.185, ax) * step(ax, 0.205) * step(y, 1.02));   /* riga laterale */
+        t = max(t, step(1.425, y) * step(ax, 0.075) * smoothstep(1.425 + ax * 0.9, 1.425 + ax * 0.9 + 0.004, y + 0.0));   /* colletto */` : `t = max(t, step(0.185, ax) * step(ax, 0.205) * step(y, 1.02) * step(0.80, y));   /* riga laterale (solo sul pantaloncino) */
         t = max(t, step(y, 0.80) * step(0.74, y));                          /* orlo */`}
         diffuseColor.rgb = mix(diffuseColor.rgb, trimC, clamp(t, 0.0, 1.0));
         float w = clamp(1.0 / (fwidth(vOP.x) * 260.0 + 1e-4), 0.0, 1.0);
         float weave = (sin(vOP.x * 420.0) * sin(vOP.y * 420.0)) * 0.5 + 0.5;
-        diffuseColor.rgb *= 1.0 - 0.07 * weave * w;
+        diffuseColor.rgb *= 1.0 - 0.07 * weave * w * (${top ? '1.0' : 'step(0.74, y)'});
       }`);
   };
   m.needsUpdate = true;
@@ -151,9 +154,9 @@ function skMat(base, rig) {
     const trimFx = m.onBeforeCompile;
     m.onBeforeCompile = sh => {
       if (trimFx) trimFx(sh);
-      sh.uniforms.skinC = { value: skinC };
+      sh.uniforms.skinC = { value: skinC }; sh.uniforms.sockC = { value: new THREE.Color('#f4f6fa') }; sh.uniforms.sockT = { value: new THREE.Color(K.trim && Gx.dist(K.trim, '#f4f6fa') > 60 ? K.trim : K.main) };
       sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying float vBY;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvBY = position.y;');
-      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vBY;\nuniform vec3 skinC;').replace('#include <color_fragment>', '#include <color_fragment>\n if (vBY < .74) diffuseColor.rgb = skinC;');
+      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vBY;\nuniform vec3 skinC; uniform vec3 sockC; uniform vec3 sockT;').replace('#include <color_fragment>', '#include <color_fragment>\n if (vBY < .74) diffuseColor.rgb = skinC; if (vBY < .30) diffuseColor.rgb = (vBY > .265) ? sockT : sockC;');
     };
   }
   else if (n === 'Wolf3D_Outfit_Footwear') flat(['#f4f6fa', '#f4f6fa', '#1d2230', Gx.light(K.main, .72)][hh % 4]);
