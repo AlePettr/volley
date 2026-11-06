@@ -59,7 +59,7 @@ function s3PostRender(S, scene, cam) {
     P.w = w; P.h = h; P.mat.uniforms.texel.value.set(1 / w, 1 / h); P.mat.uniforms.tC.value = P.rt.texture; P.mat.uniforms.tD.value = dt;
   }
   const u = P.mat.uniforms, small = Math.min(sz.x, sz.y) < 600;
-  u.near.value = cam.near; u.far.value = cam.far; u.focus.value = S.focusD || 30; u.kPx.value = 11 * (h / 760) * (small ? .85 : 1); u.taps.value = small ? 10 : 16; u.seed.value = (now % 1000) * .001;
+  u.near.value = cam.near; u.far.value = cam.far; u.focus.value = S.focusD || 30; u.kPx.value = 0;   /* sfocatura disattivata: resta il grading */ u.taps.value = small ? 10 : 16; u.seed.value = (now % 1000) * .001;
   const old = r.getRenderTarget();
   r.setRenderTarget(P.rt); r.render(scene, cam);
   r.setRenderTarget(old); r.render(P.scene, P.cam);

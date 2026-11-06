@@ -579,7 +579,7 @@ function s3Pose(rig, P, name, face, time) {
   }
   rig.g.rotation.y = face;
   if (!rig.sk && typeof skAttach === 'function') skAttach(rig);
-  if (rig.sk) skPose(rig, J);
+  rig.exName = name; if (rig.sk) { skPose(rig, J); skFaceUpdate(rig); }
 }
 
 /* ---------- ciclo di disegno ---------- */

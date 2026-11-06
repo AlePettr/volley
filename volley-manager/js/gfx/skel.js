@@ -49,7 +49,12 @@ function skAttach(rig) {
       if ((rig.look.style % 6) === 5 && hh2 % 2 === 0) for (let k = 1; k <= 3; k++) add({ c: [0, 1.50 - k * .075, -.128 - k * .004], s: [.034 - k * .004, .045, .034 - k * .004] }, hm, true);
       /* fascia sulla fronte nel colore di dettaglio del club, per una su quattro */
       if (hh2 % 4 === 0 && rig.K) { const tm = new THREE.MeshStandardMaterial({ color: rig.K.trim || '#ffffff', roughness: .8 }), o = new THREE.Mesh(SK.bandGeo || (SK.bandGeo = new THREE.TorusGeometry(1, .11, 6, 22)), tm); o.position.set(0, 1.672, .03).applyMatrix4(inv); o.quaternion.copy(qi); o.rotateX(Math.PI / 2 - .12); o.scale.set(.118, .124, .118); head.add(o); }
-      rig.sk_tails = tails; } }
+      rig.sk_tails = tails; }
+    /* espressioni: palpebre (ammiccano e si socchiudono) e bocca che si apre quando urla o fa sforzo */
+    if (head) { const sk = mats.Wolf3D_Skin, lm = new THREE.MeshStandardMaterial({ color: sk ? sk.color : rig.look.skin, roughness: .6 }), mm = new THREE.MeshStandardMaterial({ color: 0x3a1418, roughness: .5 }), tg = new THREE.MeshStandardMaterial({ color: 0xc0646c, roughness: .5 });
+      SK.faceGeo = SK.faceGeo || new THREE.SphereGeometry(1, 12, 8);
+      const mk = (mat, c, sc) => { const o = new THREE.Mesh(SK.faceGeo, mat); o.position.set(...c).applyMatrix4(inv); o.quaternion.copy(qi); o.scale.set(...sc); o.visible = false; o.userData.p0 = o.position.clone(); head.add(o); return o; };
+      rig.face = { up: new THREE.Vector3(0, 1, 0).applyQuaternion(qi), lid: [mk(lm, [-.030, 1.63, .114], [.024, .024, .02]), mk(lm, [.030, 1.63, .114], [.024, .024, .02])], mouth: mk(mm, [0, 1.571, .137], [.016, .01, .004]), tongue: mk(tg, [0, 1.565, .1385], [.009, .004, .003]), op: 0, bt: 1 + Math.random() * 3, cl: 0 }; } }
   /* numeri di maglia attaccati al busto (ossa della schiena): seguono la rotazione e stanno sulla superficie della maglia */
   /* i numeri seguono la curvatura del busto (un piano piatto si stacca ai lati della maglia) */
   const curved = (w, a, b) => { const g = new THREE.PlaneGeometry(w, w, 14, 1), P = g.attributes.position; for (let i = 0; i < P.count; i++) { const r = Math.min(.98, Math.abs(P.getX(i)) / a); P.setZ(i, -b * (1 - Math.sqrt(1 - r * r))); } g.computeVertexNormals(); return g; };
@@ -73,6 +78,16 @@ function skIK(S, W, pole, l1, l2) {
   return [E, S.clone().addScaledVector(dir, d)];
 }
 
+function skFaceUpdate(rig) {
+  const F = rig.face; if (!F) return; const now = performance.now() * .001, n = rig.exName || '', dt = Math.min(.1, now - (F.t0 || now)); F.t0 = now;
+  let op = 0, sq = 0;
+  if (/cheer/.test(n)) { op = .9; sq = .35; } else if (/spike|serveHit/.test(n)) op = .55; else if (/block/.test(n)) op = .3; else if (/cock|receive|dive|dig/.test(n)) op = .18; else if (n === 'down') sq = .3;
+  F.op += (op - F.op) * Math.min(1, dt * 14);
+  F.bt -= dt; let bl = 0; if (F.bt < 0) { const q = -F.bt / .16; bl = q < 1 ? Math.sin(q * Math.PI) : 0; if (q >= 1) F.bt = 2.2 + Math.random() * 3.5; }
+  const cl = Math.max(bl, sq); F.cl += (cl - F.cl) * Math.min(1, dt * 30);
+  for (const l of F.lid) { l.visible = F.cl > .06; if (l.visible) { const k = Math.min(1, F.cl); l.scale.y = .024 * k; l.position.copy(l.userData.p0).addScaledVector(F.up, .024 * (1 - k)); } }
+  const o = F.op; F.mouth.visible = o > .06; F.tongue.visible = o > .5; if (F.mouth.visible) { F.mouth.scale.set(.011 + .011 * o, .003 + .007 * o, .004); }
+}
 function skPose(rig, J) {
   const R = rig.sk, B = R.B, bind = SK.bind, V = THREE.Vector3, Q = THREE.Quaternion, root = R.root, I = new Q();
   const Qw = {}, Pw = {};
@@ -168,7 +183,17 @@ function skMat(base, rig) {
     };
   }
   else if (n === 'Wolf3D_Body') { m.map = null; m.color.set(look.skin); }
-  else if (n === 'Wolf3D_Skin') { const t = SK.bind.tone, c = new THREE.Color(look.skin); m.color.setRGB(Math.min(1.5, Math.max(.5, c.r / t[0])), Math.min(1.5, Math.max(.5, c.g / t[1])), Math.min(1.5, Math.max(.5, c.b / t[2]))); }
+  else if (n === 'Wolf3D_Skin') { const t = SK.bind.tone, c = new THREE.Color(look.skin); m.color.setRGB(Math.min(1.5, Math.max(.5, c.r / t[0])), Math.min(1.5, Math.max(.5, c.g / t[1])), Math.min(1.5, Math.max(.5, c.b / t[2])));
+    /* le labbra rosso fuoco e le sopracciglia rosa della texture diventano tinte naturali (labbra rosate scure, sopracciglia del colore dei capelli) */
+    const lipC = new THREE.Color(look.skin).multiply(new THREE.Color(.86, .56, .58)), browC = new THREE.Color(look.hair).multiplyScalar(.75);
+    m.onBeforeCompile = sh => {
+      sh.uniforms.lipC = { value: lipC }; sh.uniforms.browC = { value: browC };
+      sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying float vFY;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvFY = position.y;');
+      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vFY;\nuniform vec3 lipC; uniform vec3 browC;').replace('#include <map_fragment>', `#include <map_fragment>
+        { float rd = diffuseColor.r - max(diffuseColor.g, diffuseColor.b), mk = smoothstep(0.30, 0.50, rd);
+          vec3 tgt = vFY > 1.60 ? browC : lipC; float lum = dot(diffuseColor.rgb, vec3(0.3, 0.5, 0.2));
+          diffuseColor.rgb = mix(diffuseColor.rgb, tgt * (0.75 + 0.5 * lum), mk); }`);
+    }; }
   return m;
 }
 

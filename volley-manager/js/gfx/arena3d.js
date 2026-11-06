@@ -295,7 +295,24 @@ function s3RichArena(S, scene, c) {
   }
   if (c.crew) { for (const p of c.crew) s3Person(scene, p[0], p[1], p[2]); }
   /* telecamere TV e steward dietro i cartelloni */
-  const camG = (x, z, ry) => { const g = new THREE.Group(), leg = new THREE.MeshLambertMaterial({ color: 0x141a28 }); for (const a of [0, 2.1, 4.2]) { const l = new THREE.Mesh(new THREE.CylinderGeometry(.015, .02, 1.3, 5), leg); l.position.set(Math.cos(a) * .22, .65, Math.sin(a) * .22); l.rotation.set(Math.sin(a) * .18, 0, -Math.cos(a) * .18); g.add(l); } const body = new THREE.Mesh(new THREE.BoxGeometry(.32, .28, .6), leg); body.position.set(0, 1.45, 0); const lens = new THREE.Mesh(new THREE.CylinderGeometry(.09, .1, .36, 10), new THREE.MeshLambertMaterial({ color: 0x0a0e18 })); lens.rotation.x = Math.PI / 2; lens.position.set(0, 1.45, .46); const lamp = new THREE.Mesh(new THREE.SphereGeometry(.03, 6, 4), new THREE.MeshBasicMaterial({ color: 0xff2a2a })); lamp.position.set(0, 1.62, -.2); g.add(body, lens, lamp); g.position.set(x, 0, z); g.rotation.y = ry; scene.add(g); };
+  const camG = (x, z, ry) => {
+    const g = new THREE.Group(), L = (c, r) => new THREE.MeshStandardMaterial({ color: c, roughness: r === undefined ? .6 : r, metalness: .2 }), dark = L(0x1b2130), grey = L(0x4a5468), lensM = L(0x07090f, .3), glass = new THREE.MeshStandardMaterial({ color: 0x2a4a7a, roughness: .1, metalness: .6, emissive: 0x0a1830 });
+    const ad = (geo, m, px, py, pz, rx, ry2, rz) => { const o = new THREE.Mesh(geo, m); o.position.set(px, py, pz); if (rx || ry2 || rz) o.rotation.set(rx || 0, ry2 || 0, rz || 0); o.castShadow = true; g.add(o); return o; };
+    /* treppiede con raggiera e testa fluida */
+    for (const a of [0, 2.094, 4.189]) { const lx = Math.cos(a), lz = Math.sin(a); ad(new THREE.CylinderGeometry(.014, .02, 1.25, 6), dark, lx * .2, .62, lz * .2, lz * .17, 0, -lx * .17); ad(new THREE.BoxGeometry(.05, .03, .09), dark, lx * .3, .02, lz * .3, 0, -a, 0); ad(new THREE.CylinderGeometry(.006, .006, .46, 4), dark, lx * .11, .3, lz * .11, 0, 0, Math.PI / 2 - a * 0).rotation.set(0, -a, Math.PI / 2); }
+    ad(new THREE.CylinderGeometry(.075, .09, .1, 12), grey, 0, 1.28, 0); ad(new THREE.CylinderGeometry(.055, .055, .1, 10), dark, 0, 1.36, 0);
+    /* corpo camera, mirino, obiettivo con paraluce, maniglia */
+    ad(new THREE.BoxGeometry(.24, .26, .5), grey, 0, 1.52, -.02); ad(new THREE.BoxGeometry(.2, .05, .34), dark, 0, 1.67, -.02);
+    ad(new THREE.BoxGeometry(.12, .14, .22), dark, .17, 1.54, -.1); ad(new THREE.BoxGeometry(.1, .1, .01), glass, .17, 1.55, .0).rotation.y = 0;
+    ad(new THREE.CylinderGeometry(.1, .085, .3, 14), lensM, 0, 1.52, .38, Math.PI / 2, 0, 0);
+    ad(new THREE.CylinderGeometry(.16, .11, .2, 14, 1, true), L(0x0a0d14, .8), 0, 1.52, .58, Math.PI / 2, 0, 0).material.side = THREE.DoubleSide;
+    ad(new THREE.CylinderGeometry(.075, .075, .02, 14), glass, 0, 1.52, .5, Math.PI / 2, 0, 0);
+    ad(new THREE.CylinderGeometry(.012, .012, .7, 5), dark, -.06, 1.34, -.45, 1.15, 0, 0);   /* barra di panoramica */
+    ad(new THREE.SphereGeometry(.022, 8, 6), new THREE.MeshBasicMaterial({ color: 0xff2a2a }), 0, 1.7, .12);
+    g.position.set(x, 0, z); g.rotation.y = ry; scene.add(g);
+    /* operatore dietro la camera */
+    s3Person(scene, x - Math.sin(ry) * .95, z - Math.cos(ry) * .95, ry, 0x161a24);
+  };
   if (c.crew) camG(10.7, 9.6, -Math.PI / 2); camG(-3.2, 13.2, Math.PI); camG(3.4, -13.2, 0); camG(-10.7, 6, Math.PI / 2); camG(10.7, -4, -Math.PI / 2);
   S.richStewards = [[-8, 13.4], [0, 13.4], [8, 13.4], [-8, -13.4], [0, -13.4], [8, -13.4], [-10.9, -8], [-10.9, 8], [10.9, -8], [10.9, 8]];
 }
