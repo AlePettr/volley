@@ -88,6 +88,7 @@ function skPose(rig, J) {
   const Qt = new Q().setFromUnitVectors(bind.torso, J.shC.clone().sub(J.hipC).normalize());
   ['Spine', 'Spine1', 'Spine2'].forEach((n, i) => drive(B[n], new Q().slerpQuaternions(I, Qt, (i + 1) / 3).multiply(bind.q[n])));
   const Qh = new Q().setFromUnitVectors(bind.head, J.hd.clone().sub(J.shC).normalize());
+  if (rig.hLook) Qh.premultiply(new Q().setFromAxisAngle(J.hd.clone().sub(J.shC).normalize(), rig.hLook));   /* la testa segue la palla */
   drive(B.Neck, new Q().slerpQuaternions(I, Qh, .5).multiply(bind.q.Neck)); drive(B.Head, Qh.clone().multiply(bind.q.Head));
   /* braccia */
   for (const A of J.arms) {

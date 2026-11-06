@@ -591,6 +591,7 @@ function s3Frame(M, ents, dt) {
     if (rig.lu === undefined) { rig.lu = e.u; rig.lv = e.v; rig.sp = 0; rig.sph = 0; }
     const spd = dt > 0 ? Math.hypot(e.u - rig.lu, e.v - rig.lv) / dt : 0; rig.lu = e.u; rig.lv = e.v;
     rig.sp += (Math.min(7, spd) - rig.sp) * Math.min(1, dt * 9); rig.sph += rig.sp * dt * 3.4; rig.run = Math.min(1, rig.sp / 3);
+    { let lk = 0; if (bE) { lk = Math.atan2(bE.v - e.v, bE.u - e.u) - face; lk = Math.atan2(Math.sin(lk), Math.cos(lk)); lk = Math.max(-.7, Math.min(.7, lk)) * .8; } rig.hLook = (rig.hLook || 0) + (lk - (rig.hLook || 0)) * Math.min(1, dt * 9); }
     /* velocita' nel sistema del corpo (avanti/laterale) per inclinazione e passo */
     { const dx = dt > 0 ? (e.v - (rig.pv === undefined ? e.v : rig.pv)) / dt : 0, dz = dt > 0 ? (e.u - (rig.pu === undefined ? e.u : rig.pu)) / dt : 0; rig.pv = e.v; rig.pu = e.u;
       const cs = Math.cos(face), sn = Math.sin(face), fw = dx * sn + dz * cs, lt = dx * cs - dz * sn; rig.vf = (rig.vf || 0) + (Math.max(-5, Math.min(5, fw)) - (rig.vf || 0)) * Math.min(1, dt * 8); rig.vl = (rig.vl || 0) + (Math.max(-5, Math.min(5, lt)) - (rig.vl || 0)) * Math.min(1, dt * 8); }
