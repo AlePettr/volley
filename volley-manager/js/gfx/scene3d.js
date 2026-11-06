@@ -680,7 +680,7 @@ function s3Frame(M, ents, dt) {
   S.ref.position.set(Cam.side || UI.camView === 'side' || UI.camView === 'sideh' ? -6.1 : 6.1, 0, 0);
   S.ref.rotation.y = (UI.camView === 'side' || UI.camView === 'sideh') ? Math.PI / 2 : -Math.PI / 2;
   if (typeof s3ShineUpdate === 'function') s3ShineUpdate(S, scene, cam);
-  S.renderer.render(scene, cam);
+  if (!(typeof s3PostRender === 'function' && s3PostRender(S, scene, cam))) S.renderer.render(scene, cam);
   if (typeof s3ShineAfter === 'function') s3ShineAfter(S);
   s3Overlay(M, ents);
 }
@@ -714,7 +714,7 @@ function s3Camera(M, ents, dt) {
   c.look.lerp(tg, f); c.zf += (zf - c.zf) * f;
   cam.position.copy(c.look).addScaledVector(dir, c.zf);
   if (M.shake > .2) cam.position.add(new V((Math.random() - .5), (Math.random() - .5), (Math.random() - .5)).multiplyScalar(M.shake * .02));
-  cam.updateProjectionMatrix(); cam.lookAt(c.look); cam.updateMatrixWorld();
+  cam.updateProjectionMatrix(); cam.lookAt(c.look); cam.updateMatrixWorld(); S.focusD = cam.position.distanceTo(c.look);
 }
 
 /* proiezione per i livelli 2D: stessa firma di proj(u, v, zh) */
