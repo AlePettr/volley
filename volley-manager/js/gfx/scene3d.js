@@ -496,6 +496,7 @@ function s3Rig(M, e) {
 function s3Pose(rig, P, name, face, time) {
   const p = rig.parts, V = THREE.Vector3, v = (x, y, z) => new V(x, y, z);
   const run0 = ((!name || name === 'shake') && rig.run) || 0;
+  rig.moveAmt = Math.max(run0, name && name !== "ready" ? .6 : 0);
   const cr = P.cr, ln = P.ln + .1 * run0, lf = P.lf;
   const idle = !name, sw = idle ? Math.sin(time * 1.7 + rig.ph) : 0, ox = sw * .02;
   const hipH = .90 - cr * .30, hipY = lf + hipH, lean = ln * .9, tl = .52 * (1 - .2 * ln);

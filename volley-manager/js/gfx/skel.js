@@ -37,7 +37,19 @@ function skAttach(rig) {
   rig.g.add(root);
   { const head = skBones(root).Head, H = skHairStyle(rig), inv = SK.bind.mHead.clone().invert(), qi = SK.bind.q.Head.clone().invert();
     if (head && H.parts.length) { const hm = new THREE.MeshStandardMaterial({ color: rig.look.hair, roughness: .6 }); SK.hairGeo = SK.hairGeo || new THREE.SphereGeometry(1, 14, 10);
-      for (const q of H.parts) { const o = new THREE.Mesh(SK.hairGeo, hm); o.position.set(...q.c).applyMatrix4(inv); o.quaternion.copy(qi); if (q.rx) o.rotateX(q.rx); o.scale.set(...q.s); o.castShadow = true; head.add(o); } } }
+      const tails = [], hh2 = rig.hh || 0, add = (q, mat, sway) => { const o = new THREE.Mesh(SK.hairGeo, mat); o.position.set(...q.c).applyMatrix4(inv); o.quaternion.copy(qi); if (q.rx) o.rotateX(q.rx); o.scale.set(...q.s); o.castShadow = true; head.add(o); if (sway) { o.userData.rx0 = o.rotation.x; tails.push(o); } return o; };
+      const hl = new THREE.MeshStandardMaterial({ color: Gx.light(rig.look.hair, .32), roughness: .55 });
+      for (const q of H.parts) {
+        const sway = q.c[1] < 1.64 && q.c[1] > 1.45 && q.c[2] < -.05;
+        add(q, hm, sway);
+        /* meches chiare sulle code: punta piu' chiara (ombre') per una giocatrice su tre */
+        if (sway && hh2 % 3 === 1) add({ c: [q.c[0], q.c[1] - q.s[1] * .75, q.c[2] - .004], s: [q.s[0] * 1.06, q.s[1] * .36, q.s[2] * 1.06] }, hl, true);
+      }
+      /* trecce: due segmenti in piu' lungo la coda lunga */
+      if ((rig.look.style % 6) === 5 && hh2 % 2 === 0) for (let k = 1; k <= 3; k++) add({ c: [0, 1.50 - k * .075, -.128 - k * .004], s: [.034 - k * .004, .045, .034 - k * .004] }, hm, true);
+      /* fascia sulla fronte nel colore di dettaglio del club, per una su quattro */
+      if (hh2 % 4 === 0 && rig.K) { const tm = new THREE.MeshStandardMaterial({ color: rig.K.trim || '#ffffff', roughness: .8 }), o = new THREE.Mesh(SK.bandGeo || (SK.bandGeo = new THREE.TorusGeometry(1, .11, 6, 22)), tm); o.position.set(0, 1.672, .03).applyMatrix4(inv); o.quaternion.copy(qi); o.rotateX(Math.PI / 2 - .12); o.scale.set(.118, .124, .118); head.add(o); }
+      rig.sk_tails = tails; } }
   /* numeri di maglia attaccati al busto (ossa della schiena): seguono la rotazione e stanno sulla superficie della maglia */
   const ch = skBones(root).Spine2; if (ch && rig.parts.num) { ch.add(rig.parts.num, rig.parts.numF); rig.parts.num.position.set(0, -.09, -.102); rig.parts.num.rotation.set(0, Math.PI, 0); rig.parts.numF.position.set(-.075, -.05, .153); rig.parts.numF.rotation.set(0, 0, 0);
     /* stemma della squadra sul petto, a destra guardando la giocatrice di fronte */
@@ -87,6 +99,8 @@ function skPose(rig, J) {
     const s = L.sx < 0 ? 'Right' : 'Left', S = pw(B[s + 'UpLeg']), [K, F] = skIK(S, new V(L.ft.x, L.ft.y + .055, L.ft.z), L.kn, bind.len[s + 'Leg'], bind.len[s + 'Foot']);
     drive(B[s + 'UpLeg'], aim(s + 'UpLeg', K.clone().sub(S))); drive(B[s + 'Leg'], aim(s + 'Leg', F.clone().sub(K))); drive(B[s + 'Foot'], aim(s + 'Foot', new V(0, -.3, 1)));
   }
+  /* movimento secondario: code e trecce oscillano con la corsa e i salti */
+  if (rig.sk_tails && rig.sk_tails.length) { const t = performance.now() / 1000, ph = rig.ph || 0, mv = Math.min(1, (rig.moveAmt || 0)); for (const o of rig.sk_tails) { o.rotation.x = o.userData.rx0 + Math.sin(t * 5.3 + ph) * (.07 + .12 * mv); o.rotation.z = Math.sin(t * 3.7 + ph * 1.7) * (.05 + .09 * mv); } }
 }
 
 /* rifiniture della divisa disegnate sul colore pieno: bordi di maglia, righe laterali e trama del tessuto (usano la posizione del modello, non una texture) */
