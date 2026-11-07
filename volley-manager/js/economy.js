@@ -5,20 +5,36 @@ function ecoRevenue(lid, tier) { lid = lid || G.lid; tier = tier === undefined ?
 function ecoRounds() { const s = SCHEDULE[G.lid]; return s ? s.length : 26; }
 function initBudget(lid, tier) { return Math.round(ecoRevenue(lid, tier) * .4 / 500) * 500; }
 function fin() { const s = G.season || 1; if (!G.fin || G.fin.season !== s) G.fin = { season: s, sp: 0, gate: 0, prize: 0, wages: 0, b0: G.budget }; return G.fin; }
-function matchIncome(win, home) {
+function ecoRankOf(idx) { try { const tb = standings(G.lid, G.results), k = tb.findIndex(r => r.idx === idx); return { r: k < 0 ? 1 : k + 1, n: tb.length, played: tb.some(r => r.pl > 0) }; } catch (e) { return { r: 1, n: 12, played: false }; } }
+/* biglietti: solo in casa; salgono con la classifica di entrambe, nelle sfide al vertice e se vinci. In trasferta non si incassa nulla. */
+function matchIncome(win, home, fx) {
+  if (!home) return 0;
   const R = ecoRevenue(), half = ecoRounds() / 2, morale = ((G.mgr || {}).morale) || 65;
-  const inc = Math.round((home ? .40 * R / half * (win ? 1.15 : .85) * (.85 + morale / 400) : .05 * R / half * (win ? 1.2 : .8)) / 50) * 50;
-  fin().gate += inc; return inc;
+  const me = ecoRankOf(G.teamIdx), opp = fx ? ecoRankOf(fx.h === G.teamIdx ? fx.a : fx.h) : { r: Math.ceil(me.n / 2), n: me.n, played: false };
+  const top = x => x.played ? 1 - (x.r - 1) / Math.max(1, x.n - 1) : .5;
+  let att = .72 + .22 * (top(me) + top(opp)) / 2 + (opp.played && opp.r <= 3 ? .08 : 0) + (me.played && me.r <= 3 ? .05 : 0);
+  att *= (win ? 1.08 : .94) * (.96 + morale / 1500);
+  const inc = Math.round(.45 * R / half * att / 50) * 50, F = fin(); F.gate += inc; F.lastAtt = Math.round(att * 100); F.lastOpp = opp.r; return inc;
 }
 function ecoSeasonBonus(rank) { const R = ecoRevenue(); return Math.round(R * (rank === 1 ? .20 : rank >= 1 && rank <= 3 ? .10 : rank >= 1 && rank <= 6 ? .04 : 0) / 500) * 500; }
-function ecoBold() { return Math.round(ecoRevenue() * .05 / 500) * 500; }
-function chooseSponsor(kind) {
-  if (!G.management) G.management = { sponsor: null, news: [], youth: [] }; if (G.management.sponsor) { toast("Hai già uno sponsor attivo per questa stagione."); return; }
-  const R = ecoRevenue(), safe = Math.round(R * .03 / 500) * 500, now = Math.round(R * .01 / 500) * 500, big = ecoBold();
-  if (kind === "safe") { G.budget += safe; G.management.sponsor = { name: "Partner locale", desc: `Contributo garantito di ${formatEur(safe)}` }; marketNews(`Firmato un accordo con un partner locale: +${formatEur(safe)} garantiti.`); toast(`Sponsor firmato: +${formatEur(safe)}.`); }
-  else { G.budget += now; G.management.sponsor = { name: "Sponsor ambizioso", desc: `${formatEur(now)} subito, premio di ${formatEur(big)} se chiudi tra le prime 3` }; marketNews("Accordo con uno sponsor ambizioso: bonus immediato e premio legato alla classifica."); toast(`Accordo firmato: +${formatEur(now)} subito.`); }
-  persist(); render();
+function ecoBold() { return ecoSponsorDeal("premi").endBonus; }
+/* sponsor di maglia: tre formule, pagate a giornata (non una cifra unica); chi firma tardi incassa solo le giornate che restano */
+function ecoSponsorDeal(kind) {
+  const R = ecoRevenue(), n = ecoRounds(), r5 = x => Math.round(x / 50) * 50;
+  if (kind === "fisso") return { kind, name: "Sponsor di maglia · Fisso", perRound: r5(.09 * R / n), perWin: 0, endBonus: 0, endRank: 0, label: "Cifra fissa a ogni giornata, qualunque sia il risultato." };
+  if (kind === "premi") return { kind, name: "Sponsor di maglia · A premi", perRound: r5(.035 * R / n), perWin: r5(.0035 * R), endBonus: Math.round(.05 * R / 500) * 500, endRank: 4, label: "Meno fisso, ma un bonus per ogni vittoria e un premio se chiudi tra le prime 4." };
+  return { kind: "visibilita", name: "Sponsor di maglia · Visibilità", perRound: r5(.04 * R / n), perWin: 0, endBonus: Math.round(.12 * R / 500) * 500, endRank: 2, label: "Poco fisso, grosso premio solo se chiudi tra le prime 2: rischio alto." };
 }
+function chooseSponsor(kind) {
+  if (!G.management) G.management = { sponsor: null, news: [], youth: [] }; if (G.management.sponsor) { toast("Hai gi\u00e0 uno sponsor di maglia per questa stagione."); return; }
+  const d = ecoSponsorDeal(kind); d.left = Math.max(0, ecoRounds() - (G.round || 0)); d.earned = 0; d.season = G.season || 1; G.management.sponsor = d;
+  marketNews(`Firmato lo sponsor di maglia (${d.kind}): ${formatEur(d.perRound)} a giornata.`); toast("Sponsor di maglia firmato."); persist(); render();
+}
+function ecoSponsorTick(won) {
+  const sp = G.management && G.management.sponsor; if (!sp || !sp.kind || sp.left <= 0) return 0; sp.left--;
+  const v = sp.perRound + (won ? sp.perWin : 0); G.budget += v; sp.earned += v; fin().sp += v; return v;
+}
+function ecoSponsorEnd(rank) { const sp = G.management && G.management.sponsor; if (!sp || !sp.kind || !sp.endBonus || rank > sp.endRank) return; G.budget += sp.endBonus; fin().prize += sp.endBonus; marketNews(`Sponsor di maglia: premio di ${formatEur(sp.endBonus)} per il piazzamento.`); }
 function ecoMigrate() {
   if (!G || G.ecoV === 2) return; G.ecoV = 2;
   const fix = p => { if (p && p.ovr) p.val = calcETV(p); };
@@ -31,7 +47,7 @@ function ecoMigrate() {
   const pr = window.playRound;
   window.playRound = function (g, res) {
     const r = pr.apply(this, arguments);
-    try { if (g && g === G) { const F = fin(), sp = Math.round(.55 * ecoRevenue() / ecoRounds() / 50) * 50; G.budget += sp; F.sp += sp; F.wages += payrollFor(myTeam()); } } catch (e) { }
+    try { if (g && g === G) { const F = fin(), sp = Math.round(.55 * ecoRevenue() / ecoRounds() / 50) * 50; G.budget += sp; F.sp += sp; try { const lr = lastUserResult(); ecoSponsorTick(lr && lr.win); } catch (e2) { } F.wages += payrollFor(myTeam()); } } catch (e) { }
     return r;
   };
   const cards = window.alertCardsHTML;
@@ -45,6 +61,16 @@ function ecoMigrate() {
     } catch (e) { }
     return o;
   };
-  const cm = window.clubManagementHTML;
-  window.clubManagementHTML = function () { let h = cm.apply(this, arguments); const R = ecoRevenue(), safe = formatEur(Math.round(R * .03 / 500) * 500), now = formatEur(Math.round(R * .01 / 500) * 500); return h.replace("Partner locale · 8.000 €", "Partner locale · " + safe).replace("Sponsor ambizioso · 3.000 € + premio", "Sponsor ambizioso · " + now + " + premio"); };
+  window.clubManagementHTML = function () {
+    const m = G.management || (G.management = { sponsor: null, news: [], youth: [] }), sp = m.sponsor && m.sponsor.kind ? m.sponsor : null, news = (m.news || []).slice(0, 4), n = ecoRounds();
+    let spHTML;
+    if (sp) spHTML = `<b>${esc(sp.name)}</b><div class="muted small" style="margin-top:4px">${formatEur(sp.perRound)} a giornata${sp.perWin ? ` + ${formatEur(sp.perWin)} a vittoria` : ""}${sp.endBonus ? ` \u00b7 premio ${formatEur(sp.endBonus)} se chiudi tra le prime ${sp.endRank}` : ""}. Incassati finora: <b>${formatEur(sp.earned)}</b> \u00b7 giornate restanti ${sp.left}.</div>`;
+    else spHTML = `<b>Sponsor di maglia: nessun accordo</b><div class="muted small" style="margin:4px 0 8px">Scegli una formula: viene pagata a ogni giornata fino a fine stagione (${Math.max(0, n - (G.round || 0))} giornate restanti).</div>` +
+      ["fisso", "premi", "visibilita"].map(k => { const d = ecoSponsorDeal(k); return `<div style="margin:6px 0;padding:8px;border:1px solid var(--line);border-radius:10px"><b>${d.name.replace("Sponsor di maglia \u00b7 ", "")}</b> <span class="muted small">\u00b7 ${formatEur(d.perRound)}/giornata${d.perWin ? ` + ${formatEur(d.perWin)}/vittoria` : ""}${d.endBonus ? ` + premio ${formatEur(d.endBonus)} (top ${d.endRank})` : ""}</span><div class="muted small">${d.label}</div><button class="btn" style="margin-top:6px;min-height:34px;padding:5px 12px;font-size:12px" data-act="sponsor" data-v="${k}">Firma</button></div>`; }).join("");
+    return `<div class="card"><div class="row" style="justify-content:space-between"><h3>Direzione sportiva</h3><span class="pill acc">Sponsor \u00b7 contratti</span></div>
+      <p class="sub" style="margin:8px 0 12px">Sponsor, vivaio e mercato. Le scadenze richiedono rinnovi: chi non rinnova pu\u00f2 partire a fine stagione.</p>
+      <div style="padding:10px;border:1px solid var(--line);border-radius:10px">${spHTML}</div>
+      <div style="padding:10px;border:1px solid var(--line);border-radius:10px;margin-top:8px"><b>Settore giovanile</b><div class="muted small">Under 20 che crescono, promozioni e offerte degli altri club.</div><button class="btn primary" style="margin-top:8px" data-act="vgo">Apri il vivaio</button></div>
+      <h3 style="margin-top:14px">Notizie di mercato</h3>${news.length ? news.map(x => `<div class="feed" style="margin-top:7px">${esc(x)}</div>`).join("") : `<p class="muted small">Nessuna notizia: avanzando le giornate appariranno qui.</p>`}</div>`;
+  };
 })();

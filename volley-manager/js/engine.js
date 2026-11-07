@@ -149,7 +149,7 @@ function finishSeasonCareer(){
  G.careerHistory.unshift(entry);G.careerHistory=G.careerHistory.slice(0,12);
  G.seasonAwards=G.seasonAwards||[];G.seasonAwards.unshift({season:entry.season,champions:Object.fromEntries(["A1","A2","A3_PROM","A3_RETR"].filter(l=>WORLD[l]&&WORLD[l].length).map(l=>[l,(standings(l,G.results)[0]||{}).short||"—"]))});
  if(G.board){const target=G.board.goal;let met=target==="titolo"?rank<=1:target==="playoff"?rank<=8:target==="promozione"?rank<=2:target==="salvezza"?rank<=Math.max(1,table.length-3):true;G.board.confidence=clamp((G.board.confidence||60)+(met?8:-12),5,95);}
- if(G.management&&G.management.sponsor&&G.management.sponsor.name==="Sponsor ambizioso"&&rank<=3){const b=(typeof ecoBold==="function"?ecoBold():12000);G.budget+=b;if(typeof fin==="function")fin().prize+=b;}
+ if(typeof ecoSponsorEnd==="function")ecoSponsorEnd(rank);
  return {entry,rank,oldLid};
 }
 
