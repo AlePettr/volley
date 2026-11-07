@@ -11,12 +11,14 @@ function ecoRankOf(idx) { try { const tb = standings(G.lid, G.results), k = tb.f
 function ecoPrice(lid, tier) { return lid === "A1" ? 12 + 2.2 * tier : lid === "A2" ? 8 + .7 * Math.max(0, tier - 2.2) : 5 + .3 * Math.max(0, tier - 2); }
 /* capienza: posti disegnati nel palazzetto x fattore di scala, con minimo e massimo per serie */
 function ecoCapacity(t, lid) {
-  lid = lid || G.lid; const n = (typeof HALL_SEATS !== "undefined" && HALL_SEATS[t.id]) || 0, k = lid === "A1" ? [2.0, 1400, 4500] : lid === "A2" ? [2.2, 450, 2200] : [.8, 250, 700];
+  lid = lid || G.lid; if (typeof REAL_CAP !== "undefined" && REAL_CAP[t.id]) return REAL_CAP[t.id]; const n = (typeof HALL_SEATS !== "undefined" && HALL_SEATS[t.id]) || 0, k = lid === "A1" ? [2.0, 1400, 4500] : lid === "A2" ? [2.2, 450, 2200] : [.8, 250, 700];
   if (!n) return Math.round(.45 * ecoRevenue(lid, t.tier) / (ecoRounds() / 2) / (ecoPrice(lid, t.tier) * .765) / 10) * 10;
   return Math.round(Math.max(k[1], Math.min(k[2], n * k[0])) / 10) * 10;
 }
 /* sponsor e diritti TV a giornata: completano i ricavi annui R quando i biglietti (capienza x prezzo) non li coprono */
-function ecoBaseRound() { const t = myTeam(), R = ecoRevenue(), n = ecoRounds(), gateExp = .765 * ecoCapacity(t, G.lid) * ecoPrice(G.lid, t.tier) * (n / 2); return Math.round(Math.max(.35 * R, R - gateExp) / n / 50) * 50; }
+/* bacino d'utenza: pubblico tipico del club (ricavi/prezzo); con un palasport piu' grande della domanda non si riempie mai */
+function ecoDemand(t, lid) { lid = lid || G.lid; return .45 * ecoRevenue(lid, t.tier) / (ecoRounds() / 2) / (ecoPrice(lid, t.tier) * .765) * (.55 + .2 * t.tier) / 1.25; }
+function ecoBaseRound() { const t = myTeam(), R = ecoRevenue(), n = ecoRounds(), gateExp = .765 * Math.min(ecoCapacity(t, G.lid), ecoDemand(t, G.lid) * 1.1) * ecoPrice(G.lid, t.tier) * (n / 2); return Math.round(Math.max(.35 * R, R - gateExp) / n / 50) * 50; }
 function ecoStakes(me, opp, ev) {
   const n = me.n, rounds = ecoRounds(), left = rounds - (G.round || 0); let s = 0, tag = "";
   if (ev) { const st = ev.stage || ""; if (/^Finale/.test(st)) { s = .6; tag = /scudetto|playoff/i.test(st) || ev.kind === "playoffA1" ? "finale scudetto" : "finale"; } else if (/^Semifinale/.test(st)) { s = .4; tag = "semifinale"; } else { s = .25; tag = "playoff"; } return { s, tag }; }
@@ -33,7 +35,7 @@ function matchIncome(win, home, fx, ev) {
   try { const o = oppIdx >= 0 ? (WORLD[lid] || []).find(x => x.idx === oppIdx) : null, km = o ? travelDistance(t, o) : 999; if (km <= 90) { att += .18; tags.push("derby"); } else if (km <= 180) { att += .08; tags.push("sfida di vicinato"); } } catch (e) { }
   const st = ecoStakes(me, opp, ev); if (st.s) { att += st.s; tags.push(st.tag); }
   att *= (win ? 1.08 : .94) * (.96 + morale / 1500);
-  const fill = Math.min(1, att * .85), spec = Math.round(fill * cap), sold = att * .85 > 1, price = price0 * (sold ? Math.min(1.15, 1 + (att * .85 - 1)) : 1);
+  const dem = ecoDemand(t, lid) * 1.1, want = att * dem, spec = Math.round(Math.min(cap, want)), sold = want >= cap * 1.0 && cap <= dem * 1.15, price = price0 * (sold ? Math.min(1.15, 1 + (want / cap - 1)) : 1);
   const inc = Math.round(spec * price / 50) * 50, F = fin(); F.gate += inc; Object.assign(F, { lastAtt: Math.round(att * 100), lastOpp: opp.r, lastSpec: spec, lastCap: cap, lastPrice: price, lastTags: tags.join(", "), lastSold: sold });
   return inc;
 }
