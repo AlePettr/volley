@@ -10,8 +10,8 @@ const STAFF_MAX = 5;
 const PLAN_FOCUS = [['att', 'Attacco'], ['blk', 'Muro'], ['srv', 'Battuta'], ['rec', 'Ricezione'], ['def', 'Difesa'], ['set', 'Alzata']];
 
 function staff() { return G.staff || (G.staff = { coach: 1, fit: 1, med: 1, gym: 1 }); }
-function staffScale() { const l = G.lid || ''; return l === 'A1' ? 1 : l === 'A2' ? 0.16 : 0.08; }
-function staffCost(k) { const lv = staff()[k]; return Math.round(20000 * lv * lv * staffScale() / 500) * 500; }
+function staffScale() { const l = G.lid || ''; return l === 'A1' ? 1 : l === 'A2' ? 0.30 : 0.08; }
+function staffCost(k) { const lv = staff()[k]; return Math.round(12000 * lv * lv * staffScale() / 500) * 500; }
 function staffUpkeep() { const s = staff(); return Math.round(((s.coach - 1) + (s.fit - 1) + (s.med - 1) + (s.gym - 1)) * 600 * staffScale() / 50) * 50; }
 function planSlots() { return 2 + staff().gym; }
 function planCount() { const t = myTeam(), pl = (mgr().plans || {}); return t.players.filter(p => pl[p.id]).length; }

@@ -112,7 +112,7 @@ function closeMarketWindow() {
   SCHEDULE.A3A = makeSchedule(8); SCHEDULE.A3B = makeSchedule(8);
   WORLD.A3A.forEach((t, i) => syncClubLeague(t, 'A3A', i)); WORLD.A3B.forEach((t, i) => syncClubLeague(t, 'A3B', i));
   if (!WORLD[G.lid]) G.lid = 'A2';
-  G.budget += Math.round(initBudget(G.lid, myTeam().tier) * 0.6); const sponsor = Math.round(9000 + myTeam().tier * 4500); G.budget += sponsor;
+  { const pz = ecoSeasonBonus(G.mw ? G.mw.rank : 0); G.budget += pz; G.fin = null; fin().prize += pz; if (pz) marketNews('Premio di fine stagione: +' + formatEur(pz) + '.'); }
   if (G.management) { G.management.sponsor = null; G.management.news = (G.management.news || []).slice(0, 8); }
   if (!G.board) G.board = { confidence: 60, goal: 'salvezza' };
   const rank = G.mw ? G.mw.rank : 0; G.mw = null; G.offers = [];
@@ -135,5 +135,5 @@ function mwHTML() {
 }
 
 const _homeHTML4 = homeHTML;
-const APP_BUILD = '1028u';
+const APP_BUILD = '1028v';
 homeHTML = function () { return (G && G.mw ? mwHTML() + hallHTML(true) : _homeHTML4() + hallHTML(false)) + `<p class="muted small" style="text-align:center;font-size:11px;margin:10px 0 0">versione ${APP_BUILD}</p>`; };
