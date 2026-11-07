@@ -18,7 +18,7 @@ function ecoCapacity(t, lid) {
 /* sponsor e diritti TV a giornata: completano i ricavi annui R quando i biglietti (capienza x prezzo) non li coprono */
 /* bacino d'utenza: pubblico tipico del club (ricavi/prezzo); con un palasport piu' grande della domanda non si riempie mai */
 function ecoDemand(t, lid) { lid = lid || G.lid; return .45 * ecoRevenue(lid, t.tier) / (ecoRounds() / 2) / (ecoPrice(lid, t.tier) * .765) * (.55 + .2 * t.tier) / 1.25; }
-function ecoBaseRound() { const t = myTeam(), R = ecoRevenue(), n = ecoRounds(), gateExp = .765 * Math.min(ecoCapacity(t, G.lid), ecoDemand(t, G.lid) * 1.1) * ecoPrice(G.lid, t.tier) * (n / 2); return Math.round(Math.max(.35 * R, R - gateExp) / n / 50) * 50; }
+function ecoBaseRound() { const t = myTeam(), R = ecoRevenue(), n = ecoRounds(), gateExp = .765 * Math.min(ecoCapacity(t, G.lid) * .62, ecoDemand(t, G.lid) * 1.1) * ecoPrice(G.lid, t.tier) * (n / 2); return Math.round(Math.max(.35 * R, R - gateExp) / n / 50) * 50; }
 function ecoStakes(me, opp, ev) {
   const n = me.n, rounds = ecoRounds(), left = rounds - (G.round || 0); let s = 0, tag = "";
   if (ev) { const st = ev.stage || ""; if (/^Finale/.test(st)) { s = .6; tag = /scudetto|playoff/i.test(st) || ev.kind === "playoffA1" ? "finale scudetto" : "finale"; } else if (/^Semifinale/.test(st)) { s = .4; tag = "semifinale"; } else { s = .25; tag = "playoff"; } return { s, tag }; }
@@ -35,7 +35,7 @@ function matchIncome(win, home, fx, ev) {
   try { const o = oppIdx >= 0 ? (WORLD[lid] || []).find(x => x.idx === oppIdx) : null, km = o ? travelDistance(t, o) : 999; if (km <= 90) { att += .18; tags.push("derby"); } else if (km <= 180) { att += .08; tags.push("sfida di vicinato"); } } catch (e) { }
   const st = ecoStakes(me, opp, ev); if (st.s) { att += st.s; tags.push(st.tag); }
   att *= (win ? 1.08 : .94) * (.96 + morale / 1500);
-  const dem = ecoDemand(t, lid) * 1.1, want = att * dem, spec = Math.round(Math.min(cap, want)), sold = want >= cap * 1.0 && cap <= dem * 1.15, price = price0 * (sold ? Math.min(1.15, 1 + (want / cap - 1)) : 1);
+  const dem = ecoDemand(t, lid) * 1.1, want = att * dem, ceil = Math.max(.45, Math.min(1, .5 + .6 * (att - .75))), spec = Math.round(Math.min(cap * ceil, want)), sold = spec >= cap * .985 && want >= cap, price = price0 * (sold ? Math.min(1.15, 1 + (want / cap - 1) * .5) : 1);
   const inc = Math.round(spec * price / 50) * 50, F = fin(); F.gate += inc; Object.assign(F, { lastAtt: Math.round(att * 100), lastOpp: opp.r, lastSpec: spec, lastCap: cap, lastPrice: price, lastTags: tags.join(", "), lastSold: sold });
   return inc;
 }
