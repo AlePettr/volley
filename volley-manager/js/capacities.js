@@ -1,5 +1,6 @@
 /* Posti disegnati nel palazzetto 3D di ogni club (ricavati dalle tribune del modello; vedi arena3d.js). La capienza per gli incassi parte da qui (ecoCapacity in economy.js). */
 const HALL_SEATS = {"con":1167,"sca":1223,"mil":1383,"nov":1027,"chi":1223,"bus":938,"ber":906,"val":444,"fir":624,"cun":1531,"mac":518,"mar":456,"tal":524,"bre":623,"per":877,"cos":446,"cas":493,"imo":493,"ita":966,"mes":1951,"fut":431,"rom":1223,"tre":283,"mel":478,"pad":446,"fas":493,"alt":330,"mar2":260,"avs":511,"off":313,"mon":564,"mon_a3":546,"con_a3":749,"gar_a3":546,"vig_a3":546,"rip_a3":546,"vil_a3":546,"mod_a3":749,"val_a3":546,"gio_a3":749,"sma_a3":546,"adu_a3":749,"vvm_a3":546,"oly_a3":546,"ves_a3":546,"cas_a3":749,"ton_a3":749};
 
-/* Capienze REALI (stagione 2025/26) dei palasport di A1, da volleyball.it ("Serie A1 F.: Capienza 2025/26"). Le altre squadre restano sui posti disegnati (stima). */
-const REAL_CAP = {"con":5344,"mil":5310,"per":5000,"cun":4700,"bus":4490,"sca":3562,"rom":3300,"nov":3246,"ber":2844,"val":2001,"chi":1506,"tal":1500,"mon":1500};
+/* Capienze UFFICIALI dei palasport (fornite dall'utente). Club Italia e A3 non hanno dato ufficiale: restano sui posti disegnati (stima). */
+const REAL_CAP = {"bre":4000,"mac":2100,"tal":1800,"ber":2800,"cun":4700,"nov":3700,"fir":3562,"sca":3562,"bus":4490,"val":2000,"mil":5310,"mar":1614,"chi":1500,"con":5300,
+"per":3800,"cos":1095,"cas":3500,"imo":1500,"mes":1831,"rom":3500,"fut":1650,"tre":650,"mel":1510,"pad":600,"fas":2000,"alt":1222,"mar2":2924,"avs":1400,"off":500,"mon":1500};
