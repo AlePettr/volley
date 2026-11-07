@@ -297,6 +297,7 @@ function s3Build(M) {
 
   /* spettatori */
   if (AV.drummer) { for (let i = spots.length - 1; i >= 0; i--) { const sp = spots[i]; if (Math.abs(sp.x - AV.drummer.x) < 1.6 && Math.abs(sp.z - AV.drummer.z) < .9 && sp.y < AV.drummer.y + .6) spots.splice(i, 1); } }
+  S.hallSeats = spots.length;
   const N = spots.length, T4 = (x, y, z, sx, sy, sz) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion(), new THREE.Vector3(sx, sy, sz)),
     bodyG = s3Merge([{ g: new THREE.CylinderGeometry(.17, .22, .5, 8), m: T4(0, -.02, 0, 1, 1, 1) }, { g: new THREE.SphereGeometry(1, 8, 6), m: T4(0, .22, 0, .2, .1, .155) }, { g: new THREE.SphereGeometry(1, 6, 5), m: T4(-.235, .06, 0, .065, .19, .07) }, { g: new THREE.SphereGeometry(1, 6, 5), m: T4(.235, .06, 0, .065, .19, .07) }]),
     headG = s3Merge([{ g: new THREE.SphereGeometry(.13, 9, 7) }, { g: new THREE.CylinderGeometry(.055, .065, .16, 6), m: T4(0, -.14, 0, 1, 1, 1) }]);

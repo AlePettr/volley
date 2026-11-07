@@ -9,6 +9,14 @@ function ecoRankOf(idx) { try { const tb = standings(G.lid, G.results), k = tb.f
 /* biglietti = spettatori x prezzo medio. Prezzo: A2 8-10 EUR, A1 17-25 EUR (piu' alto nei club forti), A3 circa 5 EUR. Capienza tarata sui ricavi del club.
    Affluenza: classifica di entrambe, big match, derby (vicinanza), posta in gioco (volata titolo/salvezza, playoff, finale) e vittoria; sold out -> prezzi maggiorati. In trasferta non si incassa nulla. */
 function ecoPrice(lid, tier) { return lid === "A1" ? 12 + 2.2 * tier : lid === "A2" ? 8 + .7 * Math.max(0, tier - 2.2) : 5 + .3 * Math.max(0, tier - 2); }
+/* capienza: posti disegnati nel palazzetto x fattore di scala, con minimo e massimo per serie */
+function ecoCapacity(t, lid) {
+  lid = lid || G.lid; const n = (typeof HALL_SEATS !== "undefined" && HALL_SEATS[t.id]) || 0, k = lid === "A1" ? [2.0, 1400, 4500] : lid === "A2" ? [2.2, 450, 2200] : [.8, 250, 700];
+  if (!n) return Math.round(.45 * ecoRevenue(lid, t.tier) / (ecoRounds() / 2) / (ecoPrice(lid, t.tier) * .765) / 10) * 10;
+  return Math.round(Math.max(k[1], Math.min(k[2], n * k[0])) / 10) * 10;
+}
+/* sponsor e diritti TV a giornata: completano i ricavi annui R quando i biglietti (capienza x prezzo) non li coprono */
+function ecoBaseRound() { const t = myTeam(), R = ecoRevenue(), n = ecoRounds(), gateExp = .765 * ecoCapacity(t, G.lid) * ecoPrice(G.lid, t.tier) * (n / 2); return Math.round(Math.max(.35 * R, R - gateExp) / n / 50) * 50; }
 function ecoStakes(me, opp, ev) {
   const n = me.n, rounds = ecoRounds(), left = rounds - (G.round || 0); let s = 0, tag = "";
   if (ev) { const st = ev.stage || ""; if (/^Finale/.test(st)) { s = .6; tag = /scudetto|playoff/i.test(st) || ev.kind === "playoffA1" ? "finale scudetto" : "finale"; } else if (/^Semifinale/.test(st)) { s = .4; tag = "semifinale"; } else { s = .25; tag = "playoff"; } return { s, tag }; }
@@ -17,7 +25,7 @@ function ecoStakes(me, opp, ev) {
 }
 function matchIncome(win, home, fx, ev) {
   if (!home) return 0;
-  const lid = G.lid, t = myTeam(), R = ecoRevenue(), half = ecoRounds() / 2, morale = ((G.mgr || {}).morale) || 65, price0 = ecoPrice(lid, t.tier), cap = Math.round(.45 * R / half / (price0 * .765) / 10) * 10;
+  const lid = G.lid, t = myTeam(), R = ecoRevenue(), half = ecoRounds() / 2, morale = ((G.mgr || {}).morale) || 65, price0 = ecoPrice(lid, t.tier), cap = ecoCapacity(t, lid);
   const me = ecoRankOf(G.teamIdx), oppIdx = fx ? (fx.h === G.teamIdx ? fx.a : fx.h) : -1, opp = oppIdx >= 0 ? ecoRankOf(oppIdx) : { r: Math.ceil(me.n / 2), n: me.n, played: false };
   const top = x => x.played ? 1 - (x.r - 1) / Math.max(1, x.n - 1) : .5, tags = [];
   let att = .72 + .22 * (top(me) + top(opp)) / 2 + (opp.played && opp.r <= 3 ? .08 : 0) + (me.played && me.r <= 3 ? .05 : 0);
@@ -61,7 +69,7 @@ function ecoMigrate() {
   const pr = window.playRound;
   window.playRound = function (g, res) {
     const r = pr.apply(this, arguments);
-    try { if (g && g === G) { const F = fin(), sp = Math.round(.55 * ecoRevenue() / ecoRounds() / 50) * 50; G.budget += sp; F.sp += sp; try { const lr = lastUserResult(); ecoSponsorTick(lr && lr.win); } catch (e2) { } F.wages += payrollFor(myTeam()); } } catch (e) { }
+    try { if (g && g === G) { const F = fin(), sp = ecoBaseRound(); G.budget += sp; F.sp += sp; try { const lr = lastUserResult(); ecoSponsorTick(lr && lr.win); } catch (e2) { } F.wages += payrollFor(myTeam()); } } catch (e) { }
     return r;
   };
   const cards = window.alertCardsHTML;
