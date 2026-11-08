@@ -155,7 +155,9 @@ function s3Build(M) {
   /* tribune a gradoni nei colori del club di casa + pubblico a istanze */
   const seat = [Gx.dark(homeKit.main, .8), Gx.dark(homeKit.main, .72)], tint = [homeKit.main, Gx.light(homeKit.main, .4), '#f5f7fb', '#1d2a44'];
   const stepD = .95, rowsEnd = TH.rowsFar, rowsSide = TH.rowsSide, spots = [], seatsL = [];
+  const capRec = [];
   const addStand = (axis, sign, rows, start, span, centre0, h0 = 0, dh = .4, rr0 = 0, mit = false, open = 0) => {
+    if (!mit && !addStand.hollow && span > 0 && !(AV && AV.trap && axis === 'x')) capRec.push({ axis, sign, rows, start, span, centre: centre0, h0, dh });
     for (let r = 0; r < rows; r++) {
       const h = .5 + h0 + r * dh, d = start + r * stepD + stepD / 2;
       /* anello con angoli a 45 gradi: ogni fila di fondo e laterale arriva fino alla diagonale, dove gli spettatori si dividono senza sovrapporsi */
@@ -193,7 +195,7 @@ function s3Build(M) {
   const OFF = Object.assign({ xp: 0, xm: 0, zp: 0, zm: 0 }, HI ? AV.push : null);   /* spostamenti per lato delle gradinate */
   const NOEND = !!(HI && AV.ends === false), OPENX = HI ? (AV.openX || 0) : 0, SEP = !!(HI && AV.sep), SE = HI ? (AV.sepEnd || 0) : 0, SK = (HI && AV.sepK) || 1;
   if (HI && AV.boxCol) { seat[0] = AV.boxCol; seat[1] = AV.boxCol; }
-  const SCOL = [0x5a6678, 0x8a7a66, 0x9aa0aa][(AV.pal || 0) % 3], STAIRS = HI && AV.stairs !== false ? (AV.stairs || { every: 9, color: (AV.palx && AV.palx.pil) || SCOL }) : null;   /* rampe di scale tra i settori */
+  const SCOL = [0x5a6678, 0x8a7a66, 0x9aa0aa][(AV.pal || 0) % 3], STAIRS = HI && AV.stairs !== false ? (AV.stairs || { every: 9, color: (AV.palx && AV.palx.pil) || (s3CM() ? new THREE.Color(SCOL).multiplyScalar(.5).getHex() : SCOL) }) : null;   /* rampe di scale tra i settori */
   S.av = AV; const GAP = HI ? AV.gap : 0, RU = HI ? AV.ru : 0, DH = HI ? AV.dh : .4, DU = AV.du;
   const RL = HI ? (AV.rows || Math.round((rowsEnd + rowsSide) / 2) + AV.xl) : 0, RZ = HI && AV.zd ? Math.max(2, RL + AV.zd) : RL, rEL = HI ? RL : rowsEnd, rSL = HI ? RL : rowsSide;
   const END0 = 14.4, SIDE0 = 11.2, endSpan = HI ? 2 * SIDE0 : 2 * (SIDE0 + rSL * stepD), endSpanU = 2 * (SIDE0 + (rSL + GAP + RU) * stepD);
@@ -243,6 +245,20 @@ function s3Build(M) {
       for (let z = -len / 2 + 3; z < len / 2 - 2; z += 4.2) { const dr = new THREE.Mesh(new THREE.BoxGeometry(.05, 2.2, 1.4), dm); dr.position.set(EX - .52, 1.1, z); scene.add(dr); } }
     else if (AV.split && s < 0 && SEP && RU) { const L0 = (2 * END0 - 1) * SK, hw = (L0 - AV.split) / 2; for (const q of [-1, 1]) addStand('x', s, RU, EX + (RL + GAP) * stepD, hw, q * (AV.split / 2 + hw / 2), hTopS - .5 + 1.8, DU, RL, false); }
     else if (s !== OPENX && !AV.uz) addStand('x', s, RU, EX + (RL + GAP) * stepD, SEP ? (2 * END0 - 1) * SK : 0, 0, hTopS - .5 + 1.8, DU, RL, !SEP, SEP ? 0 : (OS || SE)); }
+  }
+  /* fianchi lisci in cemento alle estremita' delle tribune: niente denti a gradino, una struttura continua */
+  if (HI && s3CM()) {
+    const cheek = new THREE.MeshLambertMaterial({ color: new THREE.Color(concMat.color).lerp(new THREE.Color(0x3a4a6a), .35), side: THREE.DoubleSide });
+    for (const q of capRec) {
+      const u0 = q.start, u1 = q.start + q.rows * stepD, hI = Math.max(.25, .5 + q.h0 - .5 * q.dh), hO = .5 + q.h0 + (q.rows - .5) * q.dh;
+      const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.lineTo(u1 - u0, 0); sh.lineTo(u1 - u0, hO); sh.lineTo(0, hI); sh.closePath();
+      for (const e of [-1, 1]) {
+        const g = new THREE.ShapeGeometry(sh), m = new THREE.Mesh(g, cheek), a = q.centre + e * (q.span / 2 + .02);
+        if (q.axis === 'x') { m.scale.x = q.sign; m.position.set(q.sign * u0, 0, a); }
+        else { m.rotation.y = Math.PI / 2; m.scale.x = -q.sign; m.position.set(a, 0, q.sign * u0); }
+        scene.add(m);
+      }
+    }
   }
   if (HI && AV.balc) { const B = AV.balc; addStand.hollow = true; addStand('z', B.sign, B.rows, END0 + OFF[B.sign > 0 ? 'zp' : 'zm'] + .1, 2 * SIDE0 * (B.k || 1), B.cx || 0, B.h0, .5, 0, false); addStand.hollow = false;
     const cm = new THREE.MeshLambertMaterial({ color: 0x8a8d92 }), cw = 2 * SIDE0 * (B.k || 1); for (let k = 0; k <= 6; k++) { const col = new THREE.Mesh(new THREE.BoxGeometry(.5, B.h0 + .4, .5), cm); col.position.set((B.cx || 0) - cw / 2 + k * cw / 6, (B.h0 + .4) / 2, B.sign * (END0 + 1.0)); scene.add(col); }

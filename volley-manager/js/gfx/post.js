@@ -8,7 +8,7 @@ function s3PostInit(S) {
   const r = S.renderer, P = { rt: null, w: 0, h: 0, last: 0, slow: 0, off: false };
   P.cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   P.mat = new THREE.ShaderMaterial({
-    depthTest: false, depthWrite: false, defines: s3CM() ? { CM: 1 } : {},
+    depthTest: false, depthWrite: false, defines: s3CM() ? { CM: 1, AO: 1 } : {},
     uniforms: { tC: { value: null }, tD: { value: null }, texel: { value: new THREE.Vector2() }, near: { value: .5 }, far: { value: 200 }, focus: { value: 30 }, kPx: { value: 10 }, taps: { value: 14 }, seed: { value: 0 } },
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
     fragmentShader: `
@@ -28,6 +28,14 @@ function s3PostInit(S) {
             acc += texture2D(tC, uv).rgb * w; wsum += w; }
         }
         vec3 c = acc / wsum;
+#ifdef AO
+        { float d0 = texture2D(tD, vUv).r;
+          if (d0 < 0.99999) { float z0 = lin(d0), rpx = clamp(20.0 / (1.0 + z0 * 0.05), 5.0, 20.0), occ = 0.0, ang = hash(gl_FragCoord.xy + 3.0) * 3.1416;
+            for (int i = 0; i < 8; i++) { float fi = float(i) + 0.5, rr = (0.35 + 0.65 * fi / 8.0) * rpx, a = fi * 2.39996 + ang; vec2 o = vec2(cos(a), sin(a)) * rr * texel;
+              float z1 = lin(texture2D(tD, vUv + o).r), z2 = lin(texture2D(tD, vUv - o).r), df = z0 - 0.5 * (z1 + z2);
+              occ += smoothstep(0.03, 0.30, df) * (1.0 - smoothstep(0.8, 2.4, df)); }
+            c *= 1.0 - clamp(occ / 8.0 * 1.1, 0.0, 0.55); } }
+#endif
 #ifdef CM
         gl_FragColor = vec4(c, 1.0);
 #include <tonemapping_fragment>
