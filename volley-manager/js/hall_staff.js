@@ -14,9 +14,11 @@ function hallScale() { return G.lid === "A1" ? 1.6 : G.lid === "A2" ? 1 : .4; }
 function hallCap() { try { return ecoCapacity(myTeam(), G.lid); } catch (e) { return 1500; } }
 function hallNeeds() { const c = hallCap(); return { gest: 1, pul: Math.max(1, Math.ceil(c / 2000)), mag: Math.max(1, Math.ceil(c / 3000)), ste: Math.max(1, Math.ceil(c / 1000)), bar: Math.max(1, Math.ceil(c / 1200)), vc: G.lid === "A1" ? 2 : G.lid === "A2" ? 1 : 0 }; }
 function hallWage(role, lvl) { const r = HALL_ROLES.find(x => x.k === role); return Math.round(1250 * r.m * hallScale() * (.8 + .2 * lvl) / 50) * 50; }
-function hallMk(role, lvl) { return { id: "hs" + Math.random().toString(36).slice(2, 8), role, lvl, name: HALL_NAMES[Math.floor(Math.random() * HALL_NAMES.length)] + " " + HALL_SUR[Math.floor(Math.random() * HALL_SUR.length)], wage: hallWage(role, lvl) }; }
+function hallDisc(y) { return y >= 3 ? .9 : y === 2 ? .95 : 1; }
+function hallMk(role, lvl, yrs) { yrs = yrs || 2; return { yrs, id: "hs" + Math.random().toString(36).slice(2, 8), role, lvl, name: HALL_NAMES[Math.floor(Math.random() * HALL_NAMES.length)] + " " + HALL_SUR[Math.floor(Math.random() * HALL_SUR.length)], wage: Math.round(hallWage(role, lvl) * hallDisc(yrs) / 50) * 50 }; }
 function arena() {
   if (!G.arena || G.arena.lid !== G.lid) { G.arena = { lid: G.lid, staff: [], fines: 0 }; const n = hallNeeds(); for (const r of HALL_ROLES) for (let i = 0; i < n[r.k]; i++) G.arena.staff.push(hallMk(r.k, 2)); }
+  G.arena.staff.forEach(x => { if (x.yrs === undefined) x.yrs = 2; });
   if (!G.arena.vcV) { G.arena.vcV = 1; for (let i = 0; i < hallNeeds().vc; i++) G.arena.staff.push(hallMk("vc", 2)); }
   return G.arena;
 }
@@ -29,30 +31,39 @@ function hallBar(spec) {
   return Math.round(spec * per * b.cov * (.8 + .08 * b.avg) * (.85 + .15 * p.cov) * (.9 + .1 * m.cov) / 10) * 10;
 }
 function hallHire(role, lvl) {
-  const a = arena(), s = hallMk(role, lvl), fee = Math.round(s.wage * .25 / 10) * 10;
+  const a = arena(), s = hallMk(role, lvl, UI.hallYrs || 1), fee = Math.round(s.wage * .25 / 10) * 10;
   if (G.budget < fee) { toast("Cassa insufficiente per l'ingaggio."); return; }
   G.budget -= fee; a.staff.push(s); toast(s.name + " assunto/a."); persist(); render();
 }
+function hallBuyout(s) { return Math.round(s.wage * Math.max(.25, .5 * (s.yrs || 1)) / 10) * 10; }
+function hallRenew(id) {
+  const a = arena(), s = a.staff.find(x => x.id === id); if (!s) return; const y = UI.hallYrs || 1; s.yrs = (s.yrs || 0) + y; s.wage = Math.round(hallWage(s.role, s.lvl) * hallDisc(y) / 50) * 50; toast("Contratto di " + s.name + " rinnovato."); persist(); render();
+}
+function hallSeasonEnd() {
+  const a = arena(), gone = []; a.staff.forEach(s => { s.yrs = (s.yrs || 1) - 1; if (s.yrs <= 0) gone.push(s); }); if (!gone.length) return;
+  a.staff = a.staff.filter(s => s.yrs > 0); marketNews("Palazzetto: contratti scaduti per " + gone.length + " addetti (" + gone.map(s => s.name).join(", ") + "). Rinnova o assumi sostituti."); persist();
+}
 function hallFire(id) {
-  const a = arena(), s = a.staff.find(x => x.id === id); if (!s) return; const fee = Math.round(s.wage * .25 / 10) * 10;
+  const a = arena(), s = a.staff.find(x => x.id === id); if (!s) return; const fee = hallBuyout(s);
   if (G.budget < fee) { toast("Cassa insufficiente per la buonuscita."); return; }
   G.budget -= fee; a.staff = a.staff.filter(x => x.id !== id); toast(s.name + " licenziato/a."); persist(); render();
 }
 function hallHTML() {
   const a = arena(), n = hallNeeds(), F = fin(), btn = "min-height:32px;padding:4px 9px;font-size:12px";
   const head = `<div class="card"><div class="row" style="justify-content:space-between"><h3>Palazzetto</h3><span class="pill">Stipendi: ${formatEur(hallRoundWages())}/giornata</span></div>
-  <p class="sub">Capienza ${hallCap().toLocaleString("it-IT")} posti. Utenze per partita in casa circa ${formatEur(hallUtilities())}. Assunzione e buonuscita costano il 25% dello stipendio annuo.</p>
+  <p class="sub">Capienza ${hallCap().toLocaleString("it-IT")} posti. Utenze per partita in casa circa ${formatEur(hallUtilities())}. Contratti a stagione: più lungo il contratto, più basso lo stipendio (2 stagioni −5%, 3 stagioni −10%). Assunzione 25% dello stipendio annuo; licenziare prima della scadenza costa metà stipendio per ogni stagione residua.</p>
+  <div class="row" style="gap:6px;margin:6px 0"><span class="muted small">Durata dei nuovi contratti:</span>${[1, 2, 3].map(y => `<button class="btn ${(UI.hallYrs || 1) === y ? "primary" : ""}" style="${btn}" data-act="hallyrs" data-v="${y}">${y} ${y === 1 ? "stagione" : "stagioni"}</button>`).join("")}</div>
   <p class="muted small">Stagione: bar ${formatEur(F.bar || 0)} · utenze e multe ${formatEur(F.hall || 0)} · personale ${formatEur(F.hstaff || 0)}</p></div>`;
   return head + HALL_ROLES.filter(r => n[r.k] > 0).map(r => {
     const c = hallCov(r.k), list = a.staff.filter(s => s.role === r.k);
     return `<div class="card"><div class="row" style="justify-content:space-between"><h3>${r.n}</h3><span class="pill ${c.cov >= 1 ? "good" : ""}">${c.got}/${n[r.k]}</span></div><p class="muted small">${r.d}</p>
-    ${list.map(s => `<div class="prow"><span class="nm"><b>${esc(s.name)}</b> <span class="muted small">Liv. ${s.lvl} · ${formatEur(s.wage)}/anno</span></span><button class="btn" style="${btn}" data-act="hallfire" data-v="${s.id}">Licenzia</button></div>`).join("")}
-    <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:6px"><span class="muted small">Assumi:</span>${[1, 2, 3, 4].map(l => `<button class="btn primary" style="${btn}" data-act="hallhire" data-v="${r.k}:${l}">Liv. ${l} · ${formatEur(hallWage(r.k, l))}</button>`).join("")}</div></div>`;
+    ${list.map(s => `<div class="prow"><span class="nm"><b>${esc(s.name)}</b> <span class="muted small">Liv. ${s.lvl} · ${formatEur(s.wage)}/anno · ${s.yrs || 1} ${(s.yrs || 1) === 1 ? "stagione (in scadenza)" : "stagioni"}</span></span><button class="btn" style="${btn}" data-act="hallrenew" data-v="${s.id}">Rinnova</button><button class="btn" style="${btn}" data-act="hallfire" data-v="${s.id}">Licenzia · ${formatEur(hallBuyout(s))}</button></div>`).join("")}
+    <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:6px"><span class="muted small">Assumi:</span>${[1, 2, 3, 4].map(l => `<button class="btn primary" style="${btn}" data-act="hallhire" data-v="${r.k}:${l}">Liv. ${l} · ${formatEur(Math.round(hallWage(r.k, l) * hallDisc(UI.hallYrs || 1) / 50) * 50)}</button>`).join("")}</div></div>`;
   }).join("");
 }
 document.addEventListener("click", e => {
   const el = e.target.closest("[data-act]"); if (!el || !G) return; const a = el.dataset.act;
-  if (a === "hallhire") { const [r, l] = el.dataset.v.split(":"); hallHire(r, +l); e.stopPropagation(); } else if (a === "hallfire") { hallFire(el.dataset.v); e.stopPropagation(); }
+  if (a === "hallhire") { const [r, l] = el.dataset.v.split(":"); hallHire(r, +l); e.stopPropagation(); } else if (a === "hallyrs") { UI.hallYrs = +el.dataset.v; render(); e.stopPropagation(); } else if (a === "hallrenew") { hallRenew(el.dataset.v); e.stopPropagation(); } else if (a === "hallfire") { hallFire(el.dataset.v); e.stopPropagation(); }
 }, true);
 (function () {
   const mi = window.matchIncome;
@@ -66,6 +77,7 @@ document.addEventListener("click", e => {
   };
   const pr = window.playRound;
   window.playRound = function (g) { const r = pr.apply(this, arguments); try { if (g && g === G) { const w = hallRoundWages(); G.budget -= w; fin().hstaff = (fin().hstaff || 0) + w; } } catch (e) { } return r; };
+  const sg = window.seasonGrowthAll; window.seasonGrowthAll = function () { const r = sg.apply(this, arguments); try { hallSeasonEnd(); } catch (e) { } return r; };
   const cards = window.alertCardsHTML;
   window.alertCardsHTML = function () {
     let o = cards.apply(this, arguments);
