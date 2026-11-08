@@ -69,3 +69,6 @@ Loghi A3 e sponsor di partita; colori reali dei club; statistiche delle liberi A
 Il gioco usa Three.js r187 (moduli ES in `vendor/three187/`, mappa `importmap` in index.html). `vendor/three-bridge.js` li espone come `THREE` globale e poi carica in ordine gli script del gioco; `S3_LK` (=PI) riporta le luci alla resa di prima. I vecchi file r158 restano in `vendor/` come riserva.
 
 Colore: dal v1030b il 3D usa colori sRGB corretti e tone mapping (`s3CM()` in scene3d.js); `?cm=0` torna alla resa precedente per confronto.
+
+## Palazzetto (v1030f)
+Scheda "Palazzetto" nel mercato: personale a rosa (gestore, pulizie, magazzinieri, steward, bar) con livello e stipendio, assunzioni/licenziamenti (25% dello stipendio annuo). Stipendi a ogni giornata, utenze e ricavo del bar a ogni partita in casa, multe se mancano steward. Codice in js/hall_staff.js, dati in G.arena.
