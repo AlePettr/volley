@@ -5,7 +5,7 @@ const slotXY=(side,i)=>{const [bx,by]=BASE[i];return side==="h"?[1.5+bx,1.5+by]:
 const rnd=(a,b)=>a+Math.random()*(b-a);
 const lerp=(a,b,f)=>a+(b-a)*f;
 
-function startMatch(){ 
+function startMatch(){ try{const o=UI.match;if(o){cancelAnimationFrame(o.raf);if(typeof s3Dispose==="function")s3Dispose(o);}document.querySelectorAll("#cv3").forEach(c=>c.remove());}catch(e){} 
   const event=G.event; 
   const fx=event?{home:event.home,h:event.home?G.teamIdx:WORLD[event.lid].findIndex(t=>t.id===event.opponentId),a:event.home?WORLD[event.lid].findIndex(t=>t.id===event.opponentId):G.teamIdx}:nextFixture(G);
   const home=event?(event.home?myTeam():eventOppTeam(event)):WORLD[G.lid][fx.h];

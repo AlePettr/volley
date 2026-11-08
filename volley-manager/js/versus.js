@@ -132,6 +132,7 @@ const Vs = (() => {
   }
   function enter(M) {
     const m = $('#vsmodal'); if (m) m.remove();
+    try { const o = UI.match; if (o) { cancelAnimationFrame(o.raf); if (typeof s3Dispose === 'function') s3Dispose(o); } document.querySelectorAll('#cv3').forEach(c => c.remove()); } catch (e) { }
     UI.match = M; renderMatch();
     for (const s of ['[data-act=skip]', '[data-act=submodal]', '#vcpill']) { const e = $(s); if (e) e.remove(); }
   }

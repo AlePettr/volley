@@ -91,7 +91,7 @@ function s3Setup(M) {
   }
   const S = M.s3, cv = $("#cv");
   S.cv.style.display = 'block';
-  { const ctl = $("#ctl"); if (ctl && !$("#s3ver")) ctl.insertAdjacentHTML('beforeend', `<span class="pill" id="s3ver" title="Versione della grafica 3D">3D ${S3_BUILD}</span>`); }
+  { const ctl = $("#ctl"); if (ctl && !$("#s3ver")) ctl.insertAdjacentHTML('beforeend', `<span class="pill" id="s3ver" title="Versione della grafica 3D">3D ${S3_BUILD}</span><span class="pill" id="s3hall" title="Palazzetto di casa">Palazzetto: ${esc(M.home.short)}</span>`); }
   const w = cv.clientWidth || 800, h = Math.round(w * Cam.H / Cam.W), dpr = Math.min(2, window.devicePixelRatio || 1);
   S.renderer.setPixelRatio(dpr); S.renderer.setSize(w, h, false);
   S.aspect = w / h; S.camera.aspect = S.aspect; S.camera.updateProjectionMatrix();
