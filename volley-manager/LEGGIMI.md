@@ -75,3 +75,4 @@ Scheda "Palazzetto" nel mercato: personale a rosa (gestore, pulizie, magazzinier
 Contratti a stagione per il personale del palazzetto (1-3 stagioni, sconto sullo stipendio, rinnovo, buonuscita se licenzi prima).
 Rinnovo automatico selezionabile per addetto o per tutti (palazzetto).
 Menu organizzato (js/org_ui.js, css/org.css): Home, Squadra (Rosa, Formazione, Vivaio, Contratti), Club (Bilancio, Staff, Palazzetto, Viaggi, Società), Mercato (Svincolate, Trattative, Cessioni, Offerte, Scouting), Campionato. Menu classico con ?org=0 o dal pulsante in Società.
+Serie A3: palazzetto generato per ogni club (s3A3Hall in arena3d.js) da id e colori sociali, finche' non ci sono foto reali.

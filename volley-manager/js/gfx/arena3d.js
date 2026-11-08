@@ -114,10 +114,26 @@ function s3ArenaVariant(M) {
   if (M && M.home && S3_ROUND_CLUB[M.home.id] !== undefined) return Object.assign({ pal: S3_ROUND_CLUB[M.home.id][1] }, S3_ROUND[S3_ROUND_CLUB[M.home.id][0]]);
   if (M && M.home && S3_CUSTOM[M.home.id]) return Object.assign({}, S3_CUSTOM[M.home.id]);
   let rnd = false; try { rnd = localStorage.getItem('vm-arena') === 'rnd'; } catch (e) { }
+  if (M && M.home && !rnd && new URLSearchParams(location.search).get('arena') === null && s3IsA3(M.home.id)) return s3A3Hall(M.home);
   const q = new URLSearchParams(location.search).get('arena'), h = Gx.hash(String((M.home && M.home.id) || 'x') + 'forma') >>> 0;
   const FM = (!q && !rnd && M.home && s3IsA3(M.home.id)) ? S3_SMALL : S3_FORMS;
   const NF = FM.length, f = q !== null ? +q % NF : rnd ? Math.floor(Math.random() * NF) : h % NF, p = q !== null ? Math.floor(+q / NF) % 3 : rnd ? Math.floor(Math.random() * 3) : (h >>> 4) % 3;
   return Object.assign({ pal: p }, FM[f]);
+}
+/* serie A3: ogni club ha un palazzetto proprio, ricavato da id e colori sociali (forma, file, pareti, tetto, seggiolini) */
+function s3A3Hall(t) {
+  const h = Gx.hash(String(t.id) + 'a3hall') >>> 0, pick = (a, sh) => a[(h >>> sh) % a.length];
+  const hx = c => { c = String(c || '#2a4a8a').replace('#', ''); if (c.length === 3) c = c.split('').map(x => x + x).join(''); const n = parseInt(c, 16); return isNaN(n) ? 0x2a4a8a : n; };
+  const mix = (a, b, k) => { const r = (a >> 16) & 255, g = (a >> 8) & 255, bl = a & 255, R = (b >> 16) & 255, G2 = (b >> 8) & 255, B = b & 255; return ((Math.round(r + (R - r) * k) << 16) | (Math.round(g + (G2 - g) * k) << 8) | Math.round(bl + (B - bl) * k)); };
+  const css = n => '#' + n.toString(16).padStart(6, '0'), c1 = hx(t.color), c2 = hx(t.color2);
+  const shape = S3_SMALL[h % S3_SMALL.length], wall = pick(['#d9d2bf', '#ebe7dc', '#b9b5a8', '#cfc7b0', '#9aa4ac', '#e3d6a4', '#c9b79a', '#aab4a0'], 3);
+  const roofCol = pick([0x6b4426, 0x2c2a2a, 0x6a7076, 0xb8b2a0, 0x5a3018, 0x8a8c90], 7), dark = mix(c1, 0x101010, .72);
+  const seats = [css(c1), css(mix(c1, 0xffffff, .78)), css(c1), css(mix(c1, 0x000000, .3)), css(mix(c2, 0xffffff, .15))];
+  const o = Object.assign({}, shape, { name: 'Palazzetto ' + (t.city || t.short), rows: 5 + ((h >>> 11) % 5), wall, boxCol: dark, seatCols: seats, roofCol, pal: (h >>> 15) % 3,
+    palx: { steel: pick([0x8a8a8a, 0x8a5a34, 0x9aa0a8], 17), pil: mix(c1, 0xcfc8b0, .6), conc: pick([0x3a3a40, 0x4a4d52, 0x55575a], 19), win: pick([0xd8d2c0, 0xe8e8e8, 0x8fb4c8], 21) } });
+  if ((h >>> 23) % 4 === 0) o.arch = true; if ((h >>> 25) % 3 === 0) o.stairs = { every: 7 + ((h >>> 27) % 4), color: mix(c2, 0xffffff, .2) };
+  if (shape.horse) o.openSign = (h >>> 9) % 2 ? 1 : -1;
+  return o;
 }
 const S3_JEANS = ['#1f2a44', '#26344f', '#141820', '#3a4a66', '#5a5040', '#d8d4c8', '#2c2c32'];
 
