@@ -1,3 +1,6 @@
+/* colore corretto (sRGB + tone mapping): attivo di default, ?cm=0 torna alla resa "legacy" per confronto */
+function S3_SUNK() { return s3CM() ? 2.4 : 1; }
+function s3CM() { try { const q = new URLSearchParams(location.search).get('cm'); if (q !== null) return q !== '0'; } catch (e) { } return true; }
 /* ===== Partita in 3D (Three.js r128) =====
    Legge le stesse entita' del motore 2D (atlete con u,v e posa, palla u,v,z) e le disegna in una scena 3D.
    Mappa mondo: X = v (destra/sinistra del campo), Y = altezza, Z = u (distanza dalla rete, positivo verso la camera da fondo).
@@ -12,7 +15,7 @@ const S3_CROWD = ['#e8edf5', '#c3cddd', '#8da2c4', '#f2a43a', '#d6336c', '#2f6fd
 
 function s3Tex(w, h, fn) {
   const c = document.createElement('canvas'); c.width = w; c.height = h; fn(c.getContext('2d'), w, h);
-  const t = new THREE.CanvasTexture(c); t.anisotropy = 4; return t;
+  const t = new THREE.CanvasTexture(c); t.anisotropy = 4; if (s3CM()) t.colorSpace = THREE.SRGBColorSpace; return t;
 }
 function s3Seg(mesh, a, b, rad) {
   const d = new THREE.Vector3().subVectors(b, a), L = Math.max(1e-4, d.length());
@@ -56,10 +59,10 @@ function s3Setup(M) {
       let cv = $("#cv3");
       if (!cv) { cv = document.createElement('canvas'); cv.id = 'cv3'; cv.className = 'cv3'; ar.insertBefore(cv, ar.firstChild); }
       /* Three r158: stessa resa di r128 (colori e luci "legacy"); si puo' passare al nuovo modello in un secondo momento */
-      if (THREE.ColorManagement) THREE.ColorManagement.enabled = false;
+      if (THREE.ColorManagement) THREE.ColorManagement.enabled = s3CM();
       const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: 'high-performance' });
-      if ('outputColorSpace' in renderer) renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
-      if ('useLegacyLights' in renderer) renderer.useLegacyLights = true;
+      if (s3CM()) { renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.NeutralToneMapping; renderer.toneMappingExposure = 1; }
+      else if ('outputColorSpace' in renderer) renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
       renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       M.s3 = { cv, renderer, rigs: new Map(), crowd: null, last: 0, hi: typeof s3Hi === 'function' && s3Hi() };
       if (typeof skLoad === 'function') skLoad();
@@ -91,9 +94,9 @@ function s3Build(M) {
   const scene = S.scene = new THREE.Scene();
   scene.background = new THREE.Color(TH.wall[0]);
   S.camera = new THREE.PerspectiveCamera(32, 16 / 9, .5, 200);
-  scene.add(new THREE.AmbientLight(0xffffff, .6 * (window.S3_LK || 1)));
-  scene.add(new THREE.HemisphereLight(0xdfeaff, 0x2a2540, .42 * (window.S3_LK || 1)));
-  const sun = new THREE.DirectionalLight(0xffffff, .42 * (window.S3_LK || 1)); sun.position.set(-6, 22, 10); scene.add(sun);
+  scene.add(new THREE.AmbientLight(0xffffff, (s3CM() ? .30 : .6) * (window.S3_LK || 1)));
+  scene.add(new THREE.HemisphereLight(0xdfeaff, 0x2a2540, (s3CM() ? .55 : .42) * (window.S3_LK || 1)));
+  const sun = new THREE.DirectionalLight(0xffffff, .42 * S3_SUNK() * (window.S3_LK || 1)); sun.position.set(-6, 22, 10); scene.add(sun);
   /* ombre reali: il sole proietta giocatrici, rete, pali e palla sul campo (piano che riceve solo l'ombra) */
   sun.castShadow = true; { const q = Math.min(innerWidth, innerHeight) < 600 ? 1024 : 2048; sun.shadow.mapSize.set(q, q); } sun.shadow.bias = -.0004; sun.shadow.normalBias = .03; sun.shadow.radius = 3;
   Object.assign(sun.shadow.camera, { left: -13, right: 13, top: 13, bottom: -13, near: 8, far: 50 }); sun.shadow.camera.updateProjectionMatrix();

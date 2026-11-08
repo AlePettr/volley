@@ -219,7 +219,7 @@ homeHTML = function () {
 const SK_CREST = {};
 function skCrestTex(t) {
   const key = t.id; if (SK_CREST[key]) return SK_CREST[key];
-  const c = document.createElement('canvas'); c.width = c.height = 128; const tex = new THREE.CanvasTexture(c); tex.anisotropy = 4; SK_CREST[key] = tex;
+  const c = document.createElement('canvas'); c.width = c.height = 128; const tex = new THREE.CanvasTexture(c); tex.anisotropy = 4; if (typeof s3CM === 'function' && s3CM()) tex.colorSpace = THREE.SRGBColorSpace; SK_CREST[key] = tex;
   const img = new Image();
   img.onload = () => { const x = c.getContext('2d'), r = Math.min(124 / img.width, 124 / img.height), w = img.width * r, h = img.height * r; x.clearRect(0, 0, 128, 128); x.drawImage(img, (128 - w) / 2, (128 - h) / 2, w, h); tex.needsUpdate = true; };
   try { img.src = t.logo || ('data:image/svg+xml;charset=utf-8,' + encodeURIComponent(crestSVG(t, 128))); } catch (e) { }

@@ -8,7 +8,7 @@ function s3PostInit(S) {
   const r = S.renderer, P = { rt: null, w: 0, h: 0, last: 0, slow: 0, off: false };
   P.cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   P.mat = new THREE.ShaderMaterial({
-    depthTest: false, depthWrite: false,
+    depthTest: false, depthWrite: false, defines: s3CM() ? { CM: 1 } : {},
     uniforms: { tC: { value: null }, tD: { value: null }, texel: { value: new THREE.Vector2() }, near: { value: .5 }, far: { value: 200 }, focus: { value: 30 }, kPx: { value: 10 }, taps: { value: 14 }, seed: { value: 0 } },
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
     fragmentShader: `
@@ -28,6 +28,12 @@ function s3PostInit(S) {
             acc += texture2D(tC, uv).rgb * w; wsum += w; }
         }
         vec3 c = acc / wsum;
+#ifdef CM
+        gl_FragColor = vec4(c, 1.0);
+#include <tonemapping_fragment>
+#include <colorspace_fragment>
+        c = gl_FragColor.rgb;
+#endif
         /* grading */
         float l = dot(c, vec3(0.299, 0.587, 0.114));
         c = mix(vec3(l), c, 1.10);                                  /* un po' piu' di colore */
@@ -55,7 +61,7 @@ function s3PostRender(S, scene, cam) {
   if (!P.rt || P.w !== w || P.h !== h) {
     if (P.rt) { P.rt.dispose(); P.rt.depthTexture.dispose(); }
     const dt = new THREE.DepthTexture(w, h); dt.type = THREE.UnsignedIntType; dt.minFilter = dt.magFilter = THREE.NearestFilter;
-    P.rt = new THREE.WebGLRenderTarget(w, h, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, depthTexture: dt, samples: 4 });
+    P.rt = new THREE.WebGLRenderTarget(w, h, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, depthTexture: dt, samples: 4, type: s3CM() ? THREE.HalfFloatType : THREE.UnsignedByteType });
     P.w = w; P.h = h; P.mat.uniforms.texel.value.set(1 / w, 1 / h); P.mat.uniforms.tC.value = P.rt.texture; P.mat.uniforms.tD.value = dt;
   }
   const u = P.mat.uniforms, small = Math.min(sz.x, sz.y) < 600;
