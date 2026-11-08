@@ -74,3 +74,4 @@ Colore: dal v1030b il 3D usa colori sRGB corretti e tone mapping (`s3CM()` in sc
 Scheda "Palazzetto" nel mercato: personale a rosa (gestore, pulizie, magazzinieri, steward, video check, bar) con livello e stipendio, assunzioni/licenziamenti (25% dello stipendio annuo). Stipendi a ogni giornata, utenze e ricavo del bar a ogni partita in casa, multe se mancano steward. Codice in js/hall_staff.js, dati in G.arena.
 Contratti a stagione per il personale del palazzetto (1-3 stagioni, sconto sullo stipendio, rinnovo, buonuscita se licenzi prima).
 Rinnovo automatico selezionabile per addetto o per tutti (palazzetto).
+Interfaccia B 'Arena' (css/arena.css, js/arena_ui.js): tasto Stile in alto a destra, oppure ?ui=2.
