@@ -31,13 +31,13 @@ function s3ShineSetup(S, scene, FW, FL) {
   const rt = new THREE.WebGLRenderTarget(256, 256, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, depthBuffer: true });
   const vc = new THREE.PerspectiveCamera(), texM = new THREE.Matrix4();
   const mat = new THREE.ShaderMaterial({
-    uniforms: { tRef: { value: rt.texture }, textureMatrix: { value: texM }, uK: { value: 4 }, uTexel: { value: new THREE.Vector2(1 / 256, 1 / 256) } },
+    uniforms: { tRef: { value: rt.texture }, textureMatrix: { value: texM }, uK: { value: 1.4 }, uTexel: { value: new THREE.Vector2(1 / 256, 1 / 256) } },
     vertexShader: 'uniform mat4 textureMatrix; varying vec4 vUv; varying vec3 vW; void main(){ vec4 wp = modelMatrix * vec4(position,1.0); vW = wp.xyz; vUv = textureMatrix * wp; gl_Position = projectionMatrix * viewMatrix * wp; }',
     fragmentShader: `uniform sampler2D tRef; uniform float uK; uniform vec2 uTexel; varying vec4 vUv; varying vec3 vW;
       void main(){
         vec3 V = normalize(cameraPosition - vW); float c = clamp(V.y, 0.0, 1.0);
         float f = 0.05 + 0.95 * pow(1.0 - c, 5.0);
-        float k = min(0.32, f * uK);
+        float k = min(0.10, f * uK);
         vec2 uv = vUv.xy / vUv.w; float d = length(cameraPosition - vW);
         vec2 r = uTexel * (1.2 + d * 0.10);
         vec3 a = texture2D(tRef, uv).rgb * 0.24;
@@ -56,7 +56,7 @@ function s3ShineSetup(S, scene, FW, FL) {
 function s3ShineUpdate(S, scene, cam) {
   const H = S.shine; if (!H || H.off) return;
   const r = S.renderer, now = performance.now();
-  if (H.last) { const dt = now - H.last; H.slow = dt > 34 ? H.slow + 1 : Math.max(0, H.slow - 2); if (H.slow > 90) { H.off = true; H.ov.visible = false; return; } } H.last = now;
+  if (H.last) { const dt = now - H.last; H.slow = dt > 34 ? H.slow + 1 : Math.max(0, H.slow - 2); if (H.slow > 240) { H.off = true; H.ov.visible = false; return; } } H.last = now;
   const sz = r.getSize(new THREE.Vector2()), w = Math.max(64, Math.round(sz.x * H.sc * (r.getPixelRatio() > 1 ? 1 : 1))), h = Math.max(64, Math.round(sz.y * H.sc));
   if (H.rt.width !== w || H.rt.height !== h) { H.rt.setSize(w, h); H.mat.uniforms.uTexel.value.set(1 / w, 1 / h); }
   const { v, t, la, rot } = H.tmp, n = new THREE.Vector3(0, 1, 0), rp = new THREE.Vector3(0, 0, 0), cp = cam.position;

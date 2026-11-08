@@ -139,8 +139,8 @@ function s3Build(M) {
   floorTex.anisotropy = Math.min(8, S.renderer.capabilities.getMaxAnisotropy());
   let floorMat;
   if (S.hi && s3CM()) {   /* parquet fisico: lucido, con riflessi dell'ambiente e dei fari */
-    try { if (!S.envTex) S.envTex = s3MakeEnv(S.renderer); scene.environment = S.envTex; scene.environmentIntensity = .45; } catch (e) { }
-    floorMat = new THREE.MeshStandardMaterial({ map: floorTex, color: 0xa6a6a6, roughness: .58, metalness: 0, envMapIntensity: 1 });
+    try { if (!S.envTex) S.envTex = s3MakeEnv(S.renderer); scene.environment = S.envTex; scene.environmentIntensity = .22; } catch (e) { }
+    floorMat = new THREE.MeshStandardMaterial({ map: floorTex, color: 0xa6a6a6, roughness: .78, metalness: 0, envMapIntensity: 1 });
   } else floorMat = new THREE.MeshBasicMaterial({ map: floorTex, color: 0xd4d4d4 });
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(FW, FL), floorMat);
   floor.rotation.x = -Math.PI / 2; floor.position.y = .0; scene.add(floor);
