@@ -63,3 +63,7 @@ Loghi A3 e sponsor di partita; colori reali dei club; statistiche delle liberi A
 
 - Modello 3D delle atlete (opzionale): This work is based on "Sporty Girl _Rigged_ Free." (https://sketchfab.com/3d-models/sporty-girl--rigged--free-00d9e7c3bc1648fd8d994bf27640d8a7) by NABEEL619 (https://sketchfab.com/NABEEL619) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/). Modificato: texture ridotte.
 - Three.js r158 (MIT) con GLTFLoader e SkeletonUtils adattati come script globali, in `vendor/`.
+
+
+## Three.js r187
+Il gioco usa Three.js r187 (moduli ES in `vendor/three187/`, mappa `importmap` in index.html). `vendor/three-bridge.js` li espone come `THREE` globale e poi carica in ordine gli script del gioco; `S3_LK` (=PI) riporta le luci alla resa di prima. I vecchi file r158 restano in `vendor/` come riserva.

@@ -91,9 +91,9 @@ function s3Build(M) {
   const scene = S.scene = new THREE.Scene();
   scene.background = new THREE.Color(TH.wall[0]);
   S.camera = new THREE.PerspectiveCamera(32, 16 / 9, .5, 200);
-  scene.add(new THREE.AmbientLight(0xffffff, .6));
-  scene.add(new THREE.HemisphereLight(0xdfeaff, 0x2a2540, .42));
-  const sun = new THREE.DirectionalLight(0xffffff, .42); sun.position.set(-6, 22, 10); scene.add(sun);
+  scene.add(new THREE.AmbientLight(0xffffff, .6 * (window.S3_LK || 1)));
+  scene.add(new THREE.HemisphereLight(0xdfeaff, 0x2a2540, .42 * (window.S3_LK || 1)));
+  const sun = new THREE.DirectionalLight(0xffffff, .42 * (window.S3_LK || 1)); sun.position.set(-6, 22, 10); scene.add(sun);
   /* ombre reali: il sole proietta giocatrici, rete, pali e palla sul campo (piano che riceve solo l'ombra) */
   sun.castShadow = true; { const q = Math.min(innerWidth, innerHeight) < 600 ? 1024 : 2048; sun.shadow.mapSize.set(q, q); } sun.shadow.bias = -.0004; sun.shadow.normalBias = .03; sun.shadow.radius = 3;
   Object.assign(sun.shadow.camera, { left: -13, right: 13, top: 13, bottom: -13, near: 8, far: 50 }); sun.shadow.camera.updateProjectionMatrix();

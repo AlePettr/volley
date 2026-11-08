@@ -8,9 +8,9 @@ function s3Fx() {
 function s3SoftShadows(S, scene, sun, shadowPlane) {
   if (!s3Fx()) return;
   const small = Math.min(innerWidth, innerHeight) < 600, q = small ? 1024 : 2048, lights = [sun];
-  sun.intensity = .2;
+  sun.intensity = .2 * (window.S3_LK || 1);
   for (const [x, y, z, k] of [[8, 23, -7, .11], [-4, 24, -9, .11]]) {
-    const l = new THREE.DirectionalLight(0xffffff, k); l.position.set(x, y, z); scene.add(l);
+    const l = new THREE.DirectionalLight(0xffffff, k * (window.S3_LK || 1)); l.position.set(x, y, z); scene.add(l);
     l.castShadow = true; l.shadow.mapSize.set(q, q); l.shadow.bias = -.0004; l.shadow.normalBias = .03;
     Object.assign(l.shadow.camera, { left: -13, right: 13, top: 13, bottom: -13, near: 8, far: 52 }); l.shadow.camera.updateProjectionMatrix(); lights.push(l);
   }
