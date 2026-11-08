@@ -1,4 +1,18 @@
 /* colore corretto (sRGB + tone mapping): attivo di default, ?cm=0 torna alla resa "legacy" per confronto */
+/* ambiente luminoso generato: palazzetto stilizzato (pareti scure, pannelli di luce al soffitto) usato per i riflessi dei materiali fisici */
+function s3MakeEnv(renderer) {
+  const sc = new THREE.Scene(), T = THREE;
+  const cube = new T.Mesh(new T.BoxGeometry(60, 24, 60), new T.MeshBasicMaterial({ color: 0x2a2f3c, side: T.BackSide })); cube.position.y = 11; sc.add(cube);
+  const floorM = new T.Mesh(new T.PlaneGeometry(60, 60), new T.MeshBasicMaterial({ color: 0x4a3a28 })); floorM.rotation.x = -Math.PI / 2; floorM.position.y = .02; sc.add(floorM);
+  for (let i = -2; i <= 2; i++) for (let j = -1; j <= 1; j++) {
+    const lamp = new T.Mesh(new T.PlaneGeometry(5, 2.2), new T.MeshBasicMaterial({ color: new T.Color(1, .96, .88).multiplyScalar(14), side: T.DoubleSide }));
+    lamp.rotation.x = Math.PI / 2; lamp.position.set(i * 9, 22.5, j * 11); sc.add(lamp);
+  }
+  for (const sg of [-1, 1]) { const band = new T.Mesh(new T.PlaneGeometry(50, 3), new T.MeshBasicMaterial({ color: new T.Color(.5, .62, .9).multiplyScalar(2.2), side: T.DoubleSide })); band.position.set(sg * 29.5, 9, 0); band.rotation.y = Math.PI / 2; sc.add(band); }
+  const pm = new T.PMREMGenerator(renderer), rt = pm.fromScene(sc, .02); pm.dispose();
+  sc.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+  return rt.texture;
+}
 function S3_SUNK() { return s3CM() ? 2.4 : 1; }
 function s3CM() { try { const q = new URLSearchParams(location.search).get('cm'); if (q !== null) return q !== '0'; } catch (e) { } return true; }
 /* ===== Partita in 3D (Three.js r128) =====
@@ -123,7 +137,12 @@ function s3Build(M) {
     L(-9, -4.5, -9, 4.5); L(9, -4.5, 9, 4.5); L(-9, -4.5, 9, -4.5); L(-9, 4.5, 9, 4.5); L(0, -4.5, 0, 4.5); L(-3, -4.5, -3, 4.5); L(3, -4.5, 3, 4.5);
   });
   floorTex.anisotropy = Math.min(8, S.renderer.capabilities.getMaxAnisotropy());
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(FW, FL), new THREE.MeshBasicMaterial({ map: floorTex, color: 0xd4d4d4 }));
+  let floorMat;
+  if (S.hi && s3CM()) {   /* parquet fisico: lucido, con riflessi dell'ambiente e dei fari */
+    try { if (!S.envTex) S.envTex = s3MakeEnv(S.renderer); scene.environment = S.envTex; scene.environmentIntensity = .55; } catch (e) { }
+    floorMat = new THREE.MeshStandardMaterial({ map: floorTex, color: 0x9c9c9c, roughness: .36, metalness: 0, envMapIntensity: 1 });
+  } else floorMat = new THREE.MeshBasicMaterial({ map: floorTex, color: 0xd4d4d4 });
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(FW, FL), floorMat);
   floor.rotation.x = -Math.PI / 2; floor.position.y = .0; scene.add(floor);
   if (S.hi && typeof s3ArenaVariant === 'function' && (() => { try { return s3ArenaVariant(M).parquet; } catch (e) { return false; } })()) { const pq = new THREE.Mesh(new THREE.PlaneGeometry(2 * 11.6, 2 * 14.8), new THREE.MeshLambertMaterial({ color: 0xc89c62 })); pq.rotation.x = -Math.PI / 2; pq.position.y = -.003; scene.add(pq); }
   const shadowPlane = new THREE.Mesh(new THREE.PlaneGeometry(FW, FL), new THREE.ShadowMaterial({ opacity: .34 }));
