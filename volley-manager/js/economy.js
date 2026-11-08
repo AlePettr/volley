@@ -77,7 +77,7 @@ function ecoMigrate() {
   const cards = window.alertCardsHTML;
   window.alertCardsHTML = function () {
     try { ecoMigrate(); } catch (e) { }
-    let o = cards.apply(this, arguments);
+    let o = cards.apply(this, arguments); if (window.orgOn && orgOn()) return o;
     try {
       const F = fin(), tot = F.sp + F.gate + F.prize, net = G.budget - F.b0;
       o += `<div class="card"><div class="row" style="justify-content:space-between"><h3>Bilancio stagione</h3><span class="pill ${net >= 0 ? "good" : ""}">${net >= 0 ? "+" : ""}${formatEur(net)}</span></div>

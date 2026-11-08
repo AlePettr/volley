@@ -83,7 +83,7 @@ document.addEventListener("click", e => {
   const sg = window.seasonGrowthAll; window.seasonGrowthAll = function () { const r = sg.apply(this, arguments); try { hallSeasonEnd(); } catch (e) { } return r; };
   const cards = window.alertCardsHTML;
   window.alertCardsHTML = function () {
-    let o = cards.apply(this, arguments);
+    let o = cards.apply(this, arguments); if (window.orgOn && orgOn()) return o;
     try { const F = fin(), net = (F.bar || 0) - (F.hall || 0) - (F.hstaff || 0); o += `<div class="card"><div class="row" style="justify-content:space-between"><h3>Palazzetto</h3><span class="pill ${net >= 0 ? "good" : ""}">${net >= 0 ? "+" : ""}${formatEur(net)}</span></div><p class="muted small" style="margin-top:6px">Bar ${formatEur(F.bar || 0)} · utenze e multe ${formatEur(F.hall || 0)} · personale ${formatEur(F.hstaff || 0)}.</p></div>`; } catch (e) { }
     return o;
   };
