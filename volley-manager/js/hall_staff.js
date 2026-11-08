@@ -40,8 +40,10 @@ function hallRenew(id) {
   const a = arena(), s = a.staff.find(x => x.id === id); if (!s) return; const y = UI.hallYrs || 1; s.yrs = (s.yrs || 0) + y; s.wage = Math.round(hallWage(s.role, s.lvl) * hallDisc(y) / 50) * 50; toast("Contratto di " + s.name + " rinnovato."); persist(); render();
 }
 function hallSeasonEnd() {
-  const a = arena(), gone = []; a.staff.forEach(s => { s.yrs = (s.yrs || 1) - 1; if (s.yrs <= 0) gone.push(s); }); if (!gone.length) return;
-  a.staff = a.staff.filter(s => s.yrs > 0); marketNews("Palazzetto: contratti scaduti per " + gone.length + " addetti (" + gone.map(s => s.name).join(", ") + "). Rinnova o assumi sostituti."); persist();
+  const a = arena(), gone = []; let auto = 0; a.staff.forEach(s => { s.yrs = (s.yrs || 1) - 1; if (s.yrs <= 0) { if (s.auto) { const y = s.autoYrs || 1; s.yrs = y; s.wage = Math.round(hallWage(s.role, s.lvl) * hallDisc(y) / 50) * 50; auto++; } else gone.push(s); } });
+  if (auto) marketNews("Palazzetto: rinnovati automaticamente " + auto + " contratti.");
+  if (gone.length) { a.staff = a.staff.filter(s => s.yrs > 0); marketNews("Palazzetto: contratti scaduti per " + gone.length + " addetti (" + gone.map(s => s.name).join(", ") + "). Rinnova o assumi sostituti."); }
+  persist();
 }
 function hallFire(id) {
   const a = arena(), s = a.staff.find(x => x.id === id); if (!s) return; const fee = hallBuyout(s);
@@ -51,19 +53,20 @@ function hallFire(id) {
 function hallHTML() {
   const a = arena(), n = hallNeeds(), F = fin(), btn = "min-height:32px;padding:4px 9px;font-size:12px";
   const head = `<div class="card"><div class="row" style="justify-content:space-between"><h3>Palazzetto</h3><span class="pill">Stipendi: ${formatEur(hallRoundWages())}/giornata</span></div>
-  <p class="sub">Capienza ${hallCap().toLocaleString("it-IT")} posti. Utenze per partita in casa circa ${formatEur(hallUtilities())}. Contratti a stagione: più lungo il contratto, più basso lo stipendio (2 stagioni −5%, 3 stagioni −10%). Assunzione 25% dello stipendio annuo; licenziare prima della scadenza costa metà stipendio per ogni stagione residua.</p>
+  <p class="sub">Capienza ${hallCap().toLocaleString("it-IT")} posti. Utenze per partita in casa circa ${formatEur(hallUtilities())}. Il rinnovo automatico rinnova alla scadenza, per la durata scelta in quel momento. Contratti a stagione: più lungo il contratto, più basso lo stipendio (2 stagioni −5%, 3 stagioni −10%). Assunzione 25% dello stipendio annuo; licenziare prima della scadenza costa metà stipendio per ogni stagione residua.</p>
   <div class="row" style="gap:6px;margin:6px 0"><span class="muted small">Durata dei nuovi contratti:</span>${[1, 2, 3].map(y => `<button class="btn ${(UI.hallYrs || 1) === y ? "primary" : ""}" style="${btn}" data-act="hallyrs" data-v="${y}">${y} ${y === 1 ? "stagione" : "stagioni"}</button>`).join("")}</div>
+  <div class="row" style="gap:6px;margin:6px 0"><button class="btn" style="${btn}" data-act="hallautoall" data-v="1">Rinnovo automatico a tutti</button><button class="btn" style="${btn}" data-act="hallautoall" data-v="0">Disattiva per tutti</button></div>
   <p class="muted small">Stagione: bar ${formatEur(F.bar || 0)} · utenze e multe ${formatEur(F.hall || 0)} · personale ${formatEur(F.hstaff || 0)}</p></div>`;
   return head + HALL_ROLES.filter(r => n[r.k] > 0).map(r => {
     const c = hallCov(r.k), list = a.staff.filter(s => s.role === r.k);
     return `<div class="card"><div class="row" style="justify-content:space-between"><h3>${r.n}</h3><span class="pill ${c.cov >= 1 ? "good" : ""}">${c.got}/${n[r.k]}</span></div><p class="muted small">${r.d}</p>
-    ${list.map(s => `<div class="prow"><span class="nm"><b>${esc(s.name)}</b> <span class="muted small">Liv. ${s.lvl} · ${formatEur(s.wage)}/anno · ${s.yrs || 1} ${(s.yrs || 1) === 1 ? "stagione (in scadenza)" : "stagioni"}</span></span><button class="btn" style="${btn}" data-act="hallrenew" data-v="${s.id}">Rinnova</button><button class="btn" style="${btn}" data-act="hallfire" data-v="${s.id}">Licenzia · ${formatEur(hallBuyout(s))}</button></div>`).join("")}
+    ${list.map(s => `<div class="prow"><span class="nm"><b>${esc(s.name)}</b> <span class="muted small">Liv. ${s.lvl} · ${formatEur(s.wage)}/anno · ${s.yrs || 1} ${(s.yrs || 1) === 1 ? "stagione (in scadenza)" : "stagioni"}</span></span><button class="btn ${s.auto ? "primary" : ""}" style="${btn}" data-act="hallauto" data-v="${s.id}" aria-pressed="${!!s.auto}">Rinnovo auto: ${s.auto ? "sì" : "no"}</button><button class="btn" style="${btn}" data-act="hallrenew" data-v="${s.id}">Rinnova</button><button class="btn" style="${btn}" data-act="hallfire" data-v="${s.id}">Licenzia · ${formatEur(hallBuyout(s))}</button></div>`).join("")}
     <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:6px"><span class="muted small">Assumi:</span>${[1, 2, 3, 4].map(l => `<button class="btn primary" style="${btn}" data-act="hallhire" data-v="${r.k}:${l}">Liv. ${l} · ${formatEur(Math.round(hallWage(r.k, l) * hallDisc(UI.hallYrs || 1) / 50) * 50)}</button>`).join("")}</div></div>`;
   }).join("");
 }
 document.addEventListener("click", e => {
   const el = e.target.closest("[data-act]"); if (!el || !G) return; const a = el.dataset.act;
-  if (a === "hallhire") { const [r, l] = el.dataset.v.split(":"); hallHire(r, +l); e.stopPropagation(); } else if (a === "hallyrs") { UI.hallYrs = +el.dataset.v; render(); e.stopPropagation(); } else if (a === "hallrenew") { hallRenew(el.dataset.v); e.stopPropagation(); } else if (a === "hallfire") { hallFire(el.dataset.v); e.stopPropagation(); }
+  if (a === "hallhire") { const [r, l] = el.dataset.v.split(":"); hallHire(r, +l); e.stopPropagation(); } else if (a === "hallyrs") { UI.hallYrs = +el.dataset.v; render(); e.stopPropagation(); } else if (a === "hallauto") { const x = arena().staff.find(q => q.id === el.dataset.v); if (x) { x.auto = !x.auto; x.autoYrs = UI.hallYrs || 1; } persist(); render(); e.stopPropagation(); } else if (a === "hallautoall") { arena().staff.forEach(x => { x.auto = el.dataset.v === "1"; x.autoYrs = UI.hallYrs || 1; }); persist(); render(); e.stopPropagation(); } else if (a === "hallrenew") { hallRenew(el.dataset.v); e.stopPropagation(); } else if (a === "hallfire") { hallFire(el.dataset.v); e.stopPropagation(); }
 }, true);
 (function () {
   const mi = window.matchIncome;
