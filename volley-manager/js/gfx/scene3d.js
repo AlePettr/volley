@@ -8,7 +8,7 @@ function s3MakeEnv(renderer) {
     const lamp = new T.Mesh(new T.PlaneGeometry(5, 2.2), new T.MeshBasicMaterial({ color: new T.Color(1, .96, .88).multiplyScalar(14), side: T.DoubleSide }));
     lamp.rotation.x = Math.PI / 2; lamp.position.set(i * 9, 22.5, j * 11); sc.add(lamp);
   }
-  for (const sg of [-1, 1]) { const band = new T.Mesh(new T.PlaneGeometry(50, 3), new T.MeshBasicMaterial({ color: new T.Color(.5, .62, .9).multiplyScalar(2.2), side: T.DoubleSide })); band.position.set(sg * 29.5, 9, 0); band.rotation.y = Math.PI / 2; sc.add(band); }
+  for (const sg of [-1, 1]) { const band = new T.Mesh(new T.PlaneGeometry(50, 3), new T.MeshBasicMaterial({ color: new T.Color(.9, .78, .6).multiplyScalar(1.6), side: T.DoubleSide })); band.position.set(sg * 29.5, 9, 0); band.rotation.y = Math.PI / 2; sc.add(band); }
   const pm = new T.PMREMGenerator(renderer), rt = pm.fromScene(sc, .02); pm.dispose();
   sc.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
   return rt.texture;
@@ -109,7 +109,7 @@ function s3Build(M) {
   scene.background = new THREE.Color(TH.wall[0]);
   S.camera = new THREE.PerspectiveCamera(32, 16 / 9, .5, 200);
   scene.add(new THREE.AmbientLight(0xffffff, (s3CM() ? .30 : .6) * (window.S3_LK || 1)));
-  scene.add(new THREE.HemisphereLight(0xdfeaff, 0x2a2540, (s3CM() ? .55 : .42) * (window.S3_LK || 1)));
+  scene.add(new THREE.HemisphereLight(s3CM() ? 0xfff1e2 : 0xdfeaff, s3CM() ? 0x3a2f2a : 0x2a2540, (s3CM() ? .55 : .42) * (window.S3_LK || 1)));
   const sun = new THREE.DirectionalLight(0xffffff, .42 * S3_SUNK() * (window.S3_LK || 1)); sun.position.set(-6, 22, 10); scene.add(sun);
   /* ombre reali: il sole proietta giocatrici, rete, pali e palla sul campo (piano che riceve solo l'ombra) */
   sun.castShadow = true; { const q = Math.min(innerWidth, innerHeight) < 600 ? 1024 : 2048; sun.shadow.mapSize.set(q, q); } sun.shadow.bias = -.0004; sun.shadow.normalBias = .03; sun.shadow.radius = 3;
@@ -139,8 +139,8 @@ function s3Build(M) {
   floorTex.anisotropy = Math.min(8, S.renderer.capabilities.getMaxAnisotropy());
   let floorMat;
   if (S.hi && s3CM()) {   /* parquet fisico: lucido, con riflessi dell'ambiente e dei fari */
-    try { if (!S.envTex) S.envTex = s3MakeEnv(S.renderer); scene.environment = S.envTex; scene.environmentIntensity = .55; } catch (e) { }
-    floorMat = new THREE.MeshStandardMaterial({ map: floorTex, color: 0x9c9c9c, roughness: .36, metalness: 0, envMapIntensity: 1 });
+    try { if (!S.envTex) S.envTex = s3MakeEnv(S.renderer); scene.environment = S.envTex; scene.environmentIntensity = .45; } catch (e) { }
+    floorMat = new THREE.MeshStandardMaterial({ map: floorTex, color: 0xa6a6a6, roughness: .58, metalness: 0, envMapIntensity: 1 });
   } else floorMat = new THREE.MeshBasicMaterial({ map: floorTex, color: 0xd4d4d4 });
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(FW, FL), floorMat);
   floor.rotation.x = -Math.PI / 2; floor.position.y = .0; scene.add(floor);
@@ -707,7 +707,7 @@ function s3Frame(M, ents, dt) {
     for (const pn of S.panels) {
       const v = typeof ledSlot === 'function' ? ledSlot(pn.slot) : null;
       if (v) {
-        let tx = S.vtex.get(v); if (!tx) { tx = new THREE.VideoTexture(v); tx.minFilter = THREE.LinearFilter; S.vtex.set(v, tx); }
+        let tx = S.vtex.get(v); if (!tx) { tx = new THREE.VideoTexture(v); tx.minFilter = THREE.LinearFilter; if (s3CM()) tx.colorSpace = THREE.SRGBColorSpace; S.vtex.set(v, tx); }
         tx.needsUpdate = true; if (pn.mat.map !== tx) { pn.mat.map = tx; pn.mat.needsUpdate = true; }
       } else if (pn.mat.map !== S.fallbackTex) { pn.mat.map = S.fallbackTex; pn.mat.needsUpdate = true; }
     }

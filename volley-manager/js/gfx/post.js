@@ -8,7 +8,7 @@ function s3PostInit(S) {
   const r = S.renderer, P = { rt: null, w: 0, h: 0, last: 0, slow: 0, off: false };
   P.cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   P.mat = new THREE.ShaderMaterial({
-    depthTest: false, depthWrite: false, defines: s3CM() ? { CM: 1, AO: 1 } : {},
+    depthTest: false, depthWrite: false, defines: s3CM() ? { CM: 1 } : {},
     uniforms: { tC: { value: null }, tD: { value: null }, texel: { value: new THREE.Vector2() }, near: { value: .5 }, far: { value: 200 }, focus: { value: 30 }, kPx: { value: 10 }, taps: { value: 14 }, seed: { value: 0 } },
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
     fragmentShader: `
@@ -40,14 +40,14 @@ function s3PostInit(S) {
         gl_FragColor = vec4(c, 1.0);
 #include <tonemapping_fragment>
 #include <colorspace_fragment>
-        c = gl_FragColor.rgb;
+        c = gl_FragColor.rgb * vec3(1.035, 1.0, 0.95);   /* resa piu' calda */
 #endif
         /* grading */
         float l = dot(c, vec3(0.299, 0.587, 0.114));
         c = mix(vec3(l), c, 1.10);                                  /* un po' piu' di colore */
         c = (c - 0.46) * 1.08 + 0.46;                                /* contrasto */
         c += vec3(0.030, 0.012, -0.024) * smoothstep(0.45, 1.0, l);  /* luci calde */
-        c += vec3(-0.012, 0.004, 0.022) * (1.0 - smoothstep(0.0, 0.4, l));   /* ombre fredde */
+        c += vec3(-0.004, 0.002, 0.008) * (1.0 - smoothstep(0.0, 0.4, l));   /* ombre fredde */
         vec2 q = vUv - 0.5; q.x *= 1.0; float vg = smoothstep(0.80, 0.18, length(q * vec2(1.0, 1.15)));
         c *= mix(0.80, 1.0, vg);                                    /* vignettatura */
         c += (hash(gl_FragCoord.xy + 7.0) - 0.5) / 255.0;          /* niente bande nei gradienti */

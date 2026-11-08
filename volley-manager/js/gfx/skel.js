@@ -201,9 +201,10 @@ function skMat(base, rig) {
 function skPerf(M, dt) {
   if (SK.off || skForced() || !dt || dt > .5) return;
   const S = M.s3; if (!S || !S.rigs.size || ![...S.rigs.values()].some(r => r.sk)) return;
+  S.skW = (S.skW || 0) + 1; if (S.skW < 150) return;   /* riscaldamento: i primi fotogrammi (compilazione shader, caricamenti) non contano */
   S.skN = (S.skN || 0) + 1; S.skT = (S.skT || 0) + dt;
-  if (S.skN >= 90) {
-    if (S.skT / S.skN > .045) { SK.off = true; for (const r of S.rigs.values()) skDetach(r); console.warn('Dispositivo lento: figure classiche'); }
+  if (S.skN >= 120) {
+    if (S.skT / S.skN > .085) { SK.off = true; for (const r of S.rigs.values()) skDetach(r); console.warn('Dispositivo lento: figure classiche'); }
     S.skN = -1e9;
   }
 }
