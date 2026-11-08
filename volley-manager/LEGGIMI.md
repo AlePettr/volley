@@ -71,4 +71,4 @@ Il gioco usa Three.js r187 (moduli ES in `vendor/three187/`, mappa `importmap` i
 Colore: dal v1030b il 3D usa colori sRGB corretti e tone mapping (`s3CM()` in scene3d.js); `?cm=0` torna alla resa precedente per confronto.
 
 ## Palazzetto (v1030f)
-Scheda "Palazzetto" nel mercato: personale a rosa (gestore, pulizie, magazzinieri, steward, bar) con livello e stipendio, assunzioni/licenziamenti (25% dello stipendio annuo). Stipendi a ogni giornata, utenze e ricavo del bar a ogni partita in casa, multe se mancano steward. Codice in js/hall_staff.js, dati in G.arena.
+Scheda "Palazzetto" nel mercato: personale a rosa (gestore, pulizie, magazzinieri, steward, video check, bar) con livello e stipendio, assunzioni/licenziamenti (25% dello stipendio annuo). Stipendi a ogni giornata, utenze e ricavo del bar a ogni partita in casa, multe se mancano steward. Codice in js/hall_staff.js, dati in G.arena.
