@@ -50,7 +50,7 @@ function hallFire(id) {
   if (G.budget < fee) { toast("Cassa insufficiente per la buonuscita."); return; }
   G.budget -= fee; a.staff = a.staff.filter(x => x.id !== id); toast(s.name + " licenziato/a."); persist(); render();
 }
-function hallHTML() {
+function hallStaffHTML() {
   const a = arena(), n = hallNeeds(), F = fin(), btn = "min-height:32px;padding:4px 9px;font-size:12px";
   const head = `<div class="card"><div class="row" style="justify-content:space-between"><h3>Palazzetto</h3><span class="pill">Stipendi: ${formatEur(hallRoundWages())}/giornata</span></div>
   <p class="sub">Capienza ${hallCap().toLocaleString("it-IT")} posti. Utenze per partita in casa circa ${formatEur(hallUtilities())}. Il rinnovo automatico rinnova alla scadenza, per la durata scelta in quel momento. Contratti a stagione: più lungo il contratto, più basso lo stipendio (2 stagioni −5%, 3 stagioni −10%). Assunzione 25% dello stipendio annuo; licenziare prima della scadenza costa metà stipendio per ogni stagione residua.</p>

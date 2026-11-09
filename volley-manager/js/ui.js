@@ -222,7 +222,7 @@ function marketHTML(){
       </div>
     </div>`;
   } else if (UI.mktTab === "hall") {
-    body = hallHTML();
+    body = hallStaffHTML();
   } else if (UI.mktTab === "youth") {
     body = vivaioHTML();
   } else if (UI.mktTab === "staff") {
@@ -275,7 +275,7 @@ function marketHTML(){
 
 function leagueHTML(){ const lid=UI.lg,teams=WORLD[lid]||[]; const validLids=["A1","A2","A3A","A3B","A3_PROM","A3_RETR"].filter(k=>WORLD[k]&&WORLD[k ].length>0); const lgBtns=validLids.map(k=>`<button data-act="lg" data-v="${k}" aria-pressed="${UI.lg===k}">${LEAGUES[k]?LEAGUES[k].name:k}</button>`).join(""); const modeBtns=[["table","Classifica"],["res","Risultati"]].map(([k,l])=>`<button data-act="lgtab" data-v="${k}" aria-pressed="${UI.lgTab===k}">${l}</button>`).join(""); let body=""; if(UI.lgTab==="table"){ const st=standings(lid,G.results),n=st.length; body=`<div class="card scroll"><table><thead><tr><th>#</th><th class="l">Squadra</th><th>G</th><th>V</th><th>P</th><th>Set</th><th>Pt</th></tr></thead><tbody>${st.map((r,i)=>{ let z=""; if(lid==="A2"){if(i===0)z="zone-up";else if(i>=n-4)z="zone-down";} else if(lid==="A3A"||lid==="A3B"){if(i<4)z="zone-up";else z="zone-down";} else if(lid==="A3_PROM"){if(i<4)z="zone-up";} else if(lid==="A3_RETR"){if(i>=4)z="zone-down";} return `<tr class="${r.idx===G.teamIdx&&lid===G.lid?"me":""} ${z}"><td>${i+1}</td><td class="l"><span class="team-cell"><span class="dot" style="background:${teams[r.idx]?teams[r.idx].color:'#ccc'}"></span>${esc(r.short)}</span></td><td>${r.pl}</td><td>${r.w}</td><td>${r.l}</td><td>${r.sw}-${r.sl}</td><td><b>${r.pts}</b></td></tr>`;}).join("")}</tbody></table> <p class="muted small" style="margin:10px 2px 0">${lid.startsWith("A3")?"Verde: Accesso a Pool Promozione o Salita in A2. Rosso: Pool Retrocessione o Discesa in B1.":"3 pt (3-0, 3-1), 2 pt (3-2 vinto), 1 pt (3-2 perso)."}</p></div>`; }else{ const played=(G.results[lid]||[]).length,total=SCHEDULE[lid]?SCHEDULE[lid].length:0; if(UI.rd===null||UI.rd>=total)UI.rd=Math.max(0,Math.min(played-1,total-1)); const rd=UI.rd; const rows=played>rd?G.results[lid][rd]:(SCHEDULE[lid]&&SCHEDULE[lid][rd]?SCHEDULE[lid][rd ].map(([h,a])=>({h,a,hs:null})):[]); body=`<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:8px"><button class="btn" data-act="rd" data-v="-1" ${rd<=0?"disabled":""}>‹</button><b class="num" style="font-size:20px">Giornata ${rd+1} / ${total}</b><button class="btn" data-act="rd" data-v="1" ${rd>=total-1?"disabled":""}>›</button></div> ${rows.map(m=>m.hs===null?`<div class="res"><span>${esc(teams[m.h].short)}</span><span class="sc muted">–</span><span class="r">${esc(teams[m.a].short)}</span></div>`:resRow(lid,m)).join("")}</div>`; } return `<div class="row" style="justify-content:space-between;margin-bottom:10px"><h2>Campionato</h2></div><div class="tabs">${lgBtns}</div><div class="tabs">${modeBtns}</div>${body}`; }
 
-function homeHTML(){ return alertCardsHTML()+homeHTMLmain()+identityHTML()+saveCardHTML(); }
+function homeHTML(){ return alertCardsHTML()+homeHTMLmain()+(UI.orgHome?"":identityHTML()+saveCardHTML()); }
 
 /* Gestione filtri e ricerca nel tab Trattative Club senza perdere il focus su iPad */
 document.addEventListener("input", e => {

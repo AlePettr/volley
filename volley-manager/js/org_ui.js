@@ -38,7 +38,7 @@
   window.orgBody = function () {
     const k = sec(); UI.tab = k; const S = SECS[k]; let s = sub(k), bar = "", body = "";
     if (S.subs) bar = `<div class="org-sub" role="tablist">${S.subs.map(([id, l]) => `<button data-act="sub" data-v="${id}" aria-pressed="${s === id}">${l}${id === "offers" && typeof offersCount === "function" && offersCount() ? ` <em>${offersCount()}</em>` : ""}</button>`).join("")}</div>`;
-    if (k === "home") body = stats() + alertCardsHTML() + homeHTMLmain();
+    if (k === "home") { UI.orgHome = 1; try { body = stats() + homeHTML(); } finally { UI.orgHome = 0; } }
     else if (k === "league") body = leagueHTML();
     else if (s === "rosa") body = squadHTML(); else if (s === "lineup") body = lineupHTML(); else if (s === "scout") body = scoutingHTML(); else if (s === "travel") body = travelHTML();
     else if (s === "bilancio") body = finHTML(); else if (s === "soc") body = `<div class="card"><h3>Aspetto del menu</h3><p class="muted small" style="margin:4px 0 8px">Menu organizzato in sezioni, oppure il menu classico con tutte le schede in fila.</p><button class="btn" data-act="orgtoggle">Passa al menu classico</button></div>` + identityHTML() + saveCardHTML();

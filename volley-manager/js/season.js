@@ -116,7 +116,7 @@ function closeMarketWindow() {
   if (G.management) { G.management.sponsor = null; G.management.news = (G.management.news || []).slice(0, 8); }
   if (!G.board) G.board = { confidence: 60, goal: 'salvezza' };
   const rank = G.mw ? G.mw.rank : 0; G.mw = null; G.offers = [];
-  persist(); render(); toast(`Stagione archiviata (${rank}º posto). Nuova stagione avviata: +${formatEur(sponsor)} di contributo.`); window.scrollTo(0, 0);
+  persist(); render(); toast(`Stagione archiviata (${rank}º posto). Nuova stagione avviata.`); window.scrollTo(0, 0);
 }
 
 function hallHTML(open) {
@@ -135,5 +135,5 @@ function mwHTML() {
 }
 
 const _homeHTML4 = homeHTML;
-const APP_BUILD = '1030o';
+const APP_BUILD = '1030q';
 homeHTML = function () { return (G && G.mw ? mwHTML() + hallHTML(true) : _homeHTML4() + hallHTML(false)) + `<p class="muted small" style="text-align:center;font-size:11px;margin:10px 0 0">versione ${APP_BUILD}</p>`; };
