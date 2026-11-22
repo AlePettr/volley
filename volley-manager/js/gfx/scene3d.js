@@ -27,9 +27,11 @@ const S3_FORWARD = new Set(['bump', 'receive', 'dig', 'dive', 'shake']);
 const S3_UP = s3Available() ? new THREE.Vector3(0, 1, 0) : null;
 const S3_CROWD = ['#e8edf5', '#c3cddd', '#8da2c4', '#f2a43a', '#d6336c', '#2f6fdb', '#3a465c', '#f4d9c4'];
 
-function s3Tex(w, h, fn) {
-  const c = document.createElement('canvas'); c.width = w; c.height = h; fn(c.getContext('2d'), w, h);
-  const t = new THREE.CanvasTexture(c); t.anisotropy = 4; if (s3CM()) t.colorSpace = THREE.SRGBColorSpace; return t;
+/* texture disegnate: k = fattore di risoluzione (il disegno resta in coordinate w x h, il canvas e' piu' grande) */
+function s3TexHQ(w, h, fn) { const big = w * h > 1000 * 1000, k = !s3Hi() ? 1 : big ? (innerWidth >= 900 ? 2 : 1) : 2; return s3Tex(w, h, fn, Math.max(1, Math.min(k, 4096 / Math.max(w, h)))); }
+function s3Tex(w, h, fn, k) {
+  k = k || 1; const c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k); const cx = c.getContext('2d'); if (k !== 1) cx.scale(c.width / w, c.height / h); fn(cx, w, h);
+  const t = new THREE.CanvasTexture(c); t.anisotropy = k > 1 ? 8 : 4; if (s3CM()) t.colorSpace = THREE.SRGBColorSpace; return t;
 }
 function s3Seg(mesh, a, b, rad) {
   const d = new THREE.Vector3().subVectors(b, a), L = Math.max(1e-4, d.length());
@@ -92,7 +94,7 @@ function s3Setup(M) {
   const S = M.s3, cv = $("#cv");
   S.cv.style.display = 'block';
   { const ctl = $("#ctl"); if (ctl && !$("#s3ver")) ctl.insertAdjacentHTML('beforeend', `<span class="pill" id="s3ver" title="Versione della grafica 3D">3D ${S3_BUILD}</span><span class="pill" id="s3hall" title="Palazzetto di casa">Palazzetto: ${esc(M.home.short)}</span>`); }
-  const w = cv.clientWidth || 800, h = Math.round(w * Cam.H / Cam.W), dpr = Math.min(2, window.devicePixelRatio || 1);
+  const w = cv.clientWidth || 800, h = Math.round(w * Cam.H / Cam.W), dpr = Math.min(2, Math.max(window.devicePixelRatio || 1, S.hi ? 1.5 : 1));
   S.renderer.setPixelRatio(dpr); S.renderer.setSize(w, h, false);
   S.aspect = w / h; S.camera.aspect = S.aspect; S.camera.updateProjectionMatrix();
   S.cur = null;
@@ -112,14 +114,14 @@ function s3Build(M) {
   scene.add(new THREE.HemisphereLight(s3CM() ? 0xfff1e2 : 0xdfeaff, s3CM() ? 0x3a2f2a : 0x2a2540, (s3CM() ? .55 : .42) * (window.S3_LK || 1)));
   const sun = new THREE.DirectionalLight(0xffffff, .42 * S3_SUNK() * (window.S3_LK || 1)); sun.position.set(-6, 22, 10); scene.add(sun);
   /* ombre reali: il sole proietta giocatrici, rete, pali e palla sul campo (piano che riceve solo l'ombra) */
-  sun.castShadow = true; { const q = Math.min(innerWidth, innerHeight) < 600 ? 1024 : 2048; sun.shadow.mapSize.set(q, q); } sun.shadow.bias = -.0004; sun.shadow.normalBias = .03; sun.shadow.radius = 3;
+  sun.castShadow = true; { const q = Math.min(innerWidth, innerHeight) < 600 ? 1024 : innerWidth >= 900 ? 4096 : 2048; sun.shadow.mapSize.set(q, q); } sun.shadow.bias = -.0004; sun.shadow.normalBias = .03; sun.shadow.radius = 3;
   Object.assign(sun.shadow.camera, { left: -13, right: 13, top: 13, bottom: -13, near: 8, far: 50 }); sun.shadow.camera.updateProjectionMatrix();
   const AV0 = (S.hi && typeof s3ArenaVariant === 'function') ? (() => { try { return s3ArenaVariant(M); } catch (e) { return {}; } })() : {};
   const isA1 = ((M.home && M.home.lid) || (typeof G !== 'undefined' && G && G.lid) || 'A1') !== 'A2';
 
   /* pavimento: zona libera viola + campo in parquet (texture disegnata una volta) */
   const FW = 17.2, FL = 24, TW = 1536, TL = 2048;
-  const floorTex = s3Tex(TW, TL, (c, w, h) => {
+  const floorTex = s3TexHQ(TW, TL, (c, w, h) => {
     const X = v => (v + FW / 2) * w / FW, Y = u => (u + FL / 2) * h / FL;
     const g = c.createLinearGradient(0, 0, 0, h);
     if (isA1) { g.addColorStop(0, '#cdae80'); g.addColorStop(1, '#dcc093'); } else { g.addColorStop(0, '#4a2f86'); g.addColorStop(1, '#6f52b8'); }
@@ -304,7 +306,7 @@ function s3Build(M) {
   const zW = (RND ? RB : END0) + Math.max(OFF.zp, OFF.zm) + (rEL + GAP + RU) * stepD + 1, xW = (RND ? RA : SIDE0) + Math.max(OFF.xp, OFF.xm) + (rSL + GAP + RU) * stepD + 1; if (HI) S.camK = Math.max(1.5, (xW + 1.5) / 15);
   /* tetto ad arco: sale da 24,6 m ai lati a 30 m al centro; il resto resta piatto a 24 m */
   const WH = HI && AV.arch ? 36 : 26, rY = x => HI && AV.arch ? 24.6 + 5.4 * (1 - Math.pow(x / xW, 2)) : 23.6; S.roofY = rY;
-  if (OPEN) { const wallC = AV.wall || null, ct = s3Tex(AV.windows ? 1024 : 512, AV.windows ? 512 : 256, (c, w, h) => { if (wallC) { c.fillStyle = wallC; c.fillRect(0, 0, w, h); for (let x = 0; x < w; x += 64) { c.fillStyle = 'rgba(0,0,0,.16)'; c.fillRect(x, 0, 3, h); c.fillStyle = 'rgba(255,255,255,.06)'; c.fillRect(x + 3, 0, 2, h); } const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, 'rgba(0,0,0,.45)'); g.addColorStop(.35, 'rgba(0,0,0,0)'); c.fillStyle = g; c.fillRect(0, 0, w, h);
+  if (OPEN) { const wallC = AV.wall || null, ct = s3TexHQ(AV.windows ? 1024 : 512, AV.windows ? 512 : 256, (c, w, h) => { if (wallC) { c.fillStyle = wallC; c.fillRect(0, 0, w, h); for (let x = 0; x < w; x += 64) { c.fillStyle = 'rgba(0,0,0,.16)'; c.fillRect(x, 0, 3, h); c.fillStyle = 'rgba(255,255,255,.06)'; c.fillRect(x + 3, 0, 2, h); } const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, 'rgba(0,0,0,.45)'); g.addColorStop(.35, 'rgba(0,0,0,0)'); c.fillStyle = g; c.fillRect(0, 0, w, h);
         if (AV.windows) { /* finestre alte: telaio scuro, vetro chiaro con riflesso e montanti */ const ww = w * .13, gap = w / 3, y0 = h * .60, hh = h * .22; for (let k = 0; k < 3; k++) { const x0 = gap * (k + .5) - ww / 2; c.fillStyle = '#1a0a10'; c.fillRect(x0 - 5, y0 - 5, ww + 10, hh + 10); const gl = c.createLinearGradient(0, y0, 0, y0 + hh); gl.addColorStop(0, '#d9ecff'); gl.addColorStop(1, '#7fa6cc'); c.fillStyle = gl; c.fillRect(x0, y0, ww, hh); c.fillStyle = '#1a0a10'; c.fillRect(x0 + ww / 2 - 2, y0, 4, hh); for (let r = 1; r < 4; r++) c.fillRect(x0, y0 + hh * r / 4 - 1.5, ww, 3); c.fillStyle = 'rgba(255,255,255,.22)'; c.beginPath(); c.moveTo(x0, y0 + hh * .55); c.lineTo(x0 + ww * .5, y0); c.lineTo(x0 + ww * .75, y0); c.lineTo(x0, y0 + hh * .85); c.fill(); } }
         return; } c.fillStyle = Gx.dark(homeKit.main, .35); c.fillRect(0, 0, w, h); for (let x = 0; x < w; x += 16) { c.fillStyle = (x / 16) % 2 ? 'rgba(255,255,255,.05)' : 'rgba(0,0,0,.18)'; c.fillRect(x, 0, 16, h); } c.fillStyle = homeKit.main; c.fillRect(0, h * .30, w, h * .035); c.fillStyle = homeKit.trim; c.fillRect(0, h * .335, w, h * .012); }); ct.wrapS = THREE.RepeatWrapping; ct.repeat.set(wallC ? 3 : 5, 1);
     if (AV.arches) { const cv = ct.image, g = cv.getContext('2d'), w = cv.width, h = cv.height; g.globalCompositeOperation = 'destination-out'; g.fillStyle = '#000';
@@ -337,8 +339,8 @@ function s3Build(M) {
   if (AV.drummer) { for (let i = spots.length - 1; i >= 0; i--) { const sp = spots[i]; if (Math.abs(sp.x - AV.drummer.x) < 1.6 && Math.abs(sp.z - AV.drummer.z) < .9 && sp.y < AV.drummer.y + .6) spots.splice(i, 1); } }
   S.hallSeats = spots.length;
   const N = spots.length, T4 = (x, y, z, sx, sy, sz) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion(), new THREE.Vector3(sx, sy, sz)),
-    bodyG = s3Merge([{ g: new THREE.CylinderGeometry(.17, .22, .5, 8), m: T4(0, -.02, 0, 1, 1, 1) }, { g: new THREE.SphereGeometry(1, 8, 6), m: T4(0, .22, 0, .2, .1, .155) }, { g: new THREE.SphereGeometry(1, 6, 5), m: T4(-.235, .06, 0, .065, .19, .07) }, { g: new THREE.SphereGeometry(1, 6, 5), m: T4(.235, .06, 0, .065, .19, .07) }]),
-    headG = s3Merge([{ g: new THREE.SphereGeometry(.13, 9, 7) }, { g: new THREE.CylinderGeometry(.055, .065, .16, 6), m: T4(0, -.14, 0, 1, 1, 1) }]);
+    bodyG = s3Merge([{ g: new THREE.CylinderGeometry(.17, .22, .5, 14), m: T4(0, -.02, 0, 1, 1, 1) }, { g: new THREE.SphereGeometry(1, 14, 10), m: T4(0, .22, 0, .2, .1, .155) }, { g: new THREE.SphereGeometry(1, 6, 5), m: T4(-.235, .06, 0, .065, .19, .07) }, { g: new THREE.SphereGeometry(1, 6, 5), m: T4(.235, .06, 0, .065, .19, .07) }]),
+    headG = s3Merge([{ g: new THREE.SphereGeometry(.13, 16, 12) }, { g: new THREE.CylinderGeometry(.055, .065, .16, 10), m: T4(0, -.14, 0, 1, 1, 1) }]);
   const bodies = new THREE.InstancedMesh(bodyG, new THREE.MeshLambertMaterial({ color: 0xffffff }), N), heads = new THREE.InstancedMesh(headG, new THREE.MeshLambertMaterial({ color: 0xffffff }), N);
   const mtx = new THREE.Matrix4(), col = new THREE.Color(), skins = ['#f1c9a5', '#e0ac82', '#b9835b', '#8a5a3b', '#f5d6bd'], base = new Float32Array(N), ph = new Float32Array(N);
   const hs = M.userSide === 'a' ? -1 : 1, kh = M.kits.h, ka = M.kits.a, team = new Uint8Array(N), flagSpots = [];
@@ -370,14 +372,14 @@ function s3Build(M) {
     try {
       scene.remove(bodies); scene.remove(heads);
       S.crowd.rich = s3RichCrowd(S, scene, { spots, cc: cc_, sk: sk_, team, base });
-      const bandTex = s3Tex(2048, 64, (c, w, h) => { c.fillStyle = homeKit.shade; c.fillRect(0, 0, w, h); const it = A3 ? [(M.home.city || M.home.short).toUpperCase(), 'SERIE A3 FEMMINILE', M.home.short.toUpperCase(), 'VOLLEY MANAGER'] : [(M.home.city || M.home.short).toUpperCase(), 'SERIE A FEMMINILE', M.home.short.toUpperCase(), 'VOLLEY MANAGER', 'FRECCIAROSSA', 'FINECO']; c.fillStyle = Gx.onColor(homeKit.shade); c.font = '700 38px "Barlow Condensed",Arial Narrow,sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; for (let k = 0; k < 12; k++) c.fillText(it[k % it.length], (k + .5) * w / 12, h / 2 + 2); });
+      const bandTex = s3TexHQ(2048, 64, (c, w, h) => { c.fillStyle = homeKit.shade; c.fillRect(0, 0, w, h); const it = A3 ? [(M.home.city || M.home.short).toUpperCase(), 'SERIE A3 FEMMINILE', M.home.short.toUpperCase(), 'VOLLEY MANAGER'] : [(M.home.city || M.home.short).toUpperCase(), 'SERIE A FEMMINILE', M.home.short.toUpperCase(), 'VOLLEY MANAGER', 'FRECCIAROSSA', 'FINECO']; c.fillStyle = Gx.onColor(homeKit.shade); c.font = '700 38px "Barlow Condensed",Arial Narrow,sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; for (let k = 0; k < 12; k++) c.fillText(it[k % it.length], (k + .5) * w / 12, h / 2 + 2); });
       s3RichArena(S, scene, { arches: AV.arches ? OS : 0, gallery: AV.gallery ? (AV.openX || -1) : 0, drummer: AV.drummer, crew: AV.crew, round: RND, OFF, open: OPEN, openSign: OS, pal: ((typeof S3_PAL !== 'undefined' && S3_PAL[AV.pal || 0]) ? Object.assign({}, S3_PAL[AV.pal || 0], AV.palx || {}) : null), noEnd: NOEND, openX: OPENX, seatCols: AV.seatCols, duct: AV.duct, TH, kit: homeKit, xW, zW, END0, SIDE0, endSpan, endSpanU, stepD, seats: seatsL, rowsEnd: rEL, rowsSide: rSL, rEL, rSL, GAP, RU, DH, DU, hTopE, hTopS, topH: S.topH, bandTex, home: (M.home.city || M.home.short).toUpperCase() });
     } catch (e) { console.warn('palazzetto HD non disponibile', e); S.hi = false; S.crowd.rich = null; if (!bodies.parent) { scene.add(bodies); scene.add(heads); } }
   }
 
   /* cartelloni LED: filmati della Lega se disponibili, altrimenti nomi di squadre e sponsor */
   S.panels = []; S.vtex = new Map();
-  const fallback = s3Tex(1024, 64, (c, w, h) => {
+  const fallback = s3TexHQ(1024, 64, (c, w, h) => {
     c.fillStyle = AV0.boardCol || homeKit.shade; c.fillRect(0, 0, w, h);
     const items = A3 ? [(M.home.city || M.home.short).toUpperCase(), M.home.short.toUpperCase(), M.away.short.toUpperCase(), (M.home.city || M.home.short).toUpperCase(), M.home.short.toUpperCase(), M.away.short.toUpperCase()] : [(M.home.city || M.home.short).toUpperCase(), 'FINECO', M.away.short.toUpperCase(), 'FRECCIAROSSA', M.home.short.toUpperCase(), 'FIAT'];
     c.fillStyle = Gx.onColor(AV0.boardCol || homeKit.shade); c.font = '700 40px "Barlow Condensed",Arial Narrow,sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
@@ -400,7 +402,7 @@ function s3Build(M) {
   S.fallbackTex = fallback;
 
   /* rete, montanti, antenne */
-  const netTex = s3Tex(256, 32, (c, w, h) => { c.clearRect(0, 0, w, h); c.strokeStyle = 'rgba(235,240,250,.75)'; c.lineWidth = 1; for (let x = 0; x <= w; x += 8) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, h); c.stroke(); } for (let y = 0; y <= h; y += 8) { c.beginPath(); c.moveTo(0, y); c.lineTo(w, y); c.stroke(); } });
+  const netTex = s3TexHQ(256, 32, (c, w, h) => { c.clearRect(0, 0, w, h); c.strokeStyle = 'rgba(235,240,250,.75)'; c.lineWidth = 1; for (let x = 0; x <= w; x += 8) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, h); c.stroke(); } for (let y = 0; y <= h; y += 8) { c.beginPath(); c.moveTo(0, y); c.lineTo(w, y); c.stroke(); } });
   const net = new THREE.Mesh(new THREE.PlaneGeometry(10, 1), new THREE.MeshBasicMaterial({ map: netTex, transparent: true, side: THREE.DoubleSide, depthWrite: false }));
   net.position.set(0, 1.74, 0); scene.add(net);
   const tape = new THREE.Mesh(new THREE.BoxGeometry(10, .075, .03), new THREE.MeshLambertMaterial({ color: 0xf5f7fb })); tape.position.set(0, 2.22, 0); scene.add(tape);
@@ -425,7 +427,7 @@ function s3Build(M) {
   const person = (x, z, ry, shirt, shorts, sit, tm, ph) => {
     const g = new THREE.Group(), k = skinC[Math.floor(R() * skinC.length)], hairC = ['#1c1410', '#3a2a1c', '#6b4a2a', '#caa05a'][Math.floor(R() * 4)];
     const add = (geo, m, px, py, pz, sx, sy, sz, rx) => { const o = new THREE.Mesh(geo, m); o.position.set(px, py, pz); if (sx !== undefined) o.scale.set(sx, sy, sz); if (rx) o.rotation.x = rx; g.add(o); return o; };
-    const SPH = new THREE.SphereGeometry(1, 10, 8), CYL = new THREE.CylinderGeometry(1, 1, 1, 8), BOXG = new THREE.BoxGeometry(1, 1, 1);
+    const SPH = new THREE.SphereGeometry(1, 18, 14), CYL = new THREE.CylinderGeometry(1, 1, 1, 14), BOXG = new THREE.BoxGeometry(1, 1, 1);
     const hy = sit ? .5 : .95;   /* altezza del bacino */
     /* sedia o sgabello: i seduti non galleggiano piu' */
     if (sit) { const sm = lam(0x232b3d); add(BOXG, sm, 0, .43, .08, .42, .045, .42); add(BOXG, sm, 0, .62, -.13, .42, .38, .04); for (const dx of [-.17, .17]) for (const dz of [-.1, .26]) add(CYL, sm, dx, .2, dz, .018, .4, .018); }
@@ -468,7 +470,7 @@ function s3Build(M) {
 
   /* palla */
   /* pallone ufficiale Molten V5M5000: tre spicchi a spirale bianco / verde / rosso */
-  const ballTex = s3Tex(512, 256, (c, w, h) => {
+  const ballTex = s3TexHQ(512, 256, (c, w, h) => {
     const im = c.createImageData(w, h), d = im.data, seg = [[.20, 255, 255, 252], [.30, 22, 150, 112], [.10, 255, 255, 252], [.28, 226, 58, 86], [.12, 255, 255, 252]];
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
       const v = y / h; let t = (x / w * 3 + .45 * Math.sin(v * Math.PI) * 1.2 + v * .5) % 1; if (t < 0) t += 1;
@@ -477,7 +479,7 @@ function s3Build(M) {
     }
     c.putImageData(im, 0, 0);
   });
-  S.ball = new THREE.Mesh(new THREE.SphereGeometry(.15, 16, 12), new THREE.MeshLambertMaterial({ map: ballTex })); S.ball.castShadow = true; scene.add(S.ball);
+  S.ball = new THREE.Mesh(new THREE.SphereGeometry(.15, S.hi ? 48 : 16, S.hi ? 32 : 12), new THREE.MeshLambertMaterial({ map: ballTex })); S.ball.castShadow = true; scene.add(S.ball);
   const shTex = s3Tex(64, 64, (c, w, h) => { const g = c.createRadialGradient(w / 2, h / 2, 2, w / 2, h / 2, w / 2); g.addColorStop(0, 'rgba(4,6,14,.62)'); g.addColorStop(.55, 'rgba(4,6,14,.32)'); g.addColorStop(1, 'rgba(4,6,14,0)'); c.fillStyle = g; c.fillRect(0, 0, w, h); });
   const shadowMat = new THREE.MeshBasicMaterial({ map: shTex, transparent: true, depthWrite: false });
   S.ballShadow = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), shadowMat); S.ballShadow.rotation.x = -Math.PI / 2; S.ballShadow.position.y = .012; scene.add(S.ballShadow);
@@ -502,13 +504,13 @@ function s3Rig(M, e) {
   const K = lib ? { main: M.kits.lib, num: M.kits.libNum, shorts: Gx.dark(M.kits.lib, .5), trim: Gx.lum(M.kits.lib) > .5 ? '#1b2234' : '#fff' } : M.kits[e.side];
   const look = e.p._look || (e.p._look = avatarLook(e.p));
   const mat = c => new THREE.MeshLambertMaterial({ color: c });
-  const cyl = new THREE.CylinderGeometry(1, 1, 1, 8), sph = new THREE.SphereGeometry(1, 14, 10), box = new THREE.BoxGeometry(1, 1, 1);
+  const cyl = new THREE.CylinderGeometry(1, 1, 1, 14), sph = new THREE.SphereGeometry(1, 20, 14), box = new THREE.BoxGeometry(1, 1, 1);
   const G = s3Geos();
   const g = new THREE.Group(), parts = {};
   const mk = (name, geo, m) => { const o = new THREE.Mesh(geo, m); o.castShadow = true; g.add(o); parts[name] = o; return o; };
   const hh = Gx.hash(String(e.p.id));
   /* maglia con texture: pannelli laterali piu' scuri, scollo a V, pieghe leggere */
-  const jTex = s3Tex(256, 256, (c, w, h) => {
+  const jTex = s3TexHQ(256, 256, (c, w, h) => {
     const RR = Gx.rng(hh), sh = Gx.dark(K.main, .22), hi = Gx.light(K.main, .12);
     c.fillStyle = K.main; c.fillRect(0, 0, w, h);
     const gx = c.createLinearGradient(0, 0, w, 0); gx.addColorStop(0, hi); gx.addColorStop(.1, K.main); gx.addColorStop(.2, sh); gx.addColorStop(.3, K.main); gx.addColorStop(.5, K.main); gx.addColorStop(.7, K.main); gx.addColorStop(.8, sh); gx.addColorStop(.9, K.main); gx.addColorStop(1, hi);
@@ -531,14 +533,14 @@ function s3Rig(M, e) {
   mk('head', G.head, skin); mk('hair', sph, hair); mk('tail', sph, hair); mk('bun', sph, hair); mk('nose', sph, mat(Gx.dark(look.skin, .12)));
   /* schiena: cognome sopra il numero; petto: numero piccolo */
   const sur = String(e.p.name || '').trim().split(/\s+/).slice(-1)[0].toUpperCase();
-  const backTex = s3Tex(128, 128, (c, w, h) => {
+  const backTex = s3TexHQ(128, 128, (c, w, h) => {
     c.fillStyle = K.num || '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle';
     let fs = 24; c.font = `700 ${fs}px "Barlow Condensed",Arial Narrow,Arial`; while (c.measureText(sur).width > w - 6 && fs > 10) { fs--; c.font = `700 ${fs}px "Barlow Condensed",Arial Narrow,Arial`; }
     c.fillText(sur, w / 2, 20);
     c.font = '700 84px "Barlow Condensed",Arial Narrow,Arial'; c.fillText(String(no || ''), w / 2, 78);
   });
   const numM = new THREE.Mesh(new THREE.PlaneGeometry(.31, .31), new THREE.MeshBasicMaterial({ map: backTex, transparent: true })); g.add(numM); parts.num = numM;
-  const frontTex = s3Tex(64, 64, (c, w, h) => { c.fillStyle = K.num || '#fff'; c.font = '700 46px "Barlow Condensed",Arial'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(String(no || ''), w / 2, h / 2 + 2); });
+  const frontTex = s3TexHQ(64, 64, (c, w, h) => { c.fillStyle = K.num || '#fff'; c.font = '700 46px "Barlow Condensed",Arial'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(String(no || ''), w / 2, h / 2 + 2); });
   const numF = new THREE.Mesh(new THREE.PlaneGeometry(.12, .12), new THREE.MeshBasicMaterial({ map: frontTex, transparent: true })); g.add(numF); parts.numF = numF;
   const shadow = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), S.shadowMat); shadow.rotation.x = -Math.PI / 2; shadow.position.y = .012;
   S.scene.add(g); S.scene.add(shadow);

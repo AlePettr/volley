@@ -77,3 +77,4 @@ Rinnovo automatico selezionabile per addetto o per tutti (palazzetto).
 Menu organizzato (js/org_ui.js, css/org.css): Home, Squadra (Rosa, Formazione, Vivaio, Contratti), Club (Bilancio, Staff, Palazzetto, Viaggi, Società), Mercato (Svincolate, Trattative, Cessioni, Offerte, Scouting), Campionato. Menu classico con ?org=0 o dal pulsante in Società.
 Serie A3: palazzetto generato per ogni club (s3A3Hall in arena3d.js) da id e colori sociali, finche' non ci sono foto reali.
 Mercato IA: i club non rilasciano piu' atlete verificate e non prendono svincolate generate oltre le 14 (le rose reali restano tali durante la stagione).
+Grafica 3D piu' definita (v1030s): texture a risoluzione doppia (s3TexHQ), pallone e pubblico con piu' poligoni, ombre del sole 4096 su desktop, pixel ratio minimo 1.5 in HD.
